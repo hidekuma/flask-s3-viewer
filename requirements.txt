@@ -1,0 +1,14 @@
+boto3==1.12.2
+botocore==1.15.2
+Click==7.0
+docutils==0.15.2
+Flask==1.1.1
+itsdangerous==1.1.0
+Jinja2==2.11.1
+jmespath==0.9.4
+MarkupSafe==1.1.1
+python-dateutil==2.8.1
+s3transfer==0.3.3
+six==1.14.0
+urllib3==1.25.8
+Werkzeug==1.0.0
