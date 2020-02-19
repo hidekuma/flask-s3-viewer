@@ -1,0 +1,8 @@
+{% extends "flask_s3up/base.html" %}
+{% block title %}Upload{% endblock %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+{% block content %}
+    {% include 'flask_s3up/form.html' with context %}
+{% endblock %}

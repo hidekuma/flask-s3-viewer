@@ -1,0 +1,49 @@
+{% extends "flask_s3up/base.html" %}
+{% block title %}Files{% endblock %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+{% block content %}
+    {#<label for="page_size">page size:</label>#}
+    {#<select name="page_size" id="page_size" multiple size="1">#}
+        {#<option value="10">10</option>#}
+        {#<option value="20">20</option>#}
+    {#</select>#}
+    {% include 'flask_s3up/form.html' with context %}
+    <ul>
+        {% if prefixes%}
+            {% for p in prefixes %}
+                {% if p.Prefix %}
+                    <li>
+                        <a href="{{ url_for('flask_s3up.files', prefix=p.Prefix) }}" target="_self">{{ p.Prefix }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+        {% if contents %}
+            {% for d in contents %}
+                <li>
+                    {{ d.LastModified }}
+                    {{ d.Size }}
+                    {{ unquote_plus(d.Key) }}
+                    |copy clipboard
+                    |download
+                    |delete
+                    |rename
+                </li>
+            {% endfor %}
+        {% endif %}
+    </ul>
+    <ul>
+        {% if request.args.get('prev_token') %}
+            <li>
+                <a href="{{ url_for('flask_s3up.files', prefix=request.args.get('prefix'), starting_token=request.args.get('prev_token')) }}" target="_self">prev</a>
+            </li>
+        {% endif %}
+        {% if next_token %}
+            <li>
+                <a href="{{ url_for('flask_s3up.files', prefix=request.args.get('prefix'), prev_token=request.args.get('starting_token'), starting_token=next_token) }}" target="_self">next</a>
+            </li>
+        {% endif %}
+    </ul>
+{% endblock %}
