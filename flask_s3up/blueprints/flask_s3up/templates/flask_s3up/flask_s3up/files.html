@@ -4,13 +4,25 @@
     {{ super() }}
 {% endblock %}
 {% block content %}
-    {#<label for="page_size">page size:</label>#}
-    {#<select name="page_size" id="page_size" multiple size="1">#}
-        {#<option value="10">10</option>#}
-        {#<option value="20">20</option>#}
-    {#</select>#}
+    <p>
+        <button>delete</button>
+        <button>download</button>
+        <label for="search">Search</label><input type="text" name="search" value="" id="search">
+        <label for="page_size">Page size:</label>
+        <select name="page_size" id="page_size">
+            <option value="10">10</option>
+            <option value="20">20</option>
+        </select>
+    </p>
     {% include 'flask_s3up/form.html' with context %}
+    <p><button>check all</button></p>
     <ul>
+        {#{% if request.args.get('before_prefix') is not none or (not request.args.get('before_prefix') and request.args.get('prefix') is undefined) %}#}
+            {#<li>#}
+                {#<a href="{{ url_for('flask_s3up.files', prefix=request.args.get('before_prefix')) }}" target="_self">..</a>#}
+            {#</li>#}
+        {#{% endif %}#}
+
         {% if prefixes%}
             {% for p in prefixes %}
                 {% if p.Prefix %}
@@ -22,15 +34,18 @@
         {% endif %}
         {% if contents %}
             {% for d in contents %}
-                <li>
-                    {{ d.LastModified }}
-                    {{ d.Size }}
-                    {{ unquote_plus(d.Key) }}
-                    |copy clipboard
-                    |download
-                    |delete
-                    |rename
-                </li>
+                {% if d.Key %}
+                    <li>
+                        <input type="checkbox" name="checks[]" value="{{ unquote_plus(d.Key) }}" id="checks">
+                        {{ d.LastModified }}
+                        {{ d.Size }}
+                        {{ unquote_plus(d.Key) }}
+                        <button>clipboard</button>
+                        <button>download</button>
+                        <button>delete</button>
+                        <button>rename</button>
+                    </li>
+                {% endif %}
             {% endfor %}
         {% endif %}
     </ul>

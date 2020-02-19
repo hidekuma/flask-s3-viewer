@@ -4,7 +4,7 @@ from ..aws.s3 import AWSS3Client
 
 NAMESPACE = 'flask_s3up'
 
-blueprint = Blueprint(NAMESPACE, __name__ , template_folder=f'./{NAMESPACE}/templates/{NAMESPACE}')
+blueprint = Blueprint(NAMESPACE, __name__ , template_folder=f'./{NAMESPACE}/templates/{NAMESPACE}', static_folder=f'./{NAMESPACE}/static/{NAMESPACE}')
 
 @blueprint.route("/upload", methods=['GET'])
 def upload():
@@ -13,13 +13,16 @@ def upload():
 @blueprint.route("/files", methods=['GET', 'POST'])
 def files():
     if request.method == "POST":
-        current_path = request.form.get('current_path', None)
+        current_path = request.form.get('current_path', '')
         print(current_path, type(current_path))
         files = request.files.getlist("files[]")
         s3_client = AWSS3Client(profile_name=current_app.config['PROFILE'])
         for f in files:
             if current_path:
-                f.filename = f'{current_path}{f.filename}'
+                if current_path.endswith('/'):
+                    f.filename = f'{current_path}{f.filename}'
+                else:
+                    f.filename = f'{current_path}/{f.filename}'
             s3_client.upload_fileobj(
                 current_app.config['BUCKET'],
                 f,
