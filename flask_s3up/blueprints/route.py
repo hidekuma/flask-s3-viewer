@@ -78,6 +78,8 @@ def files():
         prefix = urllib.parse.unquote_plus(prefix)
         starting_token = request.args.get('starting_token')
         search = request.args.get('search')
+        if not starting_token:
+            starting_token = None
 
         s3_client = AWSS3Client(profile_name=current_app.config['PROFILE'])
         if prefix:
@@ -93,6 +95,7 @@ def files():
             )
 
         next_token = pages.build_full_result().get('NextToken', None)
+        print(next_token)
         if search:
             contents = pages.search(f'Contents[?Size > `0` && contains(Key, `{search}`)]') # generator
             prefixes = pages.search(f'CommonPrefixes[?contains(Prefix, `{search}`)]') # generator

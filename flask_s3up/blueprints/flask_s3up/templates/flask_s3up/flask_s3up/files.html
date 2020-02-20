@@ -22,15 +22,21 @@
             {#</li>#}
         {#{% endif %}#}
 
+        {% if request.args.get('prefix') %}
+            <li>
+                <a href="{{ url_for('flask_s3up.files', prefix=request.args.get('before_prefix')) }}" target="_self">..</a>
+            </li>
+        {% endif %}
         {% if prefixes%}
             {% for p in prefixes %}
                 {% if p.Prefix %}
                     <li>
-                        <a href="{{ url_for('flask_s3up.files', prefix=p.Prefix) }}" target="_self">{{ unquote_plus(p.Prefix | replace(request.args.get('prefix'), '')) }}</a>
+                        <a href="{{ url_for('flask_s3up.files', prefix=p.Prefix, before_prefix=request.args.get('prefix')) }}" target="_self">{{ unquote_plus(p.Prefix | replace(request.args.get('prefix'), '')) }}</a>
                     </li>
                 {% endif %}
             {% endfor %}
         {% endif %}
+        <li><hr></li>
         {% if contents %}
             {% for d in contents %}
                 {% if d.Key %}
@@ -48,9 +54,9 @@
             {% endfor %}
         {% endif %}
     </ul>
-    <p>-----</p>
+    <hr>
     <ul>
-        {% if request.args.get('prev_token') %}
+        {% if request.args.get('starting_token') %}
             <li>
                 <a href="{{ url_for('flask_s3up.files', prefix=request.args.get('prefix'), starting_token=request.args.get('prev_token')) }}" target="_self">prev</a>
             </li>
