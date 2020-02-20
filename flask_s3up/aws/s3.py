@@ -276,7 +276,7 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
 
         return objects, prefixes, next_token
 
-    def list_bucket_objects_with_pager(self, bucket_name, prefix='', delimiter='/', max_items=1000, page_size=1000, starting_token=None):
+    def list_bucket_objects_with_pager(self, bucket_name, prefix='', delimiter='/', max_items=5, page_size=5, starting_token=None):
         prefix = self.__prefixer(prefix)
         paginator = self._s3.get_paginator("list_objects_v2")
         page_iterator = paginator.paginate(

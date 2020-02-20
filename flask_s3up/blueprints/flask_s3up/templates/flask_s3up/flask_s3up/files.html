@@ -4,18 +4,17 @@
     {{ super() }}
 {% endblock %}
 {% block content %}
+    {% include 'flask_s3up/form.html' with context %}
     <p>
-        <button>delete</button>
-        <button>download</button>
         <label for="search">Search</label><input type="text" name="search" value="" id="search">
+        <button>check all</button>
+        <button>delete</button>
         <label for="page_size">Page size:</label>
         <select name="page_size" id="page_size">
             <option value="10">10</option>
             <option value="20">20</option>
         </select>
     </p>
-    {% include 'flask_s3up/form.html' with context %}
-    <p><button>check all</button></p>
     <ul>
         {#{% if request.args.get('before_prefix') is not none or (not request.args.get('before_prefix') and request.args.get('prefix') is undefined) %}#}
             {#<li>#}
@@ -27,7 +26,7 @@
             {% for p in prefixes %}
                 {% if p.Prefix %}
                     <li>
-                        <a href="{{ url_for('flask_s3up.files', prefix=p.Prefix) }}" target="_self">{{ p.Prefix }}</a>
+                        <a href="{{ url_for('flask_s3up.files', prefix=p.Prefix) }}" target="_self">{{ unquote_plus(p.Prefix | replace(request.args.get('prefix'), '')) }}</a>
                     </li>
                 {% endif %}
             {% endfor %}
@@ -36,19 +35,20 @@
             {% for d in contents %}
                 {% if d.Key %}
                     <li>
-                        <input type="checkbox" name="checks[]" value="{{ unquote_plus(d.Key) }}" id="checks">
+                        {{ loop.index }}
                         {{ d.LastModified }}
-                        {{ d.Size }}
-                        {{ unquote_plus(d.Key) }}
-                        <button>clipboard</button>
-                        <button>download</button>
+                        {{ d.Size | filesizeformat }}
+                        {{ unquote_plus(d.Key | replace(request.args.get('prefix'), ''))}}
+                        <button onclick="copyToClipboard({{ loop.index }});">clipboard</button>
+                        <input type="text" value="{{ d.Key }}" id="addr_copy_{{ loop.index }}">
+                        <a href="{{ url_for('flask_s3up.files_download', key=d.Key) }}">download</a>
                         <button>delete</button>
-                        <button>rename</button>
                     </li>
                 {% endif %}
             {% endfor %}
         {% endif %}
     </ul>
+    <p>-----</p>
     <ul>
         {% if request.args.get('prev_token') %}
             <li>
@@ -61,4 +61,7 @@
             </li>
         {% endif %}
     </ul>
+{% endblock %}
+{% block tail %}
+   <script src="{{ url_for('flask_s3up.static', filename="/js/form.js") }}" charset="utf-8"></script>
 {% endblock %}

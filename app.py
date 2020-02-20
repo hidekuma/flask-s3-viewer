@@ -3,6 +3,7 @@ import sys
 from flask import Flask
 from flask_s3up import FlaskS3Up
 app = Flask(__name__)
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 1
 s3up = FlaskS3Up()
 s3up.init_app(app, config={
     'PATH': '/flask-s3up',

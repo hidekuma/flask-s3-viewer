@@ -6,14 +6,17 @@
             <meta http-equiv="X-UA-Compatible" content="IE=edge">
             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
             <title>{% block title %}{% endblock %}</title>
+            <link rel="stylesheet" href="{{ url_for('flask_s3up.static', filename='css/initialization.css') }}" type="text/css" media="screen" title="no title" charset="utf-8">
+            <link rel="stylesheet" href="{{ url_for('flask_s3up.static', filename='css/main.css') }}" type="text/css" media="screen" title="no title" charset="utf-8">
         {% endblock %}
     </head>
     <body>
         <div id="content">{% block content %}{% endblock %}</div>
         <div id="footer">
             {% block footer %}
-                footer
             {% endblock %}
         </div>
+        {% block tail %}
+        {% endblock %}
     </body>
 </html>

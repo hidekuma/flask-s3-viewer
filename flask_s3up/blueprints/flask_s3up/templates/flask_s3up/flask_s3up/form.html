@@ -1,53 +1,17 @@
+<script charset="utf-8">
+  var FILES_ENDPOINT = "{{ url_for('flask_s3up.files') }}";
+</script>
 <form action="{{ url_for('flask_s3up.files') }}" method="post" accept-charset="utf-8" enctype="multipart/form-data">
   <p>
     <label for="files">Add files: </label><input multiple="multiple" type="file" name="files[]" id="files" required>
     <label for="submit">Submit: </label><input type="submit" name="submit" value="submit" id="submit">
   </p>
   <p>
-    current_path: 
-    <input type="text" name="current_path" value="{{ request.args.get('prefix', '') }}" id="current_path">
+    prefix: <input type="text" name="prefix" value="{{ request.args.get('prefix', '') }}" id="prefix">
   </p>
 </form>
-{#<div id="dropDiv" style="width:500px;height:500px;border:4px dotted green;">#}
-{#</div>#}
-<script charset="utf-8">
-  var files = document.getElementById('files');
-  files.onchange = function(){
-    var fileList = files.files;
-    for (var i=0; i<fileList.length; i++){
-      console.log(fileList[i]);
-    }
-  }
-{#document.getElementById('dropDiv').addEventListener('drop', function(e) {#}
-    {#e.stopPropagation();#}
-    {#e.preventDefault();#}
 
-    {#var uploadFile = function(file, path) {#}
-    {#console.log(111)#}
-        {#// handle file uploading#}
-    {#};#}
+<div id="drop_area" onclick="document.getElementById('files').click();" style="width:200px;height:200px;border:1px solid gray;"></div>
+<div id="gallery"></div>
 
-    {#var iterateFilesAndDirs = function(filesAndDirs, path) {#}
-        {#for (var i = 0; i < filesAndDirs.length; i++) {#}
-            {#if (typeof filesAndDirs[i].getFilesAndDirectories === 'function') {#}
-                {#var path = filesAndDirs[i].path;#}
-
-                {#// this recursion enables deep traversal of directories#}
-                {#filesAndDirs[i].getFilesAndDirectories().then(function(subFilesAndDirs) {#}
-                    {#// iterate through files and directories in sub-directory#}
-                    {#iterateFilesAndDirs(subFilesAndDirs, path);#}
-                {#});#}
-            {#} else {#}
-                {#uploadFile(filesAndDirs[i], path);#}
-            {#}#}
-        {#}#}
-    {#};#}
-
-    {#// begin by traversing the chosen files and directories#}
-    {#if ('getFilesAndDirectories' in e.dataTransfer) {#}
-        {#e.dataTransfer.getFilesAndDirectories().then(function(filesAndDirs) {#}
-            {#iterateFilesAndDirs(filesAndDirs, '/');#}
-        {#});#}
-    {#}#}
-{#});#}
-</script>
+<progress id="progress_bar" max=100 value=0></progress>

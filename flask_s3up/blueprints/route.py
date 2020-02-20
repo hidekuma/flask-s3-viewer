@@ -1,10 +1,51 @@
 import urllib
-from flask import Blueprint, request, redirect, render_template, current_app, url_for
+
+from werkzeug.wsgi import FileWrapper
+from flask import Blueprint, Response, request, redirect, render_template, current_app, url_for
+
 from ..aws.s3 import AWSS3Client
 
 NAMESPACE = 'flask_s3up'
 
-blueprint = Blueprint(NAMESPACE, __name__ , template_folder=f'./{NAMESPACE}/templates/{NAMESPACE}', static_folder=f'./{NAMESPACE}/static/{NAMESPACE}')
+blueprint = Blueprint(NAMESPACE, __name__ , template_folder=f'./{NAMESPACE}/templates/{NAMESPACE}', static_folder='static')
+
+@blueprint.route("/delete", methods=['DELETE'])
+def delete():
+    key = request.args.get('key')
+    if key:
+        s3_client = AWSS3Client(profile_name=current_app.config['PROFILE'])
+        s3_client.delete_fileobj(
+            current_app.config['BUCKET'],
+            key
+        )
+
+@blueprint.route("/files/<path:key>", methods=['GET', 'DELETE'])
+def files_download(key):
+    print(request.method)
+    if request.method == "GET":
+        s3_client = AWSS3Client(profile_name=current_app.config['PROFILE'])
+        r, obj = s3_client.get_object(
+            current_app.config['BUCKET'],
+            key
+        )
+        if r:
+            rv = Response(
+                FileWrapper(obj.get('Body')),
+                direct_passthrough=True,
+                mimetype=obj['ContentType']
+            )
+            filenames = {'filename': key}
+            rv.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            rv.headers['Pragma'] = 'no-cache'
+            rv.headers['Expires'] = '0'
+            rv.headers.set('Content-Disposition', 'attachment', **filenames)
+            return rv
+    elif request.method == 'DELETE':
+        s3_client = AWSS3Client(profile_name=current_app.config['PROFILE'])
+        s3_client.delete_fileobj(
+            current_app.config['BUCKET'],
+            key
+        )
 
 @blueprint.route("/upload", methods=['GET'])
 def upload():
@@ -13,26 +54,28 @@ def upload():
 @blueprint.route("/files", methods=['GET', 'POST'])
 def files():
     if request.method == "POST":
-        current_path = request.form.get('current_path', '')
-        print(current_path, type(current_path))
+        prefix = request.form.get('prefix', '')
+        prefix = urllib.parse.unquote(prefix)
         files = request.files.getlist("files[]")
         s3_client = AWSS3Client(profile_name=current_app.config['PROFILE'])
         for f in files:
-            if current_path:
-                if current_path.endswith('/'):
-                    f.filename = f'{current_path}{f.filename}'
+            if prefix:
+                if prefix.endswith('/'):
+                    f.filename = f'{prefix}{f.filename}'
                 else:
-                    f.filename = f'{current_path}/{f.filename}'
+                    f.filename = f'{prefix}/{f.filename}'
             s3_client.upload_fileobj(
                 current_app.config['BUCKET'],
                 f,
                 f.filename
             )
+        return {}, 201
 
-        return redirect(url_for(f'{NAMESPACE}.files', prefix=current_path))
+        # return redirect(url_for(f'{NAMESPACE}.files', prefix=prefix))
 
     elif request.method == "GET":
-        prefix = request.args.get('prefix')
+        prefix = request.args.get('prefix', '')
+        prefix = urllib.parse.unquote_plus(prefix)
         starting_token = request.args.get('starting_token')
         search = request.args.get('search')
 
