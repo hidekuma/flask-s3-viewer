@@ -1,0 +1,19 @@
+{% if contents %}
+<ul>
+  {% for c in contents if c.Key %}
+  <li>
+    <!--<input type="checkbox" name="checked_key_{{ loop.index }}" value="{{ c.Key }}" id="checked_key_{{ loop.index }}" class="checked-keys">-->
+    {{ loop.index }}
+    {{ c.LastModified }}
+    {{ c.Size | filesizeformat }}
+    {{ unquote_plus(c.Key | replace(request.args.get('prefix'), ''))}}
+    <button onclick="copyToClipboard({{ loop.index }});">clipboard</button>
+    <input type="text" value="{{ c.Key }}" id="addr_copy_{{ loop.index }}">
+    <a href="{{ url_for('flask_s3up.files_download', key=c.Key) }}">download</a>
+    <button onclick="deleteFile('{{ unquote_plus(c.Key) }}')">delete</button>
+  </li>
+  {% else %}
+  <li><em>doesn't exist contents</em></li>
+  {% endfor %}
+</ul>
+{% endif %}

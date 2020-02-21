@@ -7,53 +7,15 @@
     {% include 'flask_s3up/form.html' with context %}
     <p>
         <label for="search">Search</label><input type="text" name="search" value="" id="search">
-        <button>check all</button>
-        <button>delete</button>
         <label for="page_size">Page size:</label>
         <select name="page_size" id="page_size">
             <option value="10">10</option>
             <option value="20">20</option>
         </select>
     </p>
-    <ul>
-        {#{% if request.args.get('before_prefix') is not none or (not request.args.get('before_prefix') and request.args.get('prefix') is undefined) %}#}
-            {#<li>#}
-                {#<a href="{{ url_for('flask_s3up.files', prefix=request.args.get('before_prefix')) }}" target="_self">..</a>#}
-            {#</li>#}
-        {#{% endif %}#}
-
-        {% if request.args.get('prefix') %}
-            <li>
-                <a href="{{ url_for('flask_s3up.files', prefix=request.args.get('before_prefix')) }}" target="_self">..</a>
-            </li>
-        {% endif %}
-        {% if prefixes%}
-            {% for p in prefixes %}
-                {% if p.Prefix %}
-                    <li>
-                        <a href="{{ url_for('flask_s3up.files', prefix=p.Prefix, before_prefix=request.args.get('prefix')) }}" target="_self">{{ unquote_plus(p.Prefix | replace(request.args.get('prefix'), '')) }}</a>
-                    </li>
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-        <li><hr></li>
-        {% if contents %}
-            {% for d in contents %}
-                {% if d.Key %}
-                    <li>
-                        {{ loop.index }}
-                        {{ d.LastModified }}
-                        {{ d.Size | filesizeformat }}
-                        {{ unquote_plus(d.Key | replace(request.args.get('prefix'), ''))}}
-                        <button onclick="copyToClipboard({{ loop.index }});">clipboard</button>
-                        <input type="text" value="{{ d.Key }}" id="addr_copy_{{ loop.index }}">
-                        <a href="{{ url_for('flask_s3up.files_download', key=d.Key) }}">download</a>
-                        <button>delete</button>
-                    </li>
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-    </ul>
+    {% include 'flask_s3up/prefixes.html' with context %}
+    <hr>
+    {% include 'flask_s3up/contents.html' with context %}
     <hr>
     <ul>
         {% if request.args.get('starting_token') %}

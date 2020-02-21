@@ -1,7 +1,10 @@
 import urllib
+import unicodedata
+import os
 
 from werkzeug.wsgi import FileWrapper
-from flask import Blueprint, Response, request, redirect, render_template, current_app, url_for
+from werkzeug.urls import url_quote
+from flask import Blueprint, Response, request, render_template, current_app
 
 from ..aws.s3 import AWSS3Client
 
@@ -9,19 +12,9 @@ NAMESPACE = 'flask_s3up'
 
 blueprint = Blueprint(NAMESPACE, __name__ , template_folder=f'./{NAMESPACE}/templates/{NAMESPACE}', static_folder='static')
 
-@blueprint.route("/delete", methods=['DELETE'])
-def delete():
-    key = request.args.get('key')
-    if key:
-        s3_client = AWSS3Client(profile_name=current_app.config['PROFILE'])
-        s3_client.delete_fileobj(
-            current_app.config['BUCKET'],
-            key
-        )
-
 @blueprint.route("/files/<path:key>", methods=['GET', 'DELETE'])
 def files_download(key):
-    print(request.method)
+    # key = urllib.parse.unquote_plus(key)
     if request.method == "GET":
         s3_client = AWSS3Client(profile_name=current_app.config['PROFILE'])
         r, obj = s3_client.get_object(
@@ -29,12 +22,24 @@ def files_download(key):
             key
         )
         if r:
+            try:
+                key = os.path.basename(key).encode('latin-1')
+            except UnicodeEncodeError:
+                encoded_key = unicodedata.normalize(
+                    'NFKD',
+                    key
+                ).encode('latin-1', 'ignore')
+                filenames = {
+                    'filename': encoded_key,
+                    'filename*': "UTF-8''{}".format(url_quote(key)),
+                }
+            else:
+                filenames = {'filename': key}
             rv = Response(
                 FileWrapper(obj.get('Body')),
                 direct_passthrough=True,
                 mimetype=obj['ContentType']
             )
-            filenames = {'filename': key}
             rv.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
             rv.headers['Pragma'] = 'no-cache'
             rv.headers['Expires'] = '0'
@@ -42,10 +47,41 @@ def files_download(key):
             return rv
     elif request.method == 'DELETE':
         s3_client = AWSS3Client(profile_name=current_app.config['PROFILE'])
-        s3_client.delete_fileobj(
+        if key.endswith('/'):
+            s3_client.delete_fileobjs(
+                current_app.config['BUCKET'],
+                get_all_of_objects(key)
+            )
+        else:
+            s3_client.delete_fileobj(
+                current_app.config['BUCKET'],
+                key
+            )
+        return {}, 204
+
+def get_all_of_objects(prefix):
+    s3_client = AWSS3Client(profile_name=current_app.config['PROFILE'])
+    next_token=None
+    # objects = []
+    while True:
+        pages = s3_client.list_bucket_objects_with_pager(
             current_app.config['BUCKET'],
-            key
+            prefix=prefix,
+            delimiter='',
+            starting_token=next_token
         )
+        next_token = pages.build_full_result().get('NextToken', None)
+        contents = pages.search('Contents') # generator
+        for item in contents:
+            if item:
+                key = urllib.parse.unquote_plus(item['Key'])
+                # objects.append(key)
+                yield key
+        # if objects:
+            # r = s3.delete_fileobjs(bucket, objects)
+        if not next_token:
+            break
+
 
 @blueprint.route("/upload", methods=['GET'])
 def upload():
@@ -58,20 +94,24 @@ def files():
         prefix = urllib.parse.unquote(prefix)
         files = request.files.getlist("files[]")
         s3_client = AWSS3Client(profile_name=current_app.config['PROFILE'])
-        for f in files:
-            if prefix:
-                if prefix.endswith('/'):
-                    f.filename = f'{prefix}{f.filename}'
-                else:
-                    f.filename = f'{prefix}/{f.filename}'
-            s3_client.upload_fileobj(
+        if prefix:
+            if not prefix.endswith('/'):
+               prefix = f'{prefix}/'
+        if not files and prefix:
+            s3_client.put_object(
                 current_app.config['BUCKET'],
-                f,
-                f.filename
+                prefix,
+                mkdir=True
             )
+        else:
+            for f in files:
+                f.filename = f'{prefix}{f.filename}'
+                s3_client.upload_fileobj(
+                    current_app.config['BUCKET'],
+                    f,
+                    f.filename
+                )
         return {}, 201
-
-        # return redirect(url_for(f'{NAMESPACE}.files', prefix=prefix))
 
     elif request.method == "GET":
         prefix = request.args.get('prefix', '')
@@ -95,7 +135,6 @@ def files():
             )
 
         next_token = pages.build_full_result().get('NextToken', None)
-        print(next_token)
         if search:
             contents = pages.search(f'Contents[?Size > `0` && contains(Key, `{search}`)]') # generator
             prefixes = pages.search(f'CommonPrefixes[?contains(Prefix, `{search}`)]') # generator

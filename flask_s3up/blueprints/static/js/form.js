@@ -2,6 +2,7 @@ var files = document.getElementById('files');
 files.onchange = function(){
   handleFiles(files.files);
 }
+
 var submit = document.getElementById('submit');
 submit.onclick = function(e){
   var prefix = document.getElementById('prefix');
@@ -9,6 +10,30 @@ submit.onclick = function(e){
   var new_files = [...files.files];
   new_files.forEach(uploadFile);
   //location.href = FILES_ENDPOINT + "?prefix=" + encodeURIComponent(prefix.value);
+}
+
+document.getElementById('reset_form').onclick = function(e) {
+  preventDefaults(e);
+  document.getElementById('upload_form').reset();
+  document.getElementById('gallery').innerHTML = '';
+}
+
+document.getElementById('make_dir').onclick = function(e) {
+  preventDefaults(e);
+  var prefix = document.getElementById('prefix');
+  var url = FILES_ENDPOINT;
+  var xhr = new XMLHttpRequest();
+  var formData = new FormData();
+  xhr.open('POST', url, true);
+  xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+  xhr.addEventListener('readystatechange', function(e) {
+    if (xhr.readyState == 4 && xhr.status == 200) {
+    }
+    else if (xhr.readyState == 4 && xhr.status != 200) {
+    }
+  });
+  formData.append('prefix', prefix.value)
+  xhr.send(formData)
 }
 
 var dropArea = document.getElementById('drop_area');
@@ -70,6 +95,7 @@ function updateProgress(fileNumber, percent) {
   progressBar.value = total;
 }
 
+
 function handleFiles(files) {
   console.log(files);
   files = [...files];
@@ -89,6 +115,18 @@ function previewFile(file) {
   }
 }
 
+function deleteFile(key) {
+  console.log(key)
+  var xhr = new XMLHttpRequest();
+  xhr.open('DELETE', FILES_ENDPOINT + '/' + key, true);
+  xhr.onreadystatechange = function() {
+    if (this.status == 200 && this.readyState == 4) {
+      dostuff = this.responseText;
+      console.log(dostuff);
+    };//end onreadystate
+  }
+  xhr.send();
+}
 function uploadFile(file, i) {
   var prefix = document.getElementById('prefix');
   console.log(file,i)
@@ -114,7 +152,6 @@ function uploadFile(file, i) {
 
   formData.append('files[]', file)
   formData.append('prefix', prefix.value)
-  console.log(prefix.value)
   xhr.send(formData)
 }
 

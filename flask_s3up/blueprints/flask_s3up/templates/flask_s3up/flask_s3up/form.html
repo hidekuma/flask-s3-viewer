@@ -1,13 +1,15 @@
 <script charset="utf-8">
   var FILES_ENDPOINT = "{{ url_for('flask_s3up.files') }}";
 </script>
-<form action="{{ url_for('flask_s3up.files') }}" method="post" accept-charset="utf-8" enctype="multipart/form-data">
+<form id="upload_form" action="{{ url_for('flask_s3up.files') }}" method="post" accept-charset="utf-8" enctype="multipart/form-data">
   <p>
     <label for="files">Add files: </label><input multiple="multiple" type="file" name="files[]" id="files" required>
     <label for="submit">Submit: </label><input type="submit" name="submit" value="submit" id="submit">
+    <button id="reset_form">reset</button>
   </p>
   <p>
     prefix: <input type="text" name="prefix" value="{{ request.args.get('prefix', '') }}" id="prefix">
+    <button id="make_dir">makedir</button>
   </p>
 </form>
 
