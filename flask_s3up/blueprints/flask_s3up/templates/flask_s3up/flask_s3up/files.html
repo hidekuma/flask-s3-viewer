@@ -7,11 +7,6 @@
     {% include 'flask_s3up/form.html' with context %}
     <p>
         <label for="search">Search</label><input type="text" name="search" value="" id="search">
-        <label for="page_size">Page size:</label>
-        <select name="page_size" id="page_size">
-            <option value="10">10</option>
-            <option value="20">20</option>
-        </select>
     </p>
     {% include 'flask_s3up/prefixes.html' with context %}
     <hr>

@@ -2,7 +2,7 @@ import boto3
 from botocore.errorfactory import ClientError
 import logging
 
-class AWSSession():
+class AWSSession:
     """
     AWSSession (Boto3.Session) = Create AWS Session
     Document:

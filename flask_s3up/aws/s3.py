@@ -1,10 +1,13 @@
-from botocore.errorfactory import ClientError
 import re
 import urllib
-from .session import AWSSession
-from .ref import Region
 import mimetypes
 import logging
+
+from botocore.errorfactory import ClientError
+
+from .ref import Region
+from .session import AWSSession
+from .cache import AWSCache
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(asctime)s: %(message)s')
 
@@ -45,7 +48,17 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
     Inheritance of AWSSession
     """
 
-    def __init__(self, *, profile_name=None, region_name=None, endpoint_url=None, secret_key=None, access_key=None):
+    def __init__(
+        self,
+        *,
+        profile_name=None,
+        region_name=None,
+        endpoint_url=None,
+        secret_key=None,
+        access_key=None,
+        cache_dir=None,
+        use_cache=False
+    ):
         """
         :param profile_name:
         :param region_name:
@@ -66,6 +79,8 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
             region_name=self.region_name,
             endpoint_url=endpoint_url
         )
+        if use_cache:
+            self.cache = AWSCache(temp_dir=cache_dir)
 
     def __getattr__(self, name):
         if name == 'resource':
@@ -240,57 +255,43 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
             return False
         return True
 
-    def list_bucket_objects(self, bucket_name, prefix='', delimiter='/', max_keys=1000):
-        """
-        List the objects in an Amazon S3 bucket
-
-        :param bucket_name:
-        :param prefix:
-        :param delimiter:
-
-        Return:
-            List of bucket objects. If error, return None.
-        """
+    def list_bucket_objects_with_pager(
+        self,
+        bucket_name,
+        prefix='',
+        delimiter='/',
+        max_items=1000,
+        page_size=1000,
+        starting_token=None,
+        search=None,
+    ):
         prefix = self.__prefixer(prefix)
-        response = {}
-        # Retrieve the list of bucket objects
-        try:
-            response = self._s3.list_objects_v2(
+        salt = self.cache.make_hash(f"{bucket_name}.{delimiter}.{starting_token}.{search}.{max_items}.{page_size}")
+        data = self.cache.get(prefix, salt=salt)
+        if not data:
+            paginator = self._s3.get_paginator("list_objects_v2")
+            page_iterator = paginator.paginate(
                 Bucket=bucket_name,
                 Prefix=prefix,
                 Delimiter=delimiter,
-                MaxKeys=max_keys,
-                EncodingType='url'
+                EncodingType='url',
+                PaginationConfig={
+                    'MaxItems': max_items,
+                    'PageSize': page_size,
+                    'StartingToken': starting_token
+                }
             )
-            # print('='*100)
-            # from pprint import pprint
-            # pprint(response)
-            # print('='*100)
-        except ClientError as e:
-            # AllAccessDisabled error == bucket not found
-            logging.error(e)
-
-        prefixes = response.get('CommonPrefixes', None)
-        objects = response.get( 'Contents', None)
-        next_token = response.get('NextToken', None)
-
-        return objects, prefixes, next_token
-
-    def list_bucket_objects_with_pager(self, bucket_name, prefix='', delimiter='/', max_items=10, page_size=1000, starting_token=None):
-        prefix = self.__prefixer(prefix)
-        paginator = self._s3.get_paginator("list_objects_v2")
-        page_iterator = paginator.paginate(
-            Bucket=bucket_name,
-            Prefix=prefix,
-            Delimiter=delimiter,
-            EncodingType='url',
-            PaginationConfig={
-                'MaxItems': max_items,
-                'PageSize': page_size,
-                'StartingToken': starting_token
-            }
-        )
-        return page_iterator
+            data = page_iterator.build_full_result()
+            self.cache.set(prefix, data, salt=salt)
+        return data.get('CommonPrefixes', None), data.get('Contents', None), data.get('NextToken', None)
+        # next_token = page_iterator.build_full_result().get('NextToken', None)
+        # if search:
+            # contents = page_iterator.search(f'Contents[?Size > `0` && contains(Key, `"{search}"`)]') # generator
+            # prefixes = page_iterator.search(f'CommonPrefixes[?contains(Prefix, `"{search}"`)]') # generator
+        # else:
+            # contents = page_iterator.search('Contents[?Size > `0`]') # generator
+            # prefixes = page_iterator.search('CommonPrefixes') # generator
+        # return prefixes, contents, next_token
 
     def download_fileobj(self, bucket_name, file_name, object_name):
         try:

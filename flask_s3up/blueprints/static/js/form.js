@@ -1,10 +1,8 @@
-var files = document.getElementById('files');
-files.onchange = function(){
+document.getElementById('files').onchange = function(){
   handleFiles(files.files);
 }
 
-var submit = document.getElementById('submit');
-submit.onclick = function(e){
+document.getElementById('submit').onclick = function(e){
   var prefix = document.getElementById('prefix');
   preventDefaults(e);
   var new_files = [...files.files];
@@ -36,6 +34,9 @@ document.getElementById('make_dir').onclick = function(e) {
   xhr.send(formData)
 }
 
+/*
+  * DropArea
+  * */
 var dropArea = document.getElementById('drop_area');
 // Prevent default drag behaviors
 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -72,81 +73,79 @@ function handleDrop(e) {
   var dt = e.dataTransfer;
   var files = dt.files;
   document.getElementById('files').files = files;
-
   handleFiles(files);
 }
 
-let uploadProgress = [];
-let progressBar = document.getElementById('progress_bar');
+var uploadProgress = [];
+var progressBar = document.getElementById('progress_bar');
 
 function initializeProgress(numFiles) {
   progressBar.value = 0;
   uploadProgress = [];
 
-  for(let i = numFiles; i > 0; i--) {
+  for(var i = numFiles; i > 0; i--) {
     uploadProgress.push(0);
   }
 }
 
 function updateProgress(fileNumber, percent) {
   uploadProgress[fileNumber] = percent;
-  let total = uploadProgress.reduce((tot, curr) => tot + curr, 0) / uploadProgress.length;
-  console.debug('update', fileNumber, percent, total);
+  var total = uploadProgress.reduce((tot, curr) => tot + curr, 0) / uploadProgress.length;
+  console.debug('updateProgress', fileNumber, percent, total);
   progressBar.value = total;
 }
 
 
 function handleFiles(files) {
-  console.log(files);
+  console.log('handleFiles', files);
   files = [...files];
   initializeProgress(files.length);
-  //files.forEach(uploadFile);
   document.getElementById('gallery').innerHTML = '';
   files.forEach(previewFile);
 }
 
 function previewFile(file) {
-  let reader = new FileReader();
+  var reader = new FileReader();
   reader.readAsDataURL(file);
   reader.onloadend = function() {
-    let img = document.createElement('img');
+    var img = document.createElement('img');
     img.src = reader.result;
     document.getElementById('gallery').appendChild(img);
   }
 }
 
-function deleteFile(key) {
+function deleteFile(key, id) {
   console.log(key)
   var xhr = new XMLHttpRequest();
   xhr.open('DELETE', FILES_ENDPOINT + '/' + key, true);
-  xhr.onreadystatechange = function() {
-    if (this.status == 200 && this.readyState == 4) {
-      dostuff = this.responseText;
-      console.log(dostuff);
-    };//end onreadystate
-  }
+
+  xhr.addEventListener('readystatechange', function(e) {
+    if (xhr.readyState == 4 && xhr.status == 204) {
+      document.getElementById(id).remove();
+    } else if (xhr.readyState == 4 && xhr.status >= 400) {
+      alert('error');
+    }
+  });
   xhr.send();
 }
 function uploadFile(file, i) {
+  console.log('uploadFile', file,i)
   var prefix = document.getElementById('prefix');
-  console.log(file,i)
   var url = FILES_ENDPOINT;
   var xhr = new XMLHttpRequest();
   var formData = new FormData();
   xhr.open('POST', url, true);
-  xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-
-  // Update progress (can be used to show progress indicator)
+  //xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
   xhr.upload.addEventListener("progress", function(e) {
+    console.log('progress', e)
     updateProgress(i, (e.loaded * 100.0 / e.total) || 100);
   })
 
   xhr.addEventListener('readystatechange', function(e) {
-    if (xhr.readyState == 4 && xhr.status == 200) {
+    if (xhr.readyState == 4 && xhr.status == 201) {
       updateProgress(i, 100);
-    }
-    else if (xhr.readyState == 4 && xhr.status != 200) {
-
+    } else if (xhr.readyState == 4 && xhr.status >= 400) {
+      alert('error');
     }
   });
 
@@ -156,8 +155,8 @@ function uploadFile(file, i) {
 }
 
 
-function copyToClipboard(index){
-  var dummy = document.getElementById('addr_copy_' + index);
+function copyToClipboard(id){
+  var dummy = document.getElementById(id);
   dummy.select();
   document.execCommand('copy');
 }
@@ -173,3 +172,40 @@ function checkBrowser() {
   if (userAgent.indexOf('Trident') !== -1 && userAgent.indexOf('rv:11.0') !== -1) return 'IE11';
 };
 
+
+
+
+//var typingTimer;                //timer identifier
+//var doneTypingInterval = 1000;  //time in ms, 5 second for example
+document.getElementById('search').addEventListener('keydown', function(e) {
+  if (e.key == "Enter") {
+    runSearch();
+  }
+});
+
+//search.addEventListener('keyup', function () {
+  //clearTimeout(typingTimer);
+  //typingTimer = setTimeout(runSearch, doneTypingInterval);
+//});
+
+//search.addEventListener('keydown', function () {
+  //clearTimeout(typingTimer);
+//});
+
+function runSearch() {
+  var search = document.getElementById('search');
+  var urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('search') == true) {
+    if (urlParams.get('search') != search.value) {
+      urlParams.set('search', search.value);
+    } else {
+      return;
+    }
+    if (urlParams.get('search') == '') {
+      urlParams.delete('search');
+    }
+  } else {
+    urlParams.append('search', search.value);
+  }
+  location.href = location.pathname + '?' + urlParams.toString();
+}

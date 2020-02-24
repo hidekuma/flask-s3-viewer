@@ -1,5 +1,4 @@
 from .blueprints.route import blueprint as router
-from .blueprints.api import blueprint as apirouter
 
 class FlaskS3Up:
     def __init__(self, app=None, config=None):
@@ -9,17 +8,33 @@ class FlaskS3Up:
     def init_app(self, app, config=None):
         if config:
             app.config.update(config)
-        app.config.setdefault('PATH', '/flask-s3up')
-        app.config.setdefault('API_PATH', '/flask-s3up-api')
-        path = app.config.get('PATH', None)
-        api_path = app.config.get('API_PATH', None)
-        if path:
-            if not path.startswith('/'):
-                path = f'/{path}'
-        if api_path:
-            if not api_path.startswith('/'):
-                api_path = f'/{path}'
+        app.config.setdefault('S3UP_ROUTE_PATH', '/flask-s3up')
+        app.config.setdefault('S3UP_OBJECT_HOSTNAME', '/')
+        app.config.setdefault('S3UP_USE_CACHING', False)
+        app.config.setdefault('S3UP_CACHE_DIR', None)
 
-        app.register_blueprint(router, url_prefix=path)
-        app.register_blueprint(apirouter, url_prefix=api_path)
+        route_path = app.config.get('S3UP_ROUTE_PATH', None)
+        object_hostname = app.config.get('S3UP_OBJECT_HOSTNAME', None)
 
+        if route_path:
+            if not route_path.startswith('/'):
+                route_path = f'/{route_path}'
+
+        if object_hostname:
+            if object_hostname.endswith('/'):
+                app.config['S3UP_OBJECT_HOSTNAME'] = rreplace(object_hostname, '/', '', 1)
+
+        app.register_blueprint(router, url_prefix=route_path)
+
+
+def rreplace(s, old, new, occurrence):
+    """
+    to replace string from right
+
+    :param s:
+    :param old:
+    :param new:
+    :param occurrence:
+    """
+    li = s.rsplit(old, occurrence)
+    return new.join(li)

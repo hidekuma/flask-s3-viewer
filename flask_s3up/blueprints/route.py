@@ -12,13 +12,20 @@ NAMESPACE = 'flask_s3up'
 
 blueprint = Blueprint(NAMESPACE, __name__ , template_folder=f'./{NAMESPACE}/templates/{NAMESPACE}', static_folder='static')
 
+def get_s3_instance():
+    return AWSS3Client(
+        profile_name=current_app.config['S3UP_PROFILE'],
+        use_cache=current_app.config['S3UP_USE_CACHING'],
+        cache_dir=current_app.config['S3UP_CACHE_DIR']
+    )
+
 @blueprint.route("/files/<path:key>", methods=['GET', 'DELETE'])
 def files_download(key):
     # key = urllib.parse.unquote_plus(key)
     if request.method == "GET":
-        s3_client = AWSS3Client(profile_name=current_app.config['PROFILE'])
+        s3_client = get_s3_instance()
         r, obj = s3_client.get_object(
-            current_app.config['BUCKET'],
+            current_app.config['S3UP_BUCKET'],
             key
         )
         if r:
@@ -46,39 +53,35 @@ def files_download(key):
             rv.headers.set('Content-Disposition', 'attachment', **filenames)
             return rv
     elif request.method == 'DELETE':
-        s3_client = AWSS3Client(profile_name=current_app.config['PROFILE'])
+        s3_client = get_s3_instance()
         if key.endswith('/'):
             s3_client.delete_fileobjs(
-                current_app.config['BUCKET'],
+                current_app.config['S3UP_BUCKET'],
                 get_all_of_objects(key)
             )
         else:
             s3_client.delete_fileobj(
-                current_app.config['BUCKET'],
+                current_app.config['S3UP_BUCKET'],
                 key
             )
         return {}, 204
 
 def get_all_of_objects(prefix):
-    s3_client = AWSS3Client(profile_name=current_app.config['PROFILE'])
+    s3_client = get_s3_instance()
     next_token=None
-    # objects = []
     while True:
-        pages = s3_client.list_bucket_objects_with_pager(
-            current_app.config['BUCKET'],
+        prefixes, contents, next_token = s3_client.list_bucket_objects_with_pager(
+            current_app.config['S3UP_BUCKET'],
             prefix=prefix,
             delimiter='',
             starting_token=next_token
         )
-        next_token = pages.build_full_result().get('NextToken', None)
-        contents = pages.search('Contents') # generator
+        # next_token = pages.build_full_result().get('NextToken', None)
+        # contents = pages.search('Contents') # generator
         for item in contents:
             if item:
                 key = urllib.parse.unquote_plus(item['Key'])
-                # objects.append(key)
                 yield key
-        # if objects:
-            # r = s3.delete_fileobjs(bucket, objects)
         if not next_token:
             break
 
@@ -93,13 +96,13 @@ def files():
         prefix = request.form.get('prefix', '')
         prefix = urllib.parse.unquote(prefix)
         files = request.files.getlist("files[]")
-        s3_client = AWSS3Client(profile_name=current_app.config['PROFILE'])
+        s3_client = get_s3_instance()
         if prefix:
             if not prefix.endswith('/'):
                prefix = f'{prefix}/'
         if not files and prefix:
             s3_client.put_object(
-                current_app.config['BUCKET'],
+                current_app.config['S3UP_BUCKET'],
                 prefix,
                 mkdir=True
             )
@@ -107,7 +110,7 @@ def files():
             for f in files:
                 f.filename = f'{prefix}{f.filename}'
                 s3_client.upload_fileobj(
-                    current_app.config['BUCKET'],
+                    current_app.config['S3UP_BUCKET'],
                     f,
                     f.filename
                 )
@@ -121,32 +124,28 @@ def files():
         if not starting_token:
             starting_token = None
 
-        s3_client = AWSS3Client(profile_name=current_app.config['PROFILE'])
+        s3_client = get_s3_instance()
         if prefix:
-            pages = s3_client.list_bucket_objects_with_pager(
-                current_app.config['BUCKET'],
+            prefixes, contents, next_token = s3_client.list_bucket_objects_with_pager(
+                current_app.config['S3UP_BUCKET'],
                 prefix=prefix,
-                starting_token=starting_token
+                starting_token=starting_token,
+                search=search
             )
         else:
-            pages = s3_client.list_bucket_objects_with_pager(
-                current_app.config['BUCKET'],
-                starting_token=starting_token
+            prefixes, contents, next_token = s3_client.list_bucket_objects_with_pager(
+                current_app.config['S3UP_BUCKET'],
+                starting_token=starting_token,
+                search=search
             )
 
-        next_token = pages.build_full_result().get('NextToken', None)
-        if search:
-            contents = pages.search(f'Contents[?Size > `0` && contains(Key, `{search}`)]') # generator
-            prefixes = pages.search(f'CommonPrefixes[?contains(Prefix, `{search}`)]') # generator
-        else:
-            contents = pages.search('Contents[?Size > `0`]') # generator
-            prefixes = pages.search('CommonPrefixes') # generator
 
         return render_template(
             f'{NAMESPACE}/files.html',
             contents=contents,
             prefixes=prefixes,
             next_token=next_token,
+            object_hostname=current_app.config['S3UP_OBJECT_HOSTNAME']
         )
 
 @blueprint.context_processor
