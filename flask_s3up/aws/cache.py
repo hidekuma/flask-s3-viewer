@@ -71,7 +71,8 @@ class AWSCache:
     def remove(self, key):
         try:
             ddir, _ = self.__make_key(key)
-            shutil.rmtree(ddir)
+            if os.path.isdir(ddir):
+                shutil.rmtree(ddir)
         except FileNotFoundError:
             return True
         else:

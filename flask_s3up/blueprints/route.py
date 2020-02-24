@@ -76,8 +76,6 @@ def get_all_of_objects(prefix):
             delimiter='',
             starting_token=next_token
         )
-        # next_token = pages.build_full_result().get('NextToken', None)
-        # contents = pages.search('Contents') # generator
         for item in contents:
             if item:
                 key = urllib.parse.unquote_plus(item['Key'])

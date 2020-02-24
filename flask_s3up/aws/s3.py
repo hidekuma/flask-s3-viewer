@@ -1,3 +1,4 @@
+import os
 import re
 import urllib
 import mimetypes
@@ -193,6 +194,7 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
         return True
 
     def upload_fileobj(self, bucket_name, f, object_name, tagging=None):
+        print(object_name)
         put_source = {
             'Bucket': bucket_name,
             'Key': object_name,
@@ -237,6 +239,7 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
     def delete_fileobj(self, bucket_name, object_name):
         try:
             self._s3.delete_object(Bucket=bucket_name, Key=object_name)
+            self.cache.remove(os.path.dirname(object_name))
         except ClientError as e:
             logging.error(e)
             return False
@@ -246,7 +249,6 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
         try:
             if object_names:
                 objlist = [{'Key': obj} for obj in object_names]
-                # objlist = [{'Key': urllib.parse.unquote_plus(obj)} for obj in object_names]
                 self._s3.delete_objects(
                     Bucket=bucket_name, Delete={'Objects': objlist}
                 )
@@ -269,6 +271,7 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
         salt = self.cache.make_hash(f"{bucket_name}.{delimiter}.{starting_token}.{search}.{max_items}.{page_size}")
         data = self.cache.get(prefix, salt=salt)
         if not data:
+            print('NOT CACHED')
             paginator = self._s3.get_paginator("list_objects_v2")
             page_iterator = paginator.paginate(
                 Bucket=bucket_name,
