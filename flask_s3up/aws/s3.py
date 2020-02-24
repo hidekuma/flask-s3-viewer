@@ -281,17 +281,23 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
                     'StartingToken': starting_token
                 }
             )
-            data = page_iterator.build_full_result()
+
+            next_token = page_iterator.build_full_result().get('NextToken', None)
+            if search:
+                contents = page_iterator.search(f'Contents[?Size > `0` && contains(Key, `"{search}"`)]') # generator
+                prefixes = page_iterator.search(f'CommonPrefixes[?contains(Prefix, `"{search}"`)]') # generator
+            else:
+                contents = page_iterator.search('Contents[?Size > `0`]') # generator
+                prefixes = page_iterator.search('CommonPrefixes') # generator
+
+            data = (
+                list(prefixes),
+                list(contents),
+                next_token
+            )
             self.cache.set(prefix, data, salt=salt)
-        return data.get('CommonPrefixes', None), data.get('Contents', None), data.get('NextToken', None)
-        # next_token = page_iterator.build_full_result().get('NextToken', None)
-        # if search:
-            # contents = page_iterator.search(f'Contents[?Size > `0` && contains(Key, `"{search}"`)]') # generator
-            # prefixes = page_iterator.search(f'CommonPrefixes[?contains(Prefix, `"{search}"`)]') # generator
-        # else:
-            # contents = page_iterator.search('Contents[?Size > `0`]') # generator
-            # prefixes = page_iterator.search('CommonPrefixes') # generator
-        # return prefixes, contents, next_token
+
+        return data
 
     def download_fileobj(self, bucket_name, file_name, object_name):
         try:
