@@ -1,5 +1,5 @@
-{% if request.args.get('prefix') %}
 <ul>
+{% if request.args.get('prefix') %}
   <li>
     <a href="{{ url_for('flask_s3up.files', prefix=request.args.get('before_prefix')) }}" target="_self">..</a>
   </li>
@@ -12,5 +12,5 @@
     <button onclick="deleteFile('{{ unquote_plus(p.Prefix) }}', 'prefix_{{ loop.index }}')">delete</button>
   </li>
   {% endfor %}
-</ul>
 {% endif %}
+</ul>

@@ -12,8 +12,8 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 # flask_s3up Initialize
 s3up = FlaskS3Up()
 s3up.init_app(app, config={
-    'S3UP_PROFILE': 'profile',
-    'S3UP_BUCKET': 'bucket',
+    'S3UP_PROFILE': 'dgate_dev',
+    'S3UP_BUCKET': 'dgate-rewrite',
     'S3UP_SERVICE_POINT': None,
     'S3UP_IS_COMPATIBLE': False,
     'S3UP_VIEW_PATH': '/flask-s3up',

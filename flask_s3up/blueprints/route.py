@@ -14,7 +14,7 @@ blueprint = Blueprint(
     NAMESPACE,
     __name__,
     template_folder=f'./{NAMESPACE}/templates/{NAMESPACE}',
-    static_folder=f'./{NAMESPACE}/static/{NAMESPACE}/{NAMESPACE}'
+    static_folder='static'
 )
 
 def get_s3_instance():
