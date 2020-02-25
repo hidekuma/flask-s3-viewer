@@ -5,7 +5,7 @@ document.getElementById('files').onchange = function(){
 document.getElementById('submit').onclick = function(e){
   var prefix = document.getElementById('prefix');
   preventDefaults(e);
-  var new_files = [...files.files];
+  var new_files = Array.from(files.files);
   new_files.forEach(uploadFile);
   //location.href = FILES_ENDPOINT + "?prefix=" + encodeURIComponent(prefix.value);
 }
@@ -37,19 +37,22 @@ document.getElementById('make_dir').onclick = function(e) {
 /*
   * DropArea
   * */
+browser = checkBrowser()
 var dropArea = document.getElementById('drop_area');
+if (browser.indexOf('IE') !== -1) dropArea.style.display = 'none';
+
 // Prevent default drag behaviors
-['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(function(eventName) {
   dropArea.addEventListener(eventName, preventDefaults, false);
   document.body.addEventListener(eventName, preventDefaults, false);
 });
 
 // Highlight drop area when item is dragged over it
-['dragenter', 'dragover'].forEach(eventName => {
+['dragenter', 'dragover'].forEach(function(eventName) {
   dropArea.addEventListener(eventName, highlight, false);
 });
 
-['dragleave', 'drop'].forEach(eventName => {
+['dragleave', 'drop'].forEach(function(eventName) {
   dropArea.addEventListener(eventName, unhighlight, false);
 });
 
@@ -90,7 +93,9 @@ function initializeProgress(numFiles) {
 
 function updateProgress(fileNumber, percent) {
   uploadProgress[fileNumber] = percent;
-  var total = uploadProgress.reduce((tot, curr) => tot + curr, 0) / uploadProgress.length;
+  var total = uploadProgress.reduce(function(tot, curr) {
+    return tot + curr;
+  }, 0) / uploadProgress.length;
   console.debug('updateProgress', fileNumber, percent, total);
   progressBar.value = total;
 }
@@ -98,7 +103,7 @@ function updateProgress(fileNumber, percent) {
 
 function handleFiles(files) {
   console.log('handleFiles', files);
-  files = [...files];
+  files = Array.from(files);
   initializeProgress(files.length);
   document.getElementById('gallery').innerHTML = '';
   files.forEach(previewFile);

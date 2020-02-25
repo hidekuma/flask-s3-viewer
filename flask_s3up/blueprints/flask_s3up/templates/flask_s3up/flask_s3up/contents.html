@@ -9,7 +9,7 @@
         {{ unquote_plus(c.Key | replace(request.args.get('prefix'), ''))}}
         <button onclick="copyToClipboard('addr_copy_{{ loop.index }}');">clipboard</button>
         <input style="opacity: 0; width: 1px; height: 0px; position: absolute; top: -9999px; height: -9999px;" type="text" value="{{ object_hostname }}/{{ c.Key }}" id="addr_copy_{{ loop.index }}">
-        <a href="{{ url_for('flask_s3up.files_download', key=unquote_plus(c.Key)) }}">download</a>
+        <button onclick="location.href='{{ url_for('flask_s3up.files_download', key=unquote_plus(c.Key)) }}';">download</button>
         <button onclick="deleteFile('{{ unquote_plus(c.Key) }}', 'key_{{ loop.index }}')">delete</button>
       </li>
     {% else %}
