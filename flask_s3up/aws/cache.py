@@ -13,7 +13,9 @@ class AWSCache:
     SUFFIX = ".__flask_s3up_cache"
     def __init__(self, temp_dir=None, timeout=300):
         if not temp_dir:
-            raise ValueError
+            raise ValueError('have to set temp_dir.')
+        if not timeout:
+            raise ValueError('have to set timeout.')
         self._temp_dir = temp_dir
         self._timeout = timeout
 
@@ -24,20 +26,26 @@ class AWSCache:
         key = key.encode("utf-8")
         return hashlib.md5(key).hexdigest()
 
-    def __make_key(self, key, salt=None):
+    def __make_key(self, key, salt=None, division=None):
         if key.endswith('/'):
             key = key[:-1]
         if not salt:
             salt = 'default'
         if isinstance(key, str):
-            splited_key = key.split('/')
-            for i, k in enumerate(splited_key):
-                splited_key[i] = self.make_hash(k)
-            hash = '/'.join(splited_key)
-            destination = os.path.join(self._temp_dir, hash)
-        return destination, os.path.join(destination, f'{salt}')
+            splited_keys = key.split('/')
+            # for i, k in enumerate(splited_keys):
+                # splited_keys[i] = self.make_hash(k)
+            hash = '/'.join(splited_keys)
+            if division:
+                destination = os.path.join(self._temp_dir, division, hash)
+            else:
+                destination = os.path.join(self._temp_dir, hash)
+            return destination, os.path.join(destination, f'{salt}')
+        else:
+            raise ValueError('key must be str.')
 
-    def set(self, key, value, timeout=None, salt=None):
+    def set(self, key, value, timeout=None, salt=None, division=None):
+        print(f'SET: "{key}"')
         file_handler, temp_path = tempfile.mkstemp(
             suffix = self.SUFFIX,
         )
@@ -50,14 +58,15 @@ class AWSCache:
             # pickle protocol 3 >= python3.0
             pickle.dump(expires_at, f, 3)
             pickle.dump(value, f, 3)
-        ddir, dpath = self.__make_key(key, salt)
+        ddir, dpath = self.__make_key(key, salt=salt, division=division)
         if not os.path.isdir(ddir):
             os.makedirs(ddir)
         shutil.move(temp_path, dpath)
 
-    def get(self, key, salt=None):
+    def get(self, key, salt=None, division=None):
         try:
-            _, dpath = self.__make_key(key, salt)
+            _, dpath = self.__make_key(key, salt=salt, division=division)
+            print(f'GET: "{key}"')
             with open(dpath, "rb") as f:
                 expires_at = pickle.load(f)
                 if expires_at == 0 or expires_at >= time.time():
@@ -68,9 +77,10 @@ class AWSCache:
         except FileNotFoundError:
             return None
 
-    def remove(self, key):
+    def remove(self, key, division=None):
         try:
-            ddir, _ = self.__make_key(key)
+            print(f'REMOVED: "{key}"')
+            ddir, _ = self.__make_key(key, division=division)
             if os.path.isdir(ddir):
                 shutil.rmtree(ddir)
         except FileNotFoundError:

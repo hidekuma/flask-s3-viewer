@@ -10,13 +10,20 @@ from ..aws.s3 import AWSS3Client
 
 NAMESPACE = 'flask_s3up'
 
-blueprint = Blueprint(NAMESPACE, __name__ , template_folder=f'./{NAMESPACE}/templates/{NAMESPACE}', static_folder='static')
+blueprint = Blueprint(
+    NAMESPACE,
+    __name__,
+    template_folder=f'./{NAMESPACE}/templates/{NAMESPACE}',
+    static_folder=f'./{NAMESPACE}/static/{NAMESPACE}/{NAMESPACE}'
+)
 
 def get_s3_instance():
     return AWSS3Client(
         profile_name=current_app.config['S3UP_PROFILE'],
+        endpoint_url=current_app.config['S3UP_SERVICE_POINT'],
         use_cache=current_app.config['S3UP_USE_CACHING'],
-        cache_dir=current_app.config['S3UP_CACHE_DIR']
+        cache_dir=current_app.config['S3UP_CACHE_DIR'],
+        ttl=current_app.config['S3UP_TTL'],
     )
 
 @blueprint.route("/files/<path:key>", methods=['GET', 'DELETE'])
@@ -54,35 +61,11 @@ def files_download(key):
             return rv
     elif request.method == 'DELETE':
         s3_client = get_s3_instance()
-        if key.endswith('/'):
-            s3_client.delete_fileobjs(
-                current_app.config['S3UP_BUCKET'],
-                get_all_of_objects(key)
-            )
-        else:
-            s3_client.delete_fileobj(
-                current_app.config['S3UP_BUCKET'],
-                key
-            )
-        return {}, 204
-
-def get_all_of_objects(prefix):
-    s3_client = get_s3_instance()
-    next_token=None
-    while True:
-        prefixes, contents, next_token = s3_client.list_bucket_objects_with_pager(
+        s3_client.delete_objects(
             current_app.config['S3UP_BUCKET'],
-            prefix=prefix,
-            delimiter='',
-            starting_token=next_token
+            key
         )
-        for item in contents:
-            if item:
-                key = urllib.parse.unquote_plus(item['Key'])
-                yield key
-        if not next_token:
-            break
-
+        return {}, 204
 
 @blueprint.route("/upload", methods=['GET'])
 def upload():
@@ -107,7 +90,7 @@ def files():
         else:
             for f in files:
                 f.filename = f'{prefix}{f.filename}'
-                s3_client.upload_fileobj(
+                s3_client.upload_object(
                     current_app.config['S3UP_BUCKET'],
                     f,
                     f.filename
@@ -124,14 +107,14 @@ def files():
 
         s3_client = get_s3_instance()
         if prefix:
-            prefixes, contents, next_token = s3_client.list_bucket_objects_with_pager(
+            prefixes, contents, next_token = s3_client.list_objects(
                 current_app.config['S3UP_BUCKET'],
                 prefix=prefix,
                 starting_token=starting_token,
                 search=search
             )
         else:
-            prefixes, contents, next_token = s3_client.list_bucket_objects_with_pager(
+            prefixes, contents, next_token = s3_client.list_objects(
                 current_app.config['S3UP_BUCKET'],
                 starting_token=starting_token,
                 search=search
