@@ -1,0 +1,16 @@
+<ul>
+{% if request.args.get('prefix') %}
+  <li>
+    <a href="{{ url_for('flask_s3up.files', prefix=request.args.get('before_prefix')) }}" target="_self">..</a>
+  </li>
+  {% endif %}
+  {% if prefixes%}
+  {% for p in prefixes if p.Prefix %}
+  <li id="prefix_{{ loop.index }}">
+    <!--<input type="checkbox" name="checked_prefix_{{ loop.index }}" value="{{ p.Prefix }}" id="checked_prefix_{{ loop.index }}" class="checked-prefixes">-->
+    <a href="{{ url_for('flask_s3up.files', prefix=p.Prefix, before_prefix=request.args.get('prefix')) }}" target="_self">{{ unquote_plus(p.Prefix | replace(request.args.get('prefix'), '')) }}</a>
+    <button onclick="deleteFile('{{ unquote_plus(p.Prefix) }}', 'prefix_{{ loop.index }}')">delete</button>
+  </li>
+  {% endfor %}
+{% endif %}
+</ul>

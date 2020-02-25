@@ -1,0 +1,11 @@
+{% extends "flask_s3up/base.html" %}
+{% block title %}Upload{% endblock %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+{% block content %}
+    {% include 'flask_s3up/form.html' with context %}
+{% endblock %}
+{% block tail %}
+   <script src="{{ url_for('flask_s3up.static', filename="/js/form.js") }}" charset="utf-8"></script>
+{% endblock %}

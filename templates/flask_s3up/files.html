@@ -5,9 +5,15 @@
 {% endblock %}
 {% block content %}
     {% include 'flask_s3up/form.html' with context %}
-    <p>
-        <label for="search">Search: </label><input type="text" name="search" value="" id="search">
-    </p>
+    <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable">
+        <label class="mdl-button mdl-js-button mdl-button--icon" for="search">
+            <i class="material-icons">search</i>
+        </label>
+        <div class="mdl-textfield__expandable-holder">
+            <input class="mdl-textfield__input" type="text" name="search" id="search">
+            <label class="mdl-textfield__label" for="search-expandable">search text</label>
+        </div>
+    </div>
     {% include 'flask_s3up/prefixes.html' with context %}
     <hr>
     {% include 'flask_s3up/contents.html' with context %}
@@ -27,5 +33,4 @@
 {% endblock %}
 {% block tail %}
    <script src="{{ url_for('flask_s3up.static', filename="/js/form.js") }}" charset="utf-8"></script>
-   <script src="{{ url_for('flask_s3up.static', filename="/js/search.js") }}" charset="utf-8"></script>
 {% endblock %}
