@@ -38,10 +38,11 @@ function runSearching(e) {
   e = e || window.event;
   if (e.key == "Enter") {
     var target = e.target || e.srcElement;
+    var value = target.value;
     var urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('search') == true) {
-      if (urlParams.get('search') != search.value) {
-        urlParams.set('search', search.value);
+      if (urlParams.get('search') != value) {
+        urlParams.set('search', value);
       } else {
         return;
       }
@@ -49,7 +50,7 @@ function runSearching(e) {
         urlParams.delete('search');
       }
     } else {
-      urlParams.append('search', target.value);
+      urlParams.append('search', value);
     }
     if (urlParams.toString() != '') {
       location.href = location.pathname + '?' + urlParams.toString();
@@ -65,6 +66,14 @@ function fileHandling(e){
   handleFiles(target.files);
 }
 
+function handleFiles(files) {
+  console.log('handleFiles', files);
+  files = Array.from(files);
+  initializeProgress(files.length);
+  //document.getElementById('flask_s3up_gallery').innerHTML = '';
+  //files.forEach(previewFile);
+}
+
 function uploadFiles(e){
   preventDefaults(e);
   var files = document.getElementById('flask_s3up_files');
@@ -75,8 +84,8 @@ function uploadFiles(e){
 function resetForm(e) {
   e = e || window.event;
   preventDefaults(e);
-  document.getElementById('flask_s3up_form').reset();
-  document.getElementById('flask_s3up_gallery').innerHTML = '';
+  document.getElementById('flask_s3up_upload_form').reset();
+  //document.getElementById('flask_s3up_gallery').innerHTML = '';
 }
 
 function makeDir(e) {
@@ -141,15 +150,15 @@ function makeDir(e) {
 //}
 
 var uploadProgress = [];
-var progressBar = document.getElementById('flask_s3up_progress_bar');
 
 function initializeProgress(numFiles) {
-  progressBar.value = 0;
   uploadProgress = [];
-
   for(var i = numFiles; i > 0; i--) {
     uploadProgress.push(0);
   }
+  var el = document.getElementById('flask_s3up_progress')
+  el.value = 0;
+  el.dispatchEvent(new Event('change'));
 }
 
 function updateProgress(fileNumber, percent) {
@@ -157,18 +166,12 @@ function updateProgress(fileNumber, percent) {
   var total = uploadProgress.reduce(function(tot, curr) {
     return tot + curr;
   }, 0) / uploadProgress.length;
-  console.debug('updateProgress', fileNumber, percent, total);
-  progressBar.value = total;
+  console.log('updateProgress', fileNumber, percent, total);
+  var el = document.getElementById('flask_s3up_progress')
+  el.value = total;
+  el.dispatchEvent(new Event('change'));
 }
 
-
-function handleFiles(files) {
-  console.log('handleFiles', files);
-  files = Array.from(files);
-  initializeProgress(files.length);
-  //document.getElementById('flask_s3up_gallery').innerHTML = '';
-  //files.forEach(previewFile);
-}
 
 function previewFile(file) {
   var reader = new FileReader();
@@ -205,9 +208,8 @@ function uploadFile(file, i) {
   xhr.open('POST', url, true);
   //xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
   xhr.upload.addEventListener("progress", function(e) {
-    console.log('progress', e)
     updateProgress(i, (e.loaded * 100.0 / e.total) || 100);
-  })
+  });
 
   xhr.addEventListener('readystatechange', function(e) {
     if (xhr.readyState == 4 && xhr.status == 201) {

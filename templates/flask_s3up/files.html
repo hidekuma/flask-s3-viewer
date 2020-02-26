@@ -2,11 +2,14 @@
 {% block title %}Files{% endblock %}
 {% block content %}
     <div class="mdl-grid">
-        <div class="mdl-layout-spacer"></div>
         <div class="mdl-cell mdl-cell--6-col mdl-cell--8-col-tablet">
             <form id="flask_s3up_upload_form" action="{{ url_for('flask_s3up.files') }}" method="post" accept-charset="utf-8" enctype="multipart/form-data">
+                <span onclick="document.getElementById('flask_s3up_files').click();" class="mdl-button mdl-js-button mdl-button--icon mdl-button--primary">
+                    <i class="material-icons">attach_file</i>
+                </span>
                 <div class="mdl-textfield mdl-js-textfield">
-                    <label class="mdl-textfield__label" for="files"></label><input onchange="fileHandling(event);" class="mdl-textfield__input" multiple="multiple" type="file" name="files[]" id="flask_s3up_files">
+                    <label class="mdl-textfield__label" for="files"></label>
+                    <input onchange="fileHandling(event);" class="mdl-textfield__input" multiple="multiple" type="file" name="files[]" id="flask_s3up_files">
                 </div>
                 <button onclick="uploadFiles(event);" class="mdl-button mdl-js-button mdl-button--icon mdl-button--primary">
                     <i class="material-icons">cloud_upload</i>
@@ -17,14 +20,16 @@
             </form>
 
             {#<div id="flask_s3up_drop_area" onclick="document.getElementById('flask_s3up_files').click();" style="width: 100%;height: 100%; border:1px dotted lightgray;">#}
-            {#</div>#}
+                {#</div>#}
             {#<div id="flask_s3up_gallery"></div>#}
-            <progress id="flask_s3up_progress_bar" style="width: 100%;" max=100 value=0></progress>
+            <!-- MDL Progress Bar with Buffering -->
+            {#<progress id="flask_s3up_progress" style="width: 100%;" max=100 value=0></progress>#}
         </div>
         <div class="mdl-layout-spacer"></div>
     </div>
 
-
+    <input type="hidden" name="flask_s3up_progress" onchange="document.getElementById('progress_bar').MaterialProgress.setProgress(value);" value="0" id="flask_s3up_progress">
+    <div style="width: 100%;" id="progress_bar" class="mdl-progress mdl-js-progress"></div>
 
     <table style="width: 100%;" class="mdl-data-table mdl-js-data-table mdl-data-table--selectable">
         <thead>
