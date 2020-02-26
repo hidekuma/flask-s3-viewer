@@ -3,6 +3,7 @@ import re
 import urllib
 import mimetypes
 import logging
+import collections
 
 from botocore.errorfactory import ClientError
 from weakref import WeakValueDictionary
@@ -94,11 +95,12 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
         """
         return self._s3
 
-    def __prefixer(self, prefix):
-        if prefix.startswith('/'):
-            prefix = prefix[1:]
-        if not prefix.endswith('/') and prefix != '':
-            prefix += '/'
+    def prefixer(self, prefix):
+        if prefix:
+            if prefix.startswith('/'):
+                prefix = prefix[1:]
+            if not prefix.endswith('/') and prefix != '':
+                prefix += '/'
         return prefix
 
     def __trim(self, string):
@@ -224,7 +226,7 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
                 if prefixes:
                     for prefix in prefixes:
                         self._cache.remove(prefix, division=bucket_name)
-                print('2-DELETE', bucket_name, prefixes)
+                # print('2-DELETE', bucket_name, prefixes)
 
         except ClientError as e:
             logging.error(e)
@@ -242,7 +244,7 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
         search=None,
         apply_cache=True
     ):
-        prefix = self.__prefixer(prefix)
+        prefix = self.prefixer(prefix)
         def run(wrap=False):
             nonlocal bucket_name, prefix, delimiter, max_items, page_size, starting_token, search
             paginator = self._s3.get_paginator("list_objects_v2")
@@ -307,8 +309,8 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
                     self._cache.remove(os.path.dirname(object_names[:-1]), division=bucket_name)
             else:
                 self.delete_fileobj(bucket_name, object_names)
-        elif isinstance(object_names, Iterable):
-            self.delete_fileobjs(bucket_name, objects)
+        elif isinstance(object_names, collections.Iterable):
+            self.delete_fileobjs(bucket_name, object_names)
 
     def get_all_of_objects(self, bucket_name, prefix):
         next_token=None

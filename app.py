@@ -20,7 +20,7 @@ s3up.init_app(app, config={
     'S3UP_OBJECT_HOSTNAME': 'http://test.com',
     'S3UP_USE_CACHING': True,
     'S3UP_CACHE_DIR': '/tmp/flask_s3up',
-    'S3UP_TTL': 600
+    'S3UP_TTL': 86400
 })
 
 if __name__ == '__main__':

@@ -1,16 +1,56 @@
-<ul>
-{% if request.args.get('prefix') %}
-  <li>
-    <a href="{{ url_for('flask_s3up.files', prefix=request.args.get('before_prefix')) }}" target="_self">..</a>
-  </li>
-  {% endif %}
-  {% if prefixes%}
+{% if PREFIX %}
+  <tr>
+    <td class="mdl-data-table__cell--non-numeric">
+      <a href="{{ url_for('flask_s3up.files', prefix=BEFORE_PREFIX) }}" target="_self">..</a>
+    </td>
+    <td class="mdl-data-table__cell--non-numeric"></td>
+    <td class="mdl-data-table__cell--non-numeric"></td>
+    <td class="mdl-data-table__cell--non-numeric">
+      <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
+      <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
+      <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
+    </td>
+  </tr>
+{% endif %}
+
+{% if not SEARCH %}
+  <tr>
+    <td style="padding-top: 0; padding-bottom: 0;" class="mdl-data-table__cell--non-numeric">
+      <!-- create folder -->
+      <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+        <input class="mdl-textfield__input" type="text" name="suffix" value="" id="flask_s3up_suffix">
+        <label class="mdl-textfield__label" for="suffix">Folder Name</label>
+      </div>
+      <button onclick="makeDir(event);" type="button" class="mdl-button mdl-button--icon mdl-button--primary">
+        <i class="material-icons">create_new_folder</i>
+      </button>
+      <!--// create folder -->
+    </td>
+    <td class="mdl-data-table__cell--non-numeric"></td>
+    <td class="mdl-data-table__cell--non-numeric"></td>
+    <td class="mdl-data-table__cell--non-numeric">
+      <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
+      <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
+      <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
+    </td>
+  </tr>
+{% endif %}
+
+{% if prefixes%}
   {% for p in prefixes if p.Prefix %}
-  <li id="prefix_{{ loop.index }}">
-    <!--<input type="checkbox" name="checked_prefix_{{ loop.index }}" value="{{ p.Prefix }}" id="checked_prefix_{{ loop.index }}" class="checked-prefixes">-->
-    <a href="{{ url_for('flask_s3up.files', prefix=p.Prefix, before_prefix=request.args.get('prefix')) }}" target="_self">{{ unquote_plus(p.Prefix | replace(request.args.get('prefix'), '')) }}</a>
-    <button onclick="deleteFile('{{ unquote_plus(p.Prefix) }}', 'prefix_{{ loop.index }}')">delete</button>
-  </li>
+    <tr>
+      <td class="mdl-data-table__cell--non-numeric">
+        <a href="{{ url_for('flask_s3up.files', prefix=p.Prefix, before_prefix=PREFIX) }}" target="_self">{{ unquote_plus(p.Prefix | replace(PREFIX, '')) }}</a>
+      </td>
+      <td class="mdl-data-table__cell--non-numeric"></td>
+      <td class="mdl-data-table__cell--non-numeric"></td>
+      <td class="mdl-data-table__cell--non-numeric">
+        <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
+        <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
+        <button onclick="deleteFile('{{ unquote_plus(p.Prefix) }}', 'prefix_{{ loop.index }}')" type="button" class="mdl-button mdl-button--icon mdl-button--primary">
+          <i class="material-icons">clear</i>
+        </button>
+      </td>
+    </tr>
   {% endfor %}
 {% endif %}
-</ul>

@@ -78,9 +78,7 @@ def files():
         prefix = urllib.parse.unquote(prefix)
         files = request.files.getlist("files[]")
         s3_client = get_s3_instance()
-        if prefix:
-            if not prefix.endswith('/'):
-               prefix = f'{prefix}/'
+        prefix = s3_client.prefixer(prefix)
         if not files and prefix:
             s3_client.put_object(
                 current_app.config['S3UP_BUCKET'],

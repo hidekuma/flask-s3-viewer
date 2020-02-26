@@ -13,34 +13,80 @@
   limitations under the License
 -->
 <html>
-    <head>
-        {% block head %}
-            <meta charset="UTF-8" />
-            <meta http-equiv="X-UA-Compatible" content="IE=edge">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-            <title>{% block title %}{% endblock %}</title>
-            <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-            <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.blue_grey-deep_orange.min.css" />
-            <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
-        {% endblock %}
-        <script charset="utf-8">
-          var FILES_ENDPOINT = "{{ url_for('flask_s3up.files') }}";
-        </script>
-    </head>
-    <body>
-        <div class="mdl-grid">
+  <head>
+    {% block head %}
+      <meta charset="UTF-8" />
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>{% block title %}{% endblock %} | Flask_s3up</title>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+      <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.blue_grey-deep_orange.min.css" />
+      <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+    {% endblock %}
+    <script charset="utf-8">
+      var FILES_ENDPOINT = "{{ url_for('flask_s3up.files') }}";
+    </script>
+  </head>
+  <body>
+    <!-- define contexts -->
+    {% set SEARCH = request.args.get('search') %}
+    {% set PREFIX = request.args.get('prefix') %}
+    {% set PREFIX_WITH_EMPTY = request.args.get('prefix', '') %}
+    {% set BEFORE_PREFIX = request.args.get('before_prefix') %}
+    {% set STARTING_TOKEN = request.args.get('starting_token') %}
+    {% set PREV_TOKEN = request.args.get('prev_token') %}
+    <input class="mdl-textfield__input" type="hidden" name="prefix" value="{{ PREFIX_WITH_EMPTY }}" id="flask_s3up_prefix">
+    <!--// define contexts -->
+
+    <div class="demo-layout-waterfall mdl-layout mdl-js-layout mdl-layout--fixed-header">
+      <div id="header" class="mdl-layout__header">
+        {% block header %}
+          <!-- Top row, always visible -->
+          <div class="mdl-layout__header-row">
+            <!-- Title -->
+            <span class="mdl-layout-title">Flask S3up</span>
             <div class="mdl-layout-spacer"></div>
-            <div id="content" class="mdl-cell mdl-cell--8-col mdl-cell--8-col-tablet">
-                {% block content %}
-                {% endblock %}
+            <!-- search -->
+            <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable">
+              <label class="mdl-button mdl-js-button mdl-button--icon" for="search">
+                <i class="material-icons">search</i>
+              </label>
+              <div class="mdl-textfield__expandable-holder">
+                <input onkeydown="runSearching(event);" class="mdl-textfield__input" type="text" name="search" id="flask_s3up_search">
+              </div>
             </div>
-            <div class="mdl-layout-spacer"></div>
-        </div>
-        <div id="footer">
-            {% block footer %}
-            {% endblock %}
-        </div>
-        {% block tail %}
+            {% if SEARCH and SEARCH != '' %}
+              <span class="mdl-chip mdl-chip--deletable">
+                <span class="mdl-chip__text">
+                  {{ SEARCH }}
+                </span>
+                <button onclick="resetSearching(event);" type="button" class="mdl-chip__action"><i class="material-icons">cancel</i></button>
+              </span>
+            {% endif %}
+            <!--// search -->
+          </div>
         {% endblock %}
-    </body>
+      </div>
+      <div id="content" class="mdl-layout__content">
+        <div class="page-content">
+          {% block content %}
+          {% endblock %}
+        </div>
+      </div>
+      <div id="footer"  class="mdl-mini-footer">
+        {% block footer %}
+          <div class="mdl-mini-footer__left-section">
+            <div class="mdl-logo">Flask S3up</div>
+            <ul class="mdl-mini-footer__link-list">
+              <li><a href="#">Help</a></li>
+              <li><a href="#">Privacy & Terms</a></li>
+            </ul>
+          </div>
+        {% endblock %}
+      </div>
+    </div>
+    {% block tail %}
+      <script src="{{ url_for('flask_s3up.static', filename="/js/form.js") }}" charset="utf-8"></script>
+    {% endblock %}
+  </body>
 </html>
