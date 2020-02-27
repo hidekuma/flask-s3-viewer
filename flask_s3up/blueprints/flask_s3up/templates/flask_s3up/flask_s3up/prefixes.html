@@ -26,7 +26,7 @@
     <td class="mdl-data-table__cell--non-numeric"></td>
     <td class="mdl-data-table__cell--non-numeric"></td>
     <td class="mdl-data-table__cell--non-numeric">
-      <button onclick="makeDir(event);" type="button" class="mdl-button mdl-button--icon mdl-button--primary">
+      <button onclick="makeDir(event, console.log); var c = event.target.closest('tr').cloneNode(true); event.target.closest('tbody').insertBefore(c, event.target.parentNode.nextSibling);" type="button" class="mdl-button mdl-button--icon mdl-button--primary">
         <i class="material-icons">create_new_folder</i>
       </button>
       <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
