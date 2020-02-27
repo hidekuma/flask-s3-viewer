@@ -12,23 +12,36 @@
   See the License for the specific language governing permissions and
   limitations under the License
 -->
+
 <html>
   <head>
+
+    <!-- ====== BLOCK HEAD ====== -->
     {% block head %}
       <meta charset="UTF-8" />
       <meta http-equiv="X-UA-Compatible" content="IE=edge">
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+      <!-- ====== BLOCK TITLE ====== -->
       <title>{% block title %}{% endblock %} | Flask_s3up</title>
+      <!--// ====== BLOCK TITLE ====== -->
+
+      <!-- Dependecies -->
       <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
       <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.blue_grey-deep_orange.min.css" />
       <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+      <!--// Dependecies -->
+
     {% endblock %}
-    <script charset="utf-8">
-      var FILES_ENDPOINT = "{{ url_for('flask_s3up.files') }}";
-    </script>
+    <!-- ====== BLOCK HEAD ====== -->
+
   </head>
   <body>
-    <!-- define contexts -->
+
+    <!-- ====== DEFINE FLASK_S3UP REQUIRED ====== -->
+    <script charset="utf-8">
+      var FLASK_S3UP_FILES_ENDPOINT = "{{ url_for('flask_s3up.files') }}";
+    </script>
     {% set SEARCH = request.args.get('search') %}
     {% set PREFIX = request.args.get('prefix') %}
     {% set PREFIX_WITH_EMPTY = request.args.get('prefix', '') %}
@@ -36,44 +49,41 @@
     {% set STARTING_TOKEN = request.args.get('starting_token') %}
     {% set PREV_TOKEN = request.args.get('prev_token') %}
     <input class="mdl-textfield__input" type="hidden" name="prefix" value="{{ PREFIX_WITH_EMPTY }}" id="flask_s3up_prefix">
-    <!--// define contexts -->
+    <!--// ====== DEFINE FLASK_S3UP REQUIRED ====== -->
 
     <div class="demo-layout-waterfall mdl-layout mdl-js-layout mdl-layout--fixed-header">
       <div id="header" class="mdl-layout__header">
+
+        <!-- ====== BLOCK HEADER ====== -->
         {% block header %}
-          <!-- Top row, always visible -->
           <div class="mdl-layout__header-row">
-            <!-- Title -->
             <span class="mdl-layout-title">Flask S3up</span>
-            <div class="mdl-layout-spacer"></div>
-            <!-- search -->
-            <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable">
-              <label class="mdl-button mdl-js-button mdl-button--icon" for="flask_s3up_search">
-                <i class="material-icons">search</i>
-              </label>
-              <div class="mdl-textfield__expandable-holder">
-                <input onkeydown="runSearching(event);" class="mdl-textfield__input" type="text" name="search" id="flask_s3up_search">
-              </div>
-            </div>
-            {% if SEARCH and SEARCH != '' %}
-              <span class="mdl-chip mdl-chip--deletable">
-                <span class="mdl-chip__text">
-                  {{ SEARCH }}
-                </span>
-                <button onclick="resetSearching(event);" type="button" class="mdl-chip__action"><i class="material-icons">cancel</i></button>
-              </span>
-            {% endif %}
-            <!--// search -->
+
+            <!-- ====== BLOCK CONTROLLER ====== -->
+            {% block controller %}
+
+            {% endblock %}
+            <!--// ====== BLOCK CONTROLLER ====== -->
+
           </div>
         {% endblock %}
+        <!--// ====== BLOCK HEADER ====== -->
+
       </div>
       <div id="content" class="mdl-layout__content">
         <div class="page-content">
+
+          <!-- ====== BLOCK CONTENT ====== -->
           {% block content %}
+
           {% endblock %}
+          <!--// ====== BLOCK CONTENT ====== -->
+
         </div>
       </div>
       <div id="footer"  class="mdl-mini-footer">
+
+        <!-- ====== BLOCK FOOTER ====== -->
         {% block footer %}
           <div class="mdl-mini-footer__left-section">
             <div class="mdl-logo">Flask S3up</div>
@@ -83,10 +93,15 @@
             </ul>
           </div>
         {% endblock %}
+        <!--// ====== BLOCK FOOTER ====== -->
+
       </div>
     </div>
+
+    <!-- ====== BLOCK TAIL ====== -->
     {% block tail %}
-      <script src="{{ url_for('flask_s3up.static', filename="/js/form.js") }}" charset="utf-8"></script>
     {% endblock %}
+    <!--// ====== BLOCK TAIL ====== -->
+
   </body>
 </html>

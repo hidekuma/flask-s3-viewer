@@ -7,4 +7,5 @@
 4. tooltip
 5. suffix, e.g. test//test2
 6. refactoring
-7. config settings
+7. 컨픽 세팅
+8. 여러번 이벤트 치는거 막기

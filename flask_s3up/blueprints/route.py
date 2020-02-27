@@ -67,10 +67,6 @@ def files_download(key):
         )
         return {}, 204
 
-@blueprint.route("/upload", methods=['GET'])
-def upload():
-    return render_template(f'{NAMESPACE}/upload.html')
-
 @blueprint.route("/files", methods=['GET', 'POST'])
 def files():
     if request.method == "POST":

@@ -1,30 +1,36 @@
-{% extends "flask_s3up/base.html" %}
+{% extends "flask_s3up/layout.html" %}
 {% block title %}Files{% endblock %}
-{% block head %}
-    {{ super() }}
+{% block controller %}
+    {% include 'flask_s3up/controller.html' with context %}
 {% endblock %}
 {% block content %}
-    {% include 'flask_s3up/form.html' with context %}
-    <p>
-        <label for="search">Search: </label><input type="text" name="search" value="" id="search">
-    </p>
-    {% include 'flask_s3up/prefixes.html' with context %}
-    <hr>
-    {% include 'flask_s3up/contents.html' with context %}
-    <hr>
-    <ul>
-        {% if request.args.get('starting_token') %}
-            <li>
-                <a href="{{ url_for('flask_s3up.files', prefix=request.args.get('prefix'), starting_token=request.args.get('prev_token')) }}" target="_self">prev</a>
-            </li>
-        {% endif %}
-        {% if next_token %}
-            <li>
-                <a href="{{ url_for('flask_s3up.files', prefix=request.args.get('prefix'), prev_token=request.args.get('starting_token'), starting_token=next_token) }}" target="_self">next</a>
-            </li>
-        {% endif %}
-    </ul>
+    <table style="width: 100%;" class="mdl-data-table mdl-js-data-table mdl-data-table--selectable">
+        <thead>
+            <tr>
+                <th class="mdl-data-table__cell--non-numeric">Name</th>
+                <th class="mdl-data-table__cell--non-numeric">Created at</th>
+                <th class="mdl-data-table__cell--non-numeric">Size</th>
+                <th class="mdl-data-table__cell--non-numeric">Functions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% include 'flask_s3up/prefixes.html' with context %}
+            {% include 'flask_s3up/contents.html' with context %}
+        </tbody>
+        <tfoot>
+            {% if STARTING_TOKEN %}
+                <td>
+                    <a href="{{ url_for('flask_s3up.files', prefix=PREFIX, starting_token=PREV_TOKEN) }}" target="_self">prev</a>
+                </td>
+            {% endif %}
+            {% if next_token %}
+                <td>
+                    <a href="{{ url_for('flask_s3up.files', prefix=PREFIX, prev_token=STARTING_TOKEN, starting_token=next_token) }}" target="_self">next</a>
+                </td>
+            {% endif %}
+        </tfoot>
+    </table>
 {% endblock %}
 {% block tail %}
-   <script src="{{ url_for('flask_s3up.static', filename="/js/form.js") }}" charset="utf-8"></script>
+    <script src="{{ url_for('flask_s3up.static', filename="/js/core.js") }}" charset="utf-8"></script>
 {% endblock %}

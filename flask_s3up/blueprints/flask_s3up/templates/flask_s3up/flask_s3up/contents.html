@@ -1,21 +1,29 @@
-<ul>
-  {% if contents %}
-    {% for c in contents if c.Key %}
-      <li id="key_{{ loop.index }}">
-        <!--<input type="checkbox" name="checked_key_{{ loop.index }}" value="{{ c.Key }}" id="checked_key_{{ loop.index }}" class="checked-keys">-->
-        {{ loop.index }}
+{% if contents %}
+  {% for c in contents if c.Key %}
+    <tr>
+      <td class="mdl-data-table__cell--non-numeric">
+        {{ unquote_plus(c.Key | replace(PREFIX_WITH_EMPTY, ''))}}
+      </td>
+      <td class="mdl-data-table__cell--non-numeric">
         {{ c.LastModified }}
+      </td>
+      <td class="mdl-data-table__cell--non-numeric">
         {{ c.Size | filesizeformat }}
-        {{ unquote_plus(c.Key | replace(request.args.get('prefix'), ''))}}
-        <button onclick="copyToClipboard('addr_copy_{{ loop.index }}');">clipboard</button>
-        <input style="opacity: 0; width: 1px; height: 0px; position: absolute; top: -9999px; height: -9999px;" type="text" value="{{ object_hostname }}/{{ c.Key }}" id="addr_copy_{{ loop.index }}">
-        <button onclick="location.href='{{ url_for('flask_s3up.files_download', key=unquote_plus(c.Key)) }}';">download</button>
-        <button onclick="deleteFile('{{ unquote_plus(c.Key) }}', 'key_{{ loop.index }}')">delete</button>
-      </li>
-    {% else %}
-      <li><em>doesn't exist contents</em></li>
-    {% endfor %}
+      </td>
+      <td class="mdl-data-table__cell--non-numeric">
+        <button onclick="copyToClipboard('flask_s3up_addr_copy_{{ loop.index }}');" class="mdl-button mdl-button--icon mdl-button--primary">
+          <i class="material-icons">link</i>
+        </button>
+        <input style="opacity: 0; width: 1px; height: 0px; position: absolute; top: -9999px; height: -9999px;" type="text" value="{{ object_hostname }}/{{ c.Key }}" id="flask_s3up_addr_copy_{{ loop.index }}">
+        <button onclick="location.href='{{ url_for('flask_s3up.files_download', key=unquote_plus(c.Key)) }}';" class="mdl-button mdl-button--icon mdl-button--primary">
+          <i class="material-icons">save_alt</i>
+        </button>
+        <button onclick="deleteFile('{{ unquote_plus(c.Key) }}', console.log)" class="mdl-button mdl-button--icon mdl-button--primary">
+          <i class="material-icons">clear</i>
+        </button>
+      </td>
+    </tr>
   {% else %}
-    <li><em>doesn't exist contents</em></li>
-  {% endif %}
-</ul>
+  {% endfor %}
+{% else %}
+{% endif %}

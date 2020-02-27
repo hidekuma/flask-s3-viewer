@@ -1,0 +1,65 @@
+<!-- Controller -->
+<div class="mdl-layout-spacer"></div>
+<!-- Form -->
+<form id="upload_form" action="{{ url_for('flask_s3up.files') }}" method="post" accept-charset="utf-8" enctype="multipart/form-data">
+  <label class="mdl-button mdl-js-button mdl-button--icon" for="flask_s3up_files">
+    <i class="material-icons">attachment</i>
+    <input style="display: none;" onchange="readyFileHandling(event, function(files){document.getElementById('file_count').innerHTML=files.length == 1? files.length + ' file' : files.length + ' files';}); document.getElementById('file_chip').style.display='inline-block';" multiple="multiple" type="file" name="files[]" id="flask_s3up_files">
+  </label>
+</form>
+<!--// Form -->
+
+<style type="text/css" media="screen">
+  #floading.mdl-spinner {
+    width: 16px;
+    height: 16px;
+    margin: 0 7px 0 7px;
+  }
+  #floading.mdl-spinner .mdl-spinner__circle {
+    border-width: 3px;
+  }
+  .mdl-chip {
+    margin: 0 8px 0 8px;
+  }
+</style>
+
+<span id="floading" class="mdl-spinner mdl-js-spinner is-active" style="display: none;"></span>
+<span id="file_chip" class="mdl-chip mdl-chip--deletable" style="display: none;">
+  <span id="file_count" class="mdl-chip__text" style="margin-right: 8px;"></span>
+  <button onclick="uploadFiles(event, console.log); document.getElementById('floading').style.display='inline-block'; document.getElementById('upload_form').reset(); document.getElementById('file_chip').style.display='none'; document.getElementById('floading').style.display='none';" class="mdl-chip__action"><i class="material-icons">cloud_upload</i></button>
+  <button onclick="preventDefaults(event); document.getElementById('upload_form').reset(); document.getElementById('file_chip').style.display='none';" class="mdl-chip__action"><i class="material-icons">cancel</i></button>
+</span>
+
+<!-- Search -->
+<div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable">
+  <label class="mdl-button mdl-js-button mdl-button--icon" for="flask_s3up_search">
+    <i class="material-icons">search</i>
+  </label>
+  <div class="mdl-textfield__expandable-holder">
+    <input onkeydown="runSearching(event);" class="mdl-textfield__input" type="text" name="search" id="flask_s3up_search">
+  </div>
+</div>
+{% if SEARCH and SEARCH != '' %}
+<span class="mdl-chip mdl-chip--deletable">
+  <span class="mdl-chip__text">
+    {{ SEARCH }}
+  </span>
+  <button onclick="resetSearching(event);" type="button" class="mdl-chip__action"><i class="material-icons">cancel</i></button>
+</span>
+{% endif %}
+<!--// Search -->
+
+<!-- Refresh -->
+<input type="hidden" onchange="document.getElementById('badge').setAttribute('data-badge', event.target.value);" name="flask_s3up_refresh" value="0" id="flask_s3up_refresh">
+<div style="cursor: pointer;" onclick="location.reload();" id="badge" class="material-icons mdl-badge mdl-badge--overlap">cached</div>
+<!--// Refresh -->
+
+<!-- Loading -->
+<div>
+  <input type="hidden" name="flask_s3up_progress" onchange="document.getElementById('progress_bar').MaterialProgress.setProgress(value);" value="0" id="flask_s3up_progress">
+  <div style="position: fixed; z-index: 4; bottom: 0; left: 0; width: 100%;" id="progress_bar" class="mdl-progress mdl-js-progress"></div>
+</div>
+<!--// Loading -->
+<!--// Controller -->
+
+
