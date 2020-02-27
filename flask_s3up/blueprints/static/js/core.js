@@ -97,25 +97,23 @@ function copyToClipboard(id){
 function resetSearching(e, callback) {
   var search = setUrlParam('search', '');
   if (typeof callback === 'function') {
-    callback(search);
+    callback(e, search);
   } else {
     document.location.search = search;
   }
 }
 
-function runSearching(e, callback) {
-  e = e || window.event;
-  if (e.key == "Enter") {
+function runSearching(e, callback){
+    e = e || window.event;
     var target = e.target || e.srcElement;
     var value = target.value;
     var search = setUrlParam('search', value);
 
     if (typeof callback === 'function') {
-      callback(redirection);
+      callback(e, redirection);
     } else {
       document.location.search = search;
     }
-  }
 }
 
 function makeDispatchEvent(eventName){
@@ -139,15 +137,15 @@ function addRefreshingBadge(count) {
 function readyFileHandling(e, callback){
   e = e || window.event;
   var target = e.target || e.srcElement;
-  handleFiles(target.files, callback);
+  handleFiles(e, target.files, callback);
 }
 
-function handleFiles(files, callback) {
+function handleFiles(e, files, callback) {
   initializeProgress(files.length);
   //document.getElementById('flask_s3up_gallery').innerHTML = '';
   //Array.prototype.forEach.call(files, previewFile);
   if (typeof callback === 'function') {
-    callback(files);
+    callback(e, files);
   }
 }
 
@@ -166,7 +164,6 @@ function initializeProgress(numFiles) {
 function uploadFiles(e, callback){
   preventDefaults(e);
   var files = document.getElementById('flask_s3up_files');
-  var results = [];
   Array.prototype.forEach.call(files.files, uploadFile);
   function uploadFile(file, i, arr) {
     var prefix = document.getElementById('flask_s3up_prefix');
@@ -176,25 +173,25 @@ function uploadFiles(e, callback){
     var formData = new FormData();
     xhr.open('POST', url, true);
     //xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-    xhr.upload.addEventListener("progress", function(e) {
-      updateProgress(i, (e.loaded * 100.0 / e.total) || 100);
+    xhr.upload.addEventListener("progress", function(xe) {
+      updateProgress(i, (xe.loaded * 100.0 / xe.total) || 100);
     });
 
-    xhr.addEventListener('readystatechange', function(e) {
+    xhr.addEventListener('readystatechange', function(xe) {
       if (xhr.readyState == 4 && xhr.status == 201) {
         updateProgress(i, 100);
         addRefreshingBadge(1);
       } else if (xhr.readyState == 4 && xhr.status != 201) {
+
+      }
+      if (typeof callback === 'function') {
+        callback(e, xhr, file);
       }
     });
 
     formData.append('files[]', file);
     formData.append('prefix', prefix.value);
     xhr.send(formData);
-    results.push(xhr);
-  }
-  if (typeof callback === 'function') {
-    callback(results, files.files);
   }
 }
 
@@ -204,52 +201,62 @@ function updateProgress(fileNumber, percent) {
     return tot + curr;
   }, 0) / uploadProgress.length;
   //console.log('updateProgress', fileNumber, percent, total);
-  var el = document.getElementById('flask_s3up_progress')
+  var el = document.getElementById('flask_s3up_progress');
   el.value = total;
   el.dispatchEvent(makeDispatchEvent('change'));
 }
 
-
 function makeDir(e, callback) {
-  e = e || window.event;
-  preventDefaults(e);
-  var prefix = document.getElementById('flask_s3up_prefix');
-  var suffix = document.getElementById('flask_s3up_suffix');
-  if (suffix.value == ''){
-    return false;
-  }
-  var realPrefix = prefix.value + suffix.value;
-  var url = FLASK_S3UP_FILES_ENDPOINT;
-  var xhr = new XMLHttpRequest();
-  var formData = new FormData();
-  xhr.open('POST', url, true);
-  xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-  xhr.addEventListener('readystatechange', function(e) {
-    if (xhr.readyState == 4 && xhr.status == 201) {
-      addRefreshingBadge(1);
+  if (confirm('Are you sure you want to make folder?')){
+    e = e || window.event;
+    preventDefaults(e);
+    var prefix = document.getElementById('flask_s3up_prefix');
+    var suffix = document.getElementById('flask_s3up_suffix');
+    if (suffix.value == ''){
+      alert('Folder name is empty.')
+      return false;
     }
-    else if (xhr.readyState == 4 && xhr.status != 201) {
-    }
-  });
-  formData.append('prefix', realPrefix);
-  xhr.send(formData);
-  if (typeof callback === 'function') {
-    callback(xhr, realPrefix);
+    var realPrefix = prefix.value + suffix.value;
+    var url = FLASK_S3UP_FILES_ENDPOINT;
+    var xhr = new XMLHttpRequest();
+    var formData = new FormData();
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.addEventListener('readystatechange', function(xe) {
+      if (xhr.readyState == 4 && xhr.status == 201) {
+        addRefreshingBadge(1);
+      }
+      else if (xhr.readyState == 4 && xhr.status != 201) {
+
+      }
+      if (typeof callback === 'function') {
+        callback(e, xhr, realPrefix);
+      }
+    });
+    formData.append('prefix', realPrefix);
+    xhr.send(formData);
+  } else {
+    e.target.value = '';
   }
 }
 
-function deleteFile(key, callback) {
-  var xhr = new XMLHttpRequest();
-  xhr.open('DELETE', FLASK_S3UP_FILES_ENDPOINT + '/' + key, true);
-  xhr.addEventListener('readystatechange', function(e) {
-    if (xhr.readyState == 4 && xhr.status == 204) {
-      addRefreshingBadge(1);
-    } else if (xhr.readyState == 4 && xhr.status != 204) {
-    }
-  });
-  xhr.send();
-  if (typeof callback === 'function') {
-    callback(xhr, key);
+function deleteFile(e, key, callback) {
+  if (confirm('Are you sure you want to delete?')){
+    e = e || window.event;
+    preventDefaults(e);
+    var xhr = new XMLHttpRequest();
+    xhr.open('DELETE', FLASK_S3UP_FILES_ENDPOINT + '/' + key, true);
+    xhr.addEventListener('readystatechange', function(xe) {
+      if (xhr.readyState == 4 && xhr.status == 204) {
+        addRefreshingBadge(1);
+      } else if (xhr.readyState == 4 && xhr.status != 204) {
+
+      }
+      if (typeof callback === 'function') {
+        callback(e, xhr, key);
+      }
+    });
+    xhr.send();
   }
 }
 

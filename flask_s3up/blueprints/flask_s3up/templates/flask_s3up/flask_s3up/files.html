@@ -3,18 +3,63 @@
 {% block controller %}
     {% include 'flask_s3up/controller.html' with context %}
 {% endblock %}
+{% block head %}
+    {{ super() }}
+<style type="text/css" media="screen">
+  #floading.mdl-spinner {
+    width: 16px;
+    height: 16px;
+    margin: 0 7px 0 7px;
+  }
+  #floading.mdl-spinner .mdl-spinner__circle {
+    border-width: 3px;
+  }
+  .mdl-chip {
+    margin: 0 8px 0 8px;
+  }
+</style>
+{% endblock %}
+
+{% macro mdl_selectbox() -%}
+<label class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect mdl-data-table__select mdl-js-ripple-effect--ignore-events is-upgraded" data-upgraded=",MaterialCheckbox,MaterialRipple">
+    <input type="checkbox" class="mdl-checkbox__input">
+    <span class="mdl-checkbox__focus-helper"></span>
+    <span class="mdl-checkbox__box-outline"><span class="mdl-checkbox__tick-outline"></span></span>
+    <span class="mdl-checkbox__ripple-container mdl-js-ripple-effect mdl-ripple--center" data-upgraded=",MaterialRipple">
+        <span class="mdl-ripple"></span>
+    </span>
+</label>
+{%- endmacro %}
+
 {% block content %}
-    <table style="width: 100%;" class="mdl-data-table mdl-js-data-table mdl-data-table--selectable">
+    <table style="width: 100%;" class="mdl-data-table mdl-js-data-table">  <!-- mdl-data-table--selectable -->
         <thead>
             <tr>
+                <th>{{ mdl_selectbox() }}</th>
                 <th class="mdl-data-table__cell--non-numeric">Name</th>
                 <th class="mdl-data-table__cell--non-numeric">Created at</th>
                 <th class="mdl-data-table__cell--non-numeric">Size</th>
                 <th class="mdl-data-table__cell--non-numeric">Functions</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="playground">
+            <tr style="display: none;" id="clone">
+                <td>
+                    <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>
+                        <i class="material-icons">-</i>
+                    </button>
+                </td>
+                <td class="mdl-data-table__cell--non-numeric"></td>
+                <td class="mdl-data-table__cell--non-numeric"></td>
+                <td class="mdl-data-table__cell--non-numeric"></td>
+                <td class="mdl-data-table__cell--non-numeric">
+                    <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
+                    <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
+                    <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
+                </td>
+            </tr>
             {% include 'flask_s3up/prefixes.html' with context %}
+            <tr id="divider" style="display: none;"></tr>
             {% include 'flask_s3up/contents.html' with context %}
         </tbody>
         <tfoot>
@@ -33,4 +78,61 @@
 {% endblock %}
 {% block tail %}
     <script src="{{ url_for('flask_s3up.static', filename="/js/core.js") }}" charset="utf-8"></script>
+    <script charset="utf-8">
+        function callbackMkdir(e, xhr, pfx){
+            if (xhr.readyState == 4) {
+                console.log('callback:', e, xhr, pfx);
+                var clone = document.getElementById('clone').cloneNode(true);
+                var suffix = document.getElementById('flask_s3up_suffix');
+                clone.children[0].children[0].children[0].innerHTML = 'cloud_done';
+                clone.children[1].innerHTML = '<em>' + suffix.value + ' (Created)</em>';
+                clone.removeAttribute('id');
+                clone.removeAttribute('style');
+                clone.style.opacity = 0.6;
+                if(xhr.status == 201){
+                    document.getElementById('playground').insertBefore(clone, document.getElementById('tr_maker').nextSibling);
+                }
+                suffix.value = '';
+            }
+        }
+        function callbackDelFile(e, xhr, key){
+            if (xhr.readyState == 4) {
+                console.log('callback:', e, xhr, key);
+                if(xhr.status == 204){
+                    var clone = document.getElementById('clone').cloneNode(true);
+                    clone.children[0].children[0].children[0].innerHTML = 'cloud_off';
+                    clone.children[1].innerHTML = '<em><span style="text-decoration: line-through;">' + key + '</span> (Deleted)</em>';
+                    clone.removeAttribute('id');
+                    clone.removeAttribute('style');
+                    clone.style.opacity = 0.3;
+                    console.log(e.target)
+                    document.getElementById('playground').replaceChild(clone, e.target.closest('tr'));
+                }
+            }
+        }
+        function callbackReadyFileHandling(e, files){
+            console.log('callback', e, files);
+            document.getElementById('file_count').innerHTML=files.length == 1? files.length + ' file' : files.length + ' files';
+            document.getElementById('file_chip').removeAttribute('style');
+        }
+        function callbackUploadFiles(e, xhr, file){
+            if (xhr.readyState == 4) {
+                console.log('callback', e, xhr, file);
+                var tbody = document.getElementById('playground');
+                var clone = document.getElementById('clone').cloneNode(true);
+                clone.removeAttribute('id');
+                clone.removeAttribute('style');
+                if(xhr.status == 201){
+                    clone.style.opacity = 0.6;
+                    clone.children[0].children[0].children[0].innerHTML = 'attachment';
+                    clone.children[1].innerHTML = '<em>' + file.name + ' (Uploaded)</em>';
+                } else {
+                    clone.style.opacity = 0.3;
+                    clone.children[0].children[0].children[0].innerHTML = 'cloud_off';
+                    clone.children[1].innerHTML = '<em><span style="text-decoration: line-through;">' + file.name + '</span> (Failed)</em>';
+                }
+                document.getElementById('playground').insertBefore(clone, document.getElementById('divider').nextSibling);
+            }
+        }
+    </script>
 {% endblock %}
