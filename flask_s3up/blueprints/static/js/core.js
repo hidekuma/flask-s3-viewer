@@ -1,5 +1,45 @@
 var BROWSER = checkBrowser();
 
+function getUrlParam(name){
+    var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+    if (results == null){
+       return null;
+    }
+    else {
+       return decodeURI(results[1]) || 0;
+    }
+}
+
+function setUrlParam(key, value) {
+  key = encodeURI(key);
+  value = encodeURI(value);
+  var kvp = [];
+  kvp = document.location.search.substr(1).split('&');
+  var i=kvp.length; var x; 
+  while(i--){
+    x = kvp[i].split('=');
+    if (x[0]==key){
+      if(value == ''){
+        delete kvp[i];
+      } else{
+        x[1] = value;
+        kvp[i] = x.join('=');
+      }
+      break;
+    }
+  }
+  if(i<0) {
+    if(value != ''){
+      kvp[kvp.length] = [key,value].join('=');
+    }
+  }
+  kvp = kvp.filter(function(x){
+    return x != "";
+  });
+
+  return kvp.join('&');
+}
+
 function preventDefaults (e) {
   e.preventDefault();
   e.stopPropagation();
@@ -23,21 +63,11 @@ function copyToClipboard(id){
 }
 
 function resetSearching(e, callback) {
-  var urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.has('search') == true) {
-    urlParams.delete('search');
-  }
-  var redirection = ''
-  if (urlParams.toString() != '') {
-    redirection = location.pathname + '?' + urlParams.toString();
-  } else {
-    redirection = location.pathname;
-  }
-
+  var search = setUrlParam('search', '');
   if (typeof callback === 'function') {
-    callback(redirection);
+    callback(search);
   } else {
-    location.href = redirection;
+    document.location.search = search;
   }
 }
 
@@ -46,37 +76,32 @@ function runSearching(e, callback) {
   if (e.key == "Enter") {
     var target = e.target || e.srcElement;
     var value = target.value;
-    var urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('search') == true) {
-      if (urlParams.get('search') != value) {
-        urlParams.set('search', value);
-      } else {
-        return false;
-      }
-      if (urlParams.get('search') == '') {
-        urlParams.delete('search');
-      }
-    } else {
-      urlParams.append('search', value);
-    }
-    var redirection = '';
-    if (urlParams.toString() != '') {
-      redirection = location.pathname + '?' + urlParams.toString();
-    } else {
-      redirection = location.pathname;
-    }
+    var search = setUrlParam('search', value);
+
     if (typeof callback === 'function') {
       callback(redirection);
     } else {
-      location.href= redirection;
+      document.location.search = search;
     }
   }
+}
+
+function makeDispatchEvent(eventName){
+  var event;
+  if(typeof(Event) === 'function') {
+      event = new Event(eventName);
+  }else{
+      event = document.createEvent('HTMLEvents');
+      event.initEvent('change', true, true);
+  }
+  return event;
 }
 
 function addRefreshingBadge(count) {
   var el = document.getElementById('flask_s3up_refresh');
   el.value = count + parseInt(el.value);
-  el.dispatchEvent(new Event('change'));
+  el.dispatchEvent(makeDispatchEvent('change'));
+
 }
 
 function readyFileHandling(e, callback){
@@ -103,7 +128,7 @@ function initializeProgress(numFiles) {
   }
   var el = document.getElementById('flask_s3up_progress')
   el.value = 0;
-  el.dispatchEvent(new Event('change'));
+  el.dispatchEvent(makeDispatchEvent('change'));
 }
 
 function uploadFiles(e, callback){
@@ -112,7 +137,6 @@ function uploadFiles(e, callback){
   var results = [];
   Array.prototype.forEach.call(files.files, uploadFile);
   function uploadFile(file, i, arr) {
-    var urlParams = new URLSearchParams(window.location.search);
     var prefix = document.getElementById('flask_s3up_prefix');
     //console.log('uploadFile', prefix.value, file,i)
     var url = FLASK_S3UP_FILES_ENDPOINT;
@@ -150,7 +174,7 @@ function updateProgress(fileNumber, percent) {
   //console.log('updateProgress', fileNumber, percent, total);
   var el = document.getElementById('flask_s3up_progress')
   el.value = total;
-  el.dispatchEvent(new Event('change'));
+  el.dispatchEvent(makeDispatchEvent('change'));
 }
 
 
