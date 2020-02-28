@@ -7,3 +7,4 @@
 - Selects
 - Prevent multiful event
 - Settings
+- async count

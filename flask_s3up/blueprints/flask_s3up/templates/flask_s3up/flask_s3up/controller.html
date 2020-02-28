@@ -22,6 +22,14 @@
 <!--// Nav -->
 
 <div class="mdl-layout-spacer"></div>
+<!-- Delete all -->
+<button id="delAll" onclick="deleteAll(); this.disabled=true;" class="mdl-button mdl-button--icon" disabled>
+    <i class="material-icons">delete_sweep</i>
+</button>
+<div class="mdl-tooltip" data-mdl-for="delAll">
+  Delete selected files
+</div>
+<!--// Delete all -->
 <!-- Form -->
 <form id="upload_form" action="{{ url_for('flask_s3up.files') }}" method="post" accept-charset="utf-8" enctype="multipart/form-data">
   <label id='tattach' class="mdl-button mdl-js-button mdl-button--icon" for="flask_s3up_files">
@@ -68,9 +76,9 @@
 <!-- Refresh -->
 <input type="hidden" onchange="document.getElementById('badge').setAttribute('data-badge', value);" name="flask_s3up_refresh" value="0" id="flask_s3up_refresh">
 <div style="cursor: pointer;" onclick="document.location.reload();" id="badge" class="material-icons mdl-badge mdl-badge--overlap">cached</div>
-  <div class="mdl-tooltip" data-mdl-for="badge">
-    Refresh page
-  </div>
+<div class="mdl-tooltip" data-mdl-for="badge">
+  Refresh page
+</div>
 <!--// Refresh -->
 
 <!-- Loading -->

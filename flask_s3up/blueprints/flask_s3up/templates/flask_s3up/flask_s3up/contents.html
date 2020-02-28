@@ -1,7 +1,7 @@
 {% if contents %}
   {% for c in contents if c.Key %}
     <tr>
-      <td>{{ mdl_selectbox() }}</td>
+      <td>{{ mdl_checkbox(id=loop.index, type="cnt",  val=c.Key) }}</td>
       <td class="mdl-data-table__cell--non-numeric">
         {{ c.Key | replace(unquote_plus(PREFIX_WITH_EMPTY), '', 1)}}
       </td>
@@ -25,7 +25,7 @@
         <div class="mdl-tooltip" data-mdl-for="tdown{{ loop.index }}">
           Download file
         </div>
-        <button id="tdelf{{ loop.index }}" onclick="deleteFile(event, '{{ c.Key }}', callbackDelFile);" class="mdl-button mdl-button--icon mdl-button--primary">
+        <button id="tdelf{{ loop.index }}" onclick="if (confirm('Are you sure you want to delete?')) deleteFile(event, '{{ c.Key }}', callbackDelFile);" class="mdl-button mdl-button--icon mdl-button--primary">
           <i class="material-icons">clear</i>
         </button>
         <div class="mdl-tooltip" data-mdl-for="tdelf{{ loop.index }}">

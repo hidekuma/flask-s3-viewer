@@ -20,16 +20,13 @@
 </style>
 {% endblock %}
 
-{% macro mdl_selectbox() -%}
-<label class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect mdl-data-table__select mdl-js-ripple-effect--ignore-events is-upgraded" data-upgraded=",MaterialCheckbox,MaterialRipple">
-    <input type="checkbox" class="mdl-checkbox__input">
-    <span class="mdl-checkbox__focus-helper"></span>
-    <span class="mdl-checkbox__box-outline"><span class="mdl-checkbox__tick-outline"></span></span>
-    <span class="mdl-checkbox__ripple-container mdl-js-ripple-effect mdl-ripple--center" data-upgraded=",MaterialRipple">
-        <span class="mdl-ripple"></span>
-    </span>
+{% macro mdl_checkbox(type="", id="", val="") -%}
+<label class="mdl-checkbox mdl-js-checkbox" for="chkbox_{{ type }}_{{ id }}">
+    <input type="checkbox" id="chkbox_{{ type }}_{{ id }}" class="mdl-checkbox__input", value="{{ val }}">
+    <span class="mdl-checkbox__label"></span>
 </label>
 {%- endmacro %}
+
 {% macro mdl_tr(id='', display='', text='') -%}
 <tr style="{% if display != '' %}display: {{ display }};{% endif %}" {% if id != '' %}id="{{ id }}"{% endif %}>
     <td>
@@ -52,7 +49,7 @@
     <table style="width: 100%;" class="mdl-data-table mdl-js-data-table">  <!-- mdl-data-table--selectable -->
         <thead>
             <tr>
-                <th>{{ mdl_selectbox() }}</th>
+                <th>{{ mdl_checkbox(id='all') }}</th>
                 <th class="mdl-data-table__cell--non-numeric">Name</th>
                 <th class="mdl-data-table__cell--non-numeric">Created at</th>
                 <th class="mdl-data-table__cell--non-numeric">Size</th>
@@ -79,9 +76,83 @@
         </tfoot>
     </table>
 {% endblock %}
+
 {% block tail %}
     <script src="{{ url_for('flask_s3up.static', filename="/js/core.js") }}" charset="utf-8"></script>
     <script charset="utf-8">
+        document.getElementById('chkbox__all').addEventListener('click', checkAll, false);
+        function checkAll(e){
+            var chkboxs = document.getElementsByClassName('mdl-checkbox__input');
+            if(e.target.checked){
+                Array.prototype.forEach.call(
+                    chkboxs,
+                    function(v, k){
+                        v.parentNode.MaterialCheckbox.check();
+                    }
+                );
+            } else {
+                Array.prototype.forEach.call(
+                    chkboxs,
+                    function(v, k){
+                        v.parentNode.MaterialCheckbox.uncheck();
+                    }
+                );
+            }
+        }
+
+        var chkboxs = document.getElementsByClassName('mdl-checkbox__input');
+        for (var i = 0; i < chkboxs.length; i++) {
+            chkboxs[i].addEventListener('change', isChecked, false);
+        }
+        function isChecked(e){
+            var chkboxs = document.getElementsByClassName('mdl-checkbox__input');
+            var isCheck = false;
+            Array.prototype.some.call(
+                chkboxs,
+                function(el, k){
+                    if (el.checked && el.value != ''){
+                        isCheck = true;
+                        return true;
+                    }
+                }
+            );
+            var delAll = document.getElementById('delAll');
+            if (isCheck == true) {
+                delAll.disabled = false;
+            } else {
+                delAll.disabled = true;
+
+            }
+        }
+        function deleteAll(){
+            var chkboxs = document.getElementsByClassName('mdl-checkbox__input');
+            Array.prototype.forEach.call(
+                chkboxs,
+                function(el, k){
+                    if (el.checked && el.value != ''){
+                        deleteFile(null, el.value, callbackDelFile, el);
+                        el.parentNode.MaterialCheckbox.uncheck();
+                    }
+                }
+            );
+        }
+        function callbackDelFile(e, xhr, key, el){
+            var target = e == null ? el : e.target;
+            if (xhr.readyState == 4) {
+                console.log('callback:', e, xhr, key);
+                if(xhr.status == 204){
+                    var clone = document.getElementById('clone').cloneNode(true);
+                    clone.children[0].children[0].children[0].innerHTML = 'cloud_off';
+                    clone.children[1].innerHTML = '<em><span style="text-decoration: line-through;">' + key + '</span> (Deleted)</em>';
+                    clone.removeAttribute('id');
+                    clone.removeAttribute('style');
+                    clone.style.opacity = 0.3;
+                    document.getElementById('playground').replaceChild(clone, target.closest('tr'));
+                } else {
+                    alert('Error');
+                }
+            }
+        }
         function callbackMkdir(e, xhr, pfx){
             if (xhr.readyState == 4) {
                 console.log('callback:', e, xhr, pfx);
@@ -96,22 +167,6 @@
                     document.getElementById('playground').insertBefore(clone, document.getElementById('tr_maker').nextSibling);
                 }
                 suffix.value = '';
-            }
-        }
-        function callbackDelFile(e, xhr, key){
-            if (xhr.readyState == 4) {
-                console.log('callback:', e, xhr, key);
-                if(xhr.status == 204){
-                    var clone = document.getElementById('clone').cloneNode(true);
-                    clone.children[0].children[0].children[0].innerHTML = 'cloud_off';
-                    clone.children[1].innerHTML = '<em><span style="text-decoration: line-through;">' + key + '</span> (Deleted)</em>';
-                    clone.removeAttribute('id');
-                    clone.removeAttribute('style');
-                    clone.style.opacity = 0.3;
-                    document.getElementById('playground').replaceChild(clone, e.target.closest('tr'));
-                } else {
-                    alert('Error');
-                }
             }
         }
         function callbackReadyFileHandling(e, files){
