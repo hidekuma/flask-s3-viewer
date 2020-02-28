@@ -28,9 +28,12 @@
     <td class="mdl-data-table__cell--non-numeric"></td>
     <td class="mdl-data-table__cell--non-numeric"></td>
     <td class="mdl-data-table__cell--non-numeric">
-      <button onclick="makeDir(event, callbackMkdir);" type="button" class="mdl-button mdl-button--icon mdl-button--primary">
+      <button id="tmkdir" onclick="makeDir(event, callbackMkdir);" type="button" class="mdl-button mdl-button--icon mdl-button--primary">
         <i class="material-icons">create_new_folder</i>
       </button>
+      <div class="mdl-tooltip" data-mdl-for="tmkdir">
+        Make Folder
+      </div>
       <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
       <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
     </td>
@@ -42,16 +45,19 @@
     <tr>
       <td>{{ mdl_selectbox() }}</td>
       <td class="mdl-data-table__cell--non-numeric">
-        <a href="{{ url_for('flask_s3up.files', prefix=p.Prefix, before_prefix=PREFIX) }}" target="_self">{{ unquote_plus(p.Prefix | replace(PREFIX, '')) }}</a>
+        <a href="{{ url_for('flask_s3up.files', prefix=p.Prefix|urlencode, before_prefix=PREFIX) }}" target="_self">{{ p.Prefix | replace(unquote_plus(PREFIX_WITH_EMPTY), '', 1) }}</a>
       </td>
       <td class="mdl-data-table__cell--non-numeric"></td>
       <td class="mdl-data-table__cell--non-numeric"></td>
       <td class="mdl-data-table__cell--non-numeric">
         <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
         <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
-        <button onclick="deleteFile(event, '{{ unquote_plus(p.Prefix) }}', callbackDelFile);" type="button" class="mdl-button mdl-button--icon mdl-button--primary">
+        <button id="tdeld{{ loop.index }}" onclick="deleteFile(event, '{{ p.Prefix }}', callbackDelFile);" type="button" class="mdl-button mdl-button--icon mdl-button--primary">
           <i class="material-icons">clear</i>
         </button>
+        <div class="mdl-tooltip" data-mdl-for="tdeld{{ loop.index }}">
+          Delete folder
+        </div>
       </td>
     </tr>
   {% endfor %}

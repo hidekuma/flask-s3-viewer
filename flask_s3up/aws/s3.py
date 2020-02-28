@@ -166,6 +166,8 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
         return True
 
     def upload_object(self, bucket_name, f, object_name, tagging=None):
+        if self.is_exists(bucket_name, object_name):
+            raise Exception('Already exists')
         put_source = {
             'Bucket': bucket_name,
             'Key': object_name,
@@ -252,7 +254,6 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
                 Bucket=bucket_name,
                 Prefix=prefix,
                 Delimiter=delimiter,
-                EncodingType='url',
                 PaginationConfig={
                     'MaxItems': max_items,
                     'PageSize': page_size,
@@ -269,17 +270,14 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
                     f'CommonPrefixes[?contains(Prefix, `"{search}"`)]'
                 )
             else:
+                # TODO: search
                 # generator
                 if delimiter == '':
                     contents = page_iterator.search('Contents')
                 else:
                     contents = page_iterator.search('Contents[?Size > `0`]')
                 prefixes = page_iterator.search('CommonPrefixes')
-            if wrap:
-                # generator -> list (for caching)
-                return list(prefixes), list(contents), next_token
-            else:
-                return prefixes, contents, next_token
+            return list(prefixes), list(contents), next_token
 
         if self.use_cache and apply_cache:
             salt = self._cache.make_hash(
@@ -298,15 +296,19 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
     def delete_objects(self, bucket_name, object_names):
         if isinstance(object_names, str):
             if object_names.endswith('/'):
-                self.delete_fileobjs(
-                    bucket_name,
-                    self.get_all_of_objects(
+                if object_names != '/':
+                    # if == '' will deleted all
+                    self.delete_fileobjs(
                         bucket_name,
-                        object_names
+                        self.get_all_of_objects(
+                            bucket_name,
+                            object_names
+                        )
                     )
-                )
-                if self.use_cache:
-                    self._cache.remove(os.path.dirname(object_names[:-1]), division=bucket_name)
+                    if self.use_cache:
+                        self._cache.remove(os.path.dirname(object_names[:-1]), division=bucket_name)
+                else:
+                    raise ValueError('object_names can\'t be ""')
             else:
                 self.delete_fileobj(bucket_name, object_names)
         elif isinstance(object_names, collections.Iterable):
@@ -328,7 +330,7 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
 
             for item in contents:
                 if item:
-                    yield urllib.parse.unquote_plus(item['Key'])
+                    yield item['Key']
             if not next_token:
                 break
 

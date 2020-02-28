@@ -43,8 +43,8 @@ function getUrlParam(name){
 }
 
 function setUrlParam(key, value) {
-  key = encodeURI(key);
-  value = encodeURI(value);
+  key = encodeURIComponent(key);
+  value = encodeURIComponent(value);
   var kvp = [];
   kvp = document.location.search.substr(1).split('&');
   var i=kvp.length; var x; 
@@ -206,17 +206,34 @@ function updateProgress(fileNumber, percent) {
   el.dispatchEvent(makeDispatchEvent('change'));
 }
 
+
+function secure_name(text, el) {
+  var regex = /([\\\\\\/:*?\"<>|.()])/g;
+  var result = text.match(regex);
+  if (result !== null && result.length > 0) {
+    //el.val(text.replace(regex, ""));
+    return false;
+  }
+  return true;
+}
+
 function makeDir(e, callback) {
   if (confirm('Are you sure you want to make folder?')){
     e = e || window.event;
     preventDefaults(e);
     var prefix = document.getElementById('flask_s3up_prefix');
     var suffix = document.getElementById('flask_s3up_suffix');
+    //if (!secure_name(suffix.value, suffix)){
+      //alert('Not secure name');
+      //return false;
+    //}
     if (suffix.value == ''){
       alert('Folder name is empty.')
       return false;
     }
-    var realPrefix = prefix.value + suffix.value;
+    // prefix: enocoded
+    // suffix: decoded
+    var realPrefix = prefix.value + encodeURIComponent(suffix.value);
     var url = FLASK_S3UP_FILES_ENDPOINT;
     var xhr = new XMLHttpRequest();
     var formData = new FormData();
@@ -241,11 +258,12 @@ function makeDir(e, callback) {
 }
 
 function deleteFile(e, key, callback) {
+  //key: decoded
   if (confirm('Are you sure you want to delete?')){
     e = e || window.event;
     preventDefaults(e);
     var xhr = new XMLHttpRequest();
-    xhr.open('DELETE', FLASK_S3UP_FILES_ENDPOINT + '/' + key, true);
+    xhr.open('DELETE', FLASK_S3UP_FILES_ENDPOINT + '/' + encodeURIComponent(key), true);
     xhr.addEventListener('readystatechange', function(xe) {
       if (xhr.readyState == 4 && xhr.status == 204) {
         addRefreshingBadge(1);

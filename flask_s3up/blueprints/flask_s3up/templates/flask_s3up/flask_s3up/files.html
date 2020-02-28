@@ -105,8 +105,9 @@
                     clone.removeAttribute('id');
                     clone.removeAttribute('style');
                     clone.style.opacity = 0.3;
-                    console.log(e.target)
                     document.getElementById('playground').replaceChild(clone, e.target.closest('tr'));
+                } else {
+                    alert('Error');
                 }
             }
         }
