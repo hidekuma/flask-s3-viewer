@@ -208,10 +208,10 @@ function updateProgress(fileNumber, percent) {
 
 
 function secure_name(text, el) {
-  var regex = /([\\\\\\/:*?\"<>|.()])/g;
+  var regex = /([\\\\\\/:*?\"<>|.])/g;
   var result = text.match(regex);
   if (result !== null && result.length > 0) {
-    //el.val(text.replace(regex, ""));
+    el.value = text.replace(regex, "");
     return false;
   }
   return true;
@@ -223,10 +223,10 @@ function makeDir(e, callback) {
     preventDefaults(e);
     var prefix = document.getElementById('flask_s3up_prefix');
     var suffix = document.getElementById('flask_s3up_suffix');
-    //if (!secure_name(suffix.value, suffix)){
-      //alert('Not secure name');
-      //return false;
-    //}
+    if (secure_name(suffix.value, suffix) == false){
+      alert('Not secure name');
+      return false;
+    }
     if (suffix.value == ''){
       alert('Folder name is empty.')
       return false;
