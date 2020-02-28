@@ -30,6 +30,23 @@
     </span>
 </label>
 {%- endmacro %}
+{% macro mdl_tr(id='', display='', text='') -%}
+<tr style="{% if display != '' %}display: {{ display }};{% endif %}" {% if id != '' %}id="{{ id }}"{% endif %}>
+    <td>
+        <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>
+            <i class="material-icons">error_outline</i>
+        </button>
+    </td>
+    <td class="mdl-data-table__cell--non-numeric"><em>{{ text }}</em></td>
+    <td class="mdl-data-table__cell--non-numeric"></td>
+    <td class="mdl-data-table__cell--non-numeric"></td>
+    <td class="mdl-data-table__cell--non-numeric">
+        <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
+        <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
+        <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
+    </td>
+</tr>
+{%- endmacro %}
 
 {% block content %}
     <table style="width: 100%;" class="mdl-data-table mdl-js-data-table">  <!-- mdl-data-table--selectable -->
@@ -43,21 +60,7 @@
             </tr>
         </thead>
         <tbody id="playground">
-            <tr style="display: none;" id="clone">
-                <td>
-                    <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>
-                        <i class="material-icons">-</i>
-                    </button>
-                </td>
-                <td class="mdl-data-table__cell--non-numeric"></td>
-                <td class="mdl-data-table__cell--non-numeric"></td>
-                <td class="mdl-data-table__cell--non-numeric"></td>
-                <td class="mdl-data-table__cell--non-numeric">
-                    <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
-                    <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
-                    <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
-                </td>
-            </tr>
+            {{ mdl_tr('clone', 'none') }}
             {% include 'flask_s3up/prefixes.html' with context %}
             <tr id="divider" style="display: none;"></tr>
             {% include 'flask_s3up/contents.html' with context %}
@@ -129,7 +132,6 @@
                     clone.children[1].innerHTML = '<em>' + file.name + ' (Uploaded)</em>';
                 } else {
                     clone.style.opacity = 0.3;
-                    clone.children[0].children[0].children[0].innerHTML = 'cloud_off';
                     clone.children[1].innerHTML = '<em><span style="text-decoration: line-through;">' + file.name + '</span> (Failed)</em>';
                 }
                 document.getElementById('playground').insertBefore(clone, document.getElementById('divider').nextSibling);
