@@ -11,16 +11,16 @@ except ImportError:
 
 class AWSCache:
     SUFFIX = ".__flask_s3up_cache"
-    def __init__(self, temp_dir=None, timeout=300):
-        if not temp_dir:
-            raise ValueError('have to set temp_dir.')
+    def __init__(self, cache_dir=None, timeout=300):
+        if not cache_dir:
+            raise ValueError('have to set cache_dir.')
         if not timeout:
             raise ValueError('have to set timeout.')
-        self._temp_dir = temp_dir
+        self._cache_dir = cache_dir
         self._timeout = timeout
 
-        if not os.path.isdir(temp_dir):
-            os.makedirs(temp_dir)
+        if not os.path.isdir(cache_dir):
+            os.makedirs(cache_dir)
 
     def make_hash(self, key):
         key = key.encode("utf-8")
@@ -37,9 +37,9 @@ class AWSCache:
                 # splited_keys[i] = self.make_hash(k)
             hash = '/'.join(splited_keys)
             if division:
-                destination = os.path.join(self._temp_dir, division, hash)
+                destination = os.path.join(self._cache_dir, division, hash)
             else:
-                destination = os.path.join(self._temp_dir, hash)
+                destination = os.path.join(self._cache_dir, hash)
             return destination, os.path.join(destination, f'{salt}')
         else:
             raise ValueError('key must be str.')
@@ -90,4 +90,4 @@ class AWSCache:
 
     # very danger
     # def clear(self):
-        # shutil.rmtree(self._temp_dir)
+        # shutil.rmtree(self._cache_dir)

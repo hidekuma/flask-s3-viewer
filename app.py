@@ -1,7 +1,7 @@
 import sys
 
 from flask import Flask
-from flask_s3up import FlaskS3Up
+from flask_s3up import FlaskS3Up, routers
 
 app = Flask(__name__)
 
@@ -16,12 +16,12 @@ s3up.init_app(app, config={
     'S3UP_BUCKET': 'hwjeongtest',
     'S3UP_SERVICE_POINT': None,
     'S3UP_IS_COMPATIBLE': False,
-    'S3UP_VIEW_PATH': '/flask-s3up',
     'S3UP_OBJECT_HOSTNAME': 'http://test.com',
     'S3UP_USE_CACHING': True,
     'S3UP_CACHE_DIR': '/tmp/flask_s3up',
     'S3UP_TTL': 86400
 })
+app.register_blueprint(routers.FlaskS3UpViewRouter, url_prefix='/flask-s3up')
 
 if __name__ == '__main__':
     debug = False

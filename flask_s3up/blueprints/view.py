@@ -6,8 +6,7 @@ from werkzeug.wsgi import FileWrapper
 from werkzeug.urls import url_quote
 # from werkzeug.utils import secure_filename
 from flask import Blueprint, Response, request, render_template, current_app
-
-from ..aws.s3 import AWSS3Client
+from .. import get_s3_client
 
 NAMESPACE = 'flask_s3up'
 
@@ -18,14 +17,6 @@ blueprint = Blueprint(
     static_folder='static'
 )
 
-def get_s3_instance():
-    return AWSS3Client(
-        profile_name=current_app.config['S3UP_PROFILE'],
-        endpoint_url=current_app.config['S3UP_SERVICE_POINT'],
-        use_cache=current_app.config['S3UP_USE_CACHING'],
-        cache_dir=current_app.config['S3UP_CACHE_DIR'],
-        ttl=current_app.config['S3UP_TTL'],
-    )
 
 @blueprint.route("/files/<path:key>", methods=['GET'])
 def files_download(key):
@@ -34,12 +25,10 @@ def files_download(key):
         key: encoded
         """
         key = urllib.parse.unquote_plus(key)
-        s3_client = get_s3_instance()
-        r, obj = s3_client.get_object(
-            current_app.config['S3UP_BUCKET'],
-            key
-        )
-        if r:
+        s3_client = get_s3_client()
+        obj = s3_client.get_object(key)
+        # TODO: if obj is none
+        if obj:
             try:
                 key = os.path.basename(key).encode('latin-1')
             except UnicodeEncodeError:
@@ -70,9 +59,8 @@ def files_delete(key):
         """
         key: decoded
         """
-        s3_client = get_s3_instance()
+        s3_client = get_s3_client()
         s3_client.delete_objects(
-            current_app.config['S3UP_BUCKET'],
             key
         )
         return {}, 204
@@ -89,26 +77,18 @@ def files():
         prefix = request.form.get('prefix', '')
         prefix = urllib.parse.unquote_plus(prefix)
         files = request.files.getlist("files[]")
-        s3_client = get_s3_instance()
+        s3_client = get_s3_client()
         prefix = s3_client.prefixer(prefix)
         if not files and prefix:
-            is_exists = s3_client.is_exists(current_app.config['S3UP_BUCKET'], prefix)
+            is_exists = s3_client.is_exists(prefix)
             if is_exists:
                 raise Exception('Already exists')
-            s3_client.put_object(
-                current_app.config['S3UP_BUCKET'],
-                prefix,
-                mkdir=True
-            )
+            s3_client.put_object(prefix, mkdir=True)
             return {}, 201
         else:
             for f in files:
                 f.filename = f'{prefix}{f.filename}'
-                s3_client.upload_object(
-                    current_app.config['S3UP_BUCKET'],
-                    f,
-                    f.filename
-                )
+                s3_client.upload_object(f, f.filename)
             return {}, 201
 
     elif request.method == "GET":
@@ -124,17 +104,15 @@ def files():
         if not starting_token:
             starting_token = None
 
-        s3_client = get_s3_instance()
+        s3_client = get_s3_client()
         if prefix:
             prefixes, contents, next_token = s3_client.list_objects(
-                current_app.config['S3UP_BUCKET'],
                 prefix=prefix,
                 starting_token=starting_token,
                 search=search
             )
         else:
             prefixes, contents, next_token = s3_client.list_objects(
-                current_app.config['S3UP_BUCKET'],
                 starting_token=starting_token,
                 search=search
             )

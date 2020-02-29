@@ -1,12 +1,13 @@
 import os
 import re
 import urllib
+import collections
 import mimetypes
 import logging
-import collections
 
 from botocore.errorfactory import ClientError
 from weakref import WeakValueDictionary
+from functools import wraps
 
 from .ref import Region
 from .session import AWSSession
@@ -16,12 +17,7 @@ logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(asctime)s: %(me
 
 
 class Singleton(type):
-    """
-    Singleton Design: Create regional instances
 
-    Return:
-        Singleton Regional instance, Default region = Seoul(ap-northeast-2)
-    """
     _instances = WeakValueDictionary({})
 
     def __call__(cls, *args, **kwargs):
@@ -53,6 +49,7 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
         profile_name=None,
         region_name=None,
         endpoint_url=None,
+        bucket_name=None,
         secret_key=None,
         access_key=None,
         cache_dir=None,
@@ -68,17 +65,18 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
 
         if not self.runnable:
             raise ValueError('AWSSession is not available. check your credentials!')
-        self.region_name = region_name
         # self.location = {'LocationConstraint': self.region_name}
+        self.region_name = region_name
+        self.use_cache = use_cache
+        self._bucket_name = bucket_name
         self._s3 = self.session.client(
             's3',
             region_name=self.region_name,
             endpoint_url=endpoint_url
         )
-        self.use_cache = use_cache
         if use_cache:
             self._cache = AWSCache(
-                temp_dir=cache_dir,
+                cache_dir=cache_dir,
                 timeout=ttl
             )
 
@@ -88,12 +86,29 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
             setattr(self, name, value)
             return value
 
-    @property
-    def s3(self):
-        """
-        s3 getter
-        """
-        return self._s3
+    # @property
+    # def s3(self):
+        # """
+        # s3 getter
+        # """
+        # return self._s3
+
+    def apply_bucket(define=None):
+        def __wrapper(func):
+            @wraps(func)
+            def __decorartor(self, *args, **kwargs):
+                bucket_name = kwargs.get('bucket_name', None)
+                if define:
+                    kwargs['bucket_name'] = define
+                else:
+                    if self._bucket_name or not bucket_name:
+                        kwargs['bucket_name'] = self._bucket_name
+                rtn = func(self, *args, **kwargs)
+                return rtn
+            return __decorartor
+        return __wrapper
+
+
 
     def prefixer(self, prefix):
         if prefix:
@@ -107,20 +122,26 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
         pattern = re.compile(r'\s+')
         return re.sub(pattern, '', string)
 
-    def get_object(self, bucket_name, object_name):
+    def __get_bucket_name(self, bucket_name):
+        if self._bucket_name or not bucket_name:
+            return self._bucket_name
+        return bucket_name
+
+    def get_object(self, object_name, bucket_name=None):
         try:
             r = self._s3.get_object(
-                Bucket=bucket_name,
+                Bucket=self.__get_bucket_name(bucket_name),
                 Key=object_name
             )
         except ClientError as e:
             logging.info(e)
-            return False, None
+            return None
         else:
-            return True, r
+            return r
 
 
-    def put_object(self, bucket_name, object_name, src_data=None, mkdir=False):
+    def put_object(self, object_name, bucket_name=None, src_data=None, mkdir=False):
+        bucket_name = self.__get_bucket_name(bucket_name)
         if isinstance(src_data, bytes):
             object_data = src_data
         elif isinstance(src_data, str):
@@ -165,8 +186,9 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
                 object_data.close()
         return True
 
-    def upload_object(self, bucket_name, f, object_name, tagging=None):
-        if self.is_exists(bucket_name, object_name):
+    def upload_object(self, f, object_name, bucket_name=None, tagging=None):
+        bucket_name = self.__get_bucket_name(bucket_name)
+        if self.is_exists(object_name):
             raise Exception('Already exists')
         put_source = {
             'Bucket': bucket_name,
@@ -188,11 +210,11 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
             return False
         return True
 
-    def copy_fileobj(self, bucket_name, copy_source, object_name):
+    def copy_fileobj(self, copy_source, object_name, bucket_name=None):
         try:
             self._s3.copy_object(
                 CopySource=copy_source,
-                Bucket=bucket_name,
+                Bucket=self.__get_bucket_name(bucket_name),
                 Key=object_name
             )
         except ClientError as e:
@@ -200,19 +222,27 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
             return False
         return True
 
-    def delete_fileobj(self, bucket_name, object_name):
+    def delete_fileobj(self, object_name, bucket_name=None):
         try:
-            self._s3.delete_object(Bucket=bucket_name, Key=object_name)
+            bucket_name = self.__get_bucket_name(bucket_name)
+            self._s3.delete_object(
+                Bucket=bucket_name,
+                Key=object_name
+            )
         except ClientError as e:
             logging.error(e)
             return False
         else:
             if self.use_cache:
-                self._cache.remove(os.path.dirname(object_name), division=bucket_name)
+                self._cache.remove(
+                    os.path.dirname(object_name),
+                    division=bucket_name
+                )
         return True
 
-    def delete_fileobjs(self, bucket_name, object_names):
+    def delete_fileobjs(self, object_names, bucket_name=None):
         try:
+            bucket_name = self.__get_bucket_name(bucket_name)
             if object_names:
                 prefixes = set()
                 objects = []
@@ -223,7 +253,8 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
                             prefixes.add(os.path.dirname(obj))
                 if objects:
                     self._s3.delete_objects(
-                        Bucket=bucket_name, Delete={'Objects': objects}
+                        Bucket=bucket_name,
+                        Delete={'Objects': objects}
                     )
                 if prefixes:
                     for prefix in prefixes:
@@ -235,13 +266,14 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
             return False
         return True
 
+    @apply_bucket()
     def list_objects(
         self,
-        bucket_name,
         prefix='',
         delimiter='/',
         max_items=1000,
         page_size=1000,
+        bucket_name=None,
         starting_token=None,
         search=None,
         apply_cache=True
@@ -283,42 +315,57 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
             salt = self._cache.make_hash(
                 f"{delimiter}|{starting_token}|{search}|{max_items}|{page_size}"
             )
-            data = self._cache.get(prefix, salt=salt, division=bucket_name)
+            data = self._cache.get(
+                prefix,
+                salt=salt,
+                division=bucket_name
+            )
             if not data:
                 logging.info('NOT CACHED.')
                 data = run(True)
-                self._cache.set(prefix, data, salt=salt, division=bucket_name)
+                self._cache.set(
+                    prefix,
+                    data,
+                    salt=salt,
+                    division=bucket_name
+                )
         else:
             data = run()
 
         return data
 
-    def delete_objects(self, bucket_name, object_names):
+    def delete_objects(self, object_names, bucket_name=None):
+        bucket_name = self.__get_bucket_name(bucket_name)
         if isinstance(object_names, str):
             if object_names.endswith('/'):
                 if object_names != '/':
                     # if == '' will deleted all
                     self.delete_fileobjs(
-                        bucket_name,
                         self.get_all_of_objects(
-                            bucket_name,
                             object_names
                         )
                     )
                     if self.use_cache:
-                        self._cache.remove(os.path.dirname(object_names[:-1]), division=bucket_name)
+                        self._cache.remove(
+                            os.path.dirname(object_names[:-1]),
+                            division=bucket_name
+                        )
                 else:
                     raise ValueError('object_names can\'t be ""')
             else:
-                self.delete_fileobj(bucket_name, object_names)
+                self.delete_fileobj(
+                    object_names
+                )
         elif isinstance(object_names, collections.Iterable):
-            self.delete_fileobjs(bucket_name, object_names)
+            self.delete_fileobjs(
+                object_names
+            )
 
-    def get_all_of_objects(self, bucket_name, prefix):
+    def get_all_of_objects(self, prefix, bucket_name=None):
         next_token=None
+        bucket_name = self.__get_bucket_name(bucket_name)
         while True:
             prefixes, contents, next_token = self.list_objects(
-                bucket_name,
                 prefix=prefix,
                 delimiter='',
                 starting_token=next_token,
@@ -334,8 +381,9 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
             if not next_token:
                 break
 
-    def download_fileobj(self, bucket_name, file_name, object_name):
+    def download_fileobj(self, file_name, object_name, bucket_name=None):
         try:
+            bucket_name = self.__get_bucket_name(bucket_name)
             with open(file_name, 'wb') as f:
                 self._s3.download_fileobj(bucket_name, object_name, f)
         except ClientError as e:
@@ -344,12 +392,18 @@ class AWSS3Client(AWSSession, metaclass=Singleton):
         else:
             return True
 
-    def is_exists(self, bucket_name, object_name=None):
+    def is_exists(self, object_name=None, bucket_name=None):
         try:
+            bucket_name = self.__get_bucket_name(bucket_name)
             if object_name:
-                self._s3.head_object(Bucket=bucket_name, Key=object_name)
+                self._s3.head_object(
+                    Bucket=bucket_name,
+                    Key=object_name
+                )
             else:
-                self._s3.head_object(Bucket=bucket_name)
+                self._s3.head_object(
+                    Bucket=bucket_name
+                )
         except ClientError as e:
             logging.info(e)
             return False
