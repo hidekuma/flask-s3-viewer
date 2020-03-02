@@ -1,18 +1,45 @@
-from flask import current_app
+import logging
 
-from . import aws
-from . import blueprints
+from flask import current_app
+from weakref import WeakValueDictionary
+
+from .aws.ref import Region
 from .aws.s3 import AWSS3Client
 
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(asctime)s: %(message)s')
 
 __version__ = "0.0.1"
 
-__all__ = ['FlaskS3up', 'FlaskS3UpViewRouter', 'get_s3_instance']
+__all__ = ['FlaskS3up', 'get_s3_client']
 
-class FlaskS3Up:
+class Singleton(type):
+
+    _instances = WeakValueDictionary({})
+
+    def __call__(cls, *args, **kwargs):
+        if 'region_name' not in kwargs:
+            kwargs['region_name'] = Region.SEOUL.value
+
+        key = f'{kwargs["profile_name"]}/{kwargs["region_name"]}'
+
+        if not cls._instances.get(key):
+            i = super(Singleton, cls).__call__(*args, **kwargs)
+            cls._instances[key] = i
+            print('-'*150)
+            logging.info(f"*** {i} Initialized ! ***")
+            logging.info(f"*** Clients info ***")
+            # logging.info(f"{cls._instances.data}")
+            logging.info(f"{cls._instances}")
+            print('-'*150)
+        return cls._instances[key]
+
+class FlaskS3Up():
     def __init__(self, app=None, config=None):
         if app:
             self.init_app(app, config)
+
+    def __call__(self):
+        print('called')
 
     def init_app(self, app, config=None):
         self.__app = app

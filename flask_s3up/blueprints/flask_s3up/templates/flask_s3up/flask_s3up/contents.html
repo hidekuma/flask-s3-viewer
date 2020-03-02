@@ -34,6 +34,7 @@
       </td>
     </tr>
   {% else %}
+    {{ mdl_tr(text="There are no files under this path.") }}
   {% endfor %}
 {% else %}
   {{ mdl_tr(text="There are no files under this path.") }}
