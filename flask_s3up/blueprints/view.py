@@ -4,19 +4,11 @@ import os
 
 from werkzeug.wsgi import FileWrapper
 from werkzeug.urls import url_quote
-# from werkzeug.utils import secure_filename
-from flask import Blueprint, Response, request, render_template, current_app
+from flask import Response, request, render_template, current_app
 from .. import get_s3_client
-
-NAMESPACE = 'flask_s3up'
-
-blueprint = Blueprint(
-    NAMESPACE,
-    __name__,
-    template_folder=f'./{NAMESPACE}/templates/{NAMESPACE}',
-    static_folder='static'
-)
-
+from .. import blueprint
+from .. import NAMESPACE
+from .. import FLASK_S3UP_BUCKET_PATH_CONFIGS
 
 @blueprint.route("/files/<path:key>", methods=['GET'])
 def files_download(key):
@@ -67,6 +59,10 @@ def files_delete(key):
 
 @blueprint.route("/files", methods=['GET', 'POST'])
 def files():
+    print('----')
+    print(request.url_rule.rule)
+    print(FLASK_S3UP_BUCKET_PATH_CONFIGS)
+    print('----')
     if request.method == "POST":
         """
         prefix: encoded

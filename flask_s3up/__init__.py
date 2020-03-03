@@ -1,6 +1,6 @@
 import logging
 
-from flask import current_app
+from flask import current_app, Blueprint
 from weakref import WeakValueDictionary
 
 from .aws.ref import Region
@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(asctime)s: %(me
 
 __version__ = "0.0.1"
 
-__all__ = ['FlaskS3up', 'get_s3_client']
+__all__ = ['FlaskS3up']
 
 class Singleton(type):
 
@@ -77,3 +77,15 @@ def get_s3_client():
         cache_dir=current_app.config['S3UP_CACHE_DIR'],
         ttl=current_app.config['S3UP_TTL'],
     )
+
+FLASK_S3UP_BUCKET_PATH_CONFIGS = {
+    'flask_s3up': 'hwjeongtest'
+}
+
+NAMESPACE = 'flask_s3up'
+blueprint = Blueprint(
+    NAMESPACE,
+    __name__,
+    template_folder=f'./blueprints/{NAMESPACE}/templates/{NAMESPACE}',
+    static_folder='static',
+)

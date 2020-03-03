@@ -22,6 +22,7 @@ s3up.init_app(app, config={
     'S3UP_TTL': 86400
 })
 app.register_blueprint(routers.FlaskS3UpViewRouter, url_prefix='/flask-s3up')
+app.register_blueprint(routers.FlaskS3UpViewRouter, url_prefix='/test')
 
 if __name__ == '__main__':
     debug = False
