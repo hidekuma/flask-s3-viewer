@@ -4,11 +4,15 @@ import os
 
 from werkzeug.wsgi import FileWrapper
 from werkzeug.urls import url_quote
-from flask import Response, request, render_template, current_app
-from .. import get_s3_client
-from .. import blueprint
-from .. import NAMESPACE
-from .. import FLASK_S3UP_BUCKET_PATH_CONFIGS
+from flask import Response, request, render_template, current_app, Blueprint
+from .. import FlaskS3Up, FLASK_S3UP_NAMESPACE
+
+blueprint = Blueprint(
+    FLASK_S3UP_NAMESPACE,
+    __name__,
+    template_folder=f'./{FLASK_S3UP_NAMESPACE}/templates/{FLASK_S3UP_NAMESPACE}',
+    static_folder='static',
+)
 
 @blueprint.route("/files/<path:key>", methods=['GET'])
 def files_download(key):
@@ -17,7 +21,7 @@ def files_download(key):
         key: encoded
         """
         key = urllib.parse.unquote_plus(key)
-        s3_client = get_s3_client()
+        s3_client = FlaskS3Up.get_s3_client()
         obj = s3_client.get_object(key)
         # TODO: if obj is none
         if obj:
@@ -51,7 +55,7 @@ def files_delete(key):
         """
         key: decoded
         """
-        s3_client = get_s3_client()
+        s3_client = FlaskS3Up.get_s3_client()
         s3_client.delete_objects(
             key
         )
@@ -61,7 +65,6 @@ def files_delete(key):
 def files():
     print('----')
     print(request.url_rule.rule)
-    print(FLASK_S3UP_BUCKET_PATH_CONFIGS)
     print('----')
     if request.method == "POST":
         """
@@ -73,7 +76,7 @@ def files():
         prefix = request.form.get('prefix', '')
         prefix = urllib.parse.unquote_plus(prefix)
         files = request.files.getlist("files[]")
-        s3_client = get_s3_client()
+        s3_client = FlaskS3Up.get_s3_client()
         prefix = s3_client.prefixer(prefix)
         if not files and prefix:
             is_exists = s3_client.is_exists(prefix)
@@ -100,7 +103,7 @@ def files():
         if not starting_token:
             starting_token = None
 
-        s3_client = get_s3_client()
+        s3_client = FlaskS3Up.get_s3_client()
         if prefix:
             prefixes, contents, next_token = s3_client.list_objects(
                 prefix=prefix,
@@ -115,7 +118,7 @@ def files():
 
 
         return render_template(
-            f'{NAMESPACE}/files.html',
+            f'{FLASK_S3UP_NAMESPACE}/files.html',
             contents=contents,
             prefixes=prefixes,
             next_token=next_token,

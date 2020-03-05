@@ -9,11 +9,23 @@ app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 1
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
-# flask_s3up Initialize
+# FlaskS3Up Init
 s3up = FlaskS3Up()
+
+# FlaskS3Up Configs
 s3up.init_app(app, config={
+    'S3UP_BUCKET_CONFIGS': {
+        'flask_s3up': {
+            'bucket': 'hwjeongtest',
+            'profile': 'test',
+            'is_compatible': False,
+            'service_point': None,
+            'object_hostname': 'http://test.com',
+            'use_caching': True,
+            'region': ''
+        }
+    },
     'S3UP_PROFILE': 'test',
-    'S3UP_BUCKET': 'hwjeongtest',
     'S3UP_SERVICE_POINT': None,
     'S3UP_IS_COMPATIBLE': False,
     'S3UP_OBJECT_HOSTNAME': 'http://test.com',
