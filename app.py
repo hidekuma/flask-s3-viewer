@@ -15,23 +15,18 @@ s3up = FlaskS3Up()
 # FlaskS3Up Configs
 s3up.init_app(app, config={
     'S3UP_BUCKET_CONFIGS': {
-        'flask_s3up': {
+        'flask-s3up': {
             'bucket': 'hwjeongtest',
             'profile': 'test',
             'is_compatible': False,
             'service_point': None,
             'object_hostname': 'http://test.com',
-            'use_caching': True,
-            'region': ''
+            'use_cache': True,
+            'region': '',
+            'ttl': 86400,
+            'cache_dir': '/tmp/flask_s3up'
         }
-    },
-    'S3UP_PROFILE': 'test',
-    'S3UP_SERVICE_POINT': None,
-    'S3UP_IS_COMPATIBLE': False,
-    'S3UP_OBJECT_HOSTNAME': 'http://test.com',
-    'S3UP_USE_CACHING': True,
-    'S3UP_CACHE_DIR': '/tmp/flask_s3up',
-    'S3UP_TTL': 86400
+    }
 })
 app.register_blueprint(routers.FlaskS3UpViewRouter, url_prefix='/flask-s3up')
 app.register_blueprint(routers.FlaskS3UpViewRouter, url_prefix='/test')

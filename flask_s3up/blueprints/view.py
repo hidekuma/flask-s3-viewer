@@ -4,8 +4,8 @@ import os
 
 from werkzeug.wsgi import FileWrapper
 from werkzeug.urls import url_quote
-from flask import Response, request, render_template, current_app, Blueprint
-from .. import FlaskS3Up, FLASK_S3UP_NAMESPACE
+from flask import Response, request, render_template, Blueprint
+from .. import FlaskS3Up, FLASK_S3UP_NAMESPACE, FLASK_S3UP_BUCKET_CONFIGS
 
 blueprint = Blueprint(
     FLASK_S3UP_NAMESPACE,
@@ -14,6 +14,10 @@ blueprint = Blueprint(
     static_folder='static',
 )
 
+def get_url_prefix():
+    url_prefix = str(request.url_rule.rule).split('/')[1]
+    return url_prefix
+
 @blueprint.route("/files/<path:key>", methods=['GET'])
 def files_download(key):
     if request.method == "GET":
@@ -21,7 +25,7 @@ def files_download(key):
         key: encoded
         """
         key = urllib.parse.unquote_plus(key)
-        s3_client = FlaskS3Up.get_s3_client()
+        s3_client = FlaskS3Up.get_s3_client(get_url_prefix())
         obj = s3_client.get_object(key)
         # TODO: if obj is none
         if obj:
@@ -55,7 +59,7 @@ def files_delete(key):
         """
         key: decoded
         """
-        s3_client = FlaskS3Up.get_s3_client()
+        s3_client = FlaskS3Up.get_s3_client(get_url_prefix())
         s3_client.delete_objects(
             key
         )
@@ -63,9 +67,6 @@ def files_delete(key):
 
 @blueprint.route("/files", methods=['GET', 'POST'])
 def files():
-    print('----')
-    print(request.url_rule.rule)
-    print('----')
     if request.method == "POST":
         """
         prefix: encoded
@@ -76,7 +77,7 @@ def files():
         prefix = request.form.get('prefix', '')
         prefix = urllib.parse.unquote_plus(prefix)
         files = request.files.getlist("files[]")
-        s3_client = FlaskS3Up.get_s3_client()
+        s3_client = FlaskS3Up.get_s3_client(get_url_prefix())
         prefix = s3_client.prefixer(prefix)
         if not files and prefix:
             is_exists = s3_client.is_exists(prefix)
@@ -103,7 +104,7 @@ def files():
         if not starting_token:
             starting_token = None
 
-        s3_client = FlaskS3Up.get_s3_client()
+        s3_client = FlaskS3Up.get_s3_client(get_url_prefix())
         if prefix:
             prefixes, contents, next_token = s3_client.list_objects(
                 prefix=prefix,
@@ -122,7 +123,10 @@ def files():
             contents=contents,
             prefixes=prefixes,
             next_token=next_token,
-            object_hostname=current_app.config['S3UP_OBJECT_HOSTNAME']
+            object_hostname=getattr(
+                FLASK_S3UP_BUCKET_CONFIGS[get_url_prefix()],
+                'object_hostname'
+            )
         )
 
 
