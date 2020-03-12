@@ -13,6 +13,7 @@ from .cache import AWSCache
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(asctime)s: %(message)s')
 
+# TODO error extend
 class AWSS3Client(AWSSession):
     """
     Inheritance of AWSSession
@@ -182,8 +183,7 @@ class AWSS3Client(AWSSession):
                 self._cache.remove(os.path.dirname(object_name), division=bucket_name)
         except ClientError as e:
             logging.error(e)
-            return False
-        return True
+            raise
 
     @__bucket()
     def copy_fileobj(self, copy_source, object_name, bucket_name=None):
@@ -195,8 +195,7 @@ class AWSS3Client(AWSSession):
             )
         except ClientError as e:
             logging.error(e)
-            return False
-        return True
+            raise
 
     @__bucket()
     def delete_fileobj(self, object_name, bucket_name=None):
@@ -207,14 +206,13 @@ class AWSS3Client(AWSSession):
             )
         except ClientError as e:
             logging.error(e)
-            return False
+            raise
         else:
             if self.use_cache:
                 self._cache.remove(
                     os.path.dirname(object_name),
                     division=bucket_name
                 )
-        return True
 
     @__bucket()
     def delete_fileobjs(self, object_names, bucket_name=None):
@@ -239,8 +237,7 @@ class AWSS3Client(AWSSession):
 
         except ClientError as e:
             logging.error(e)
-            return False
-        return True
+            raise
 
     @__bucket()
     def list_objects(
@@ -364,9 +361,7 @@ class AWSS3Client(AWSSession):
                 self._s3.download_fileobj(bucket_name, object_name, f)
         except ClientError as e:
             logging.info(e)
-            return False
-        else:
-            return True
+            raise
 
     @__bucket()
     def is_exists(self, object_name=None, bucket_name=None):

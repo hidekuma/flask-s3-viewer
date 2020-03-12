@@ -10,26 +10,22 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 1
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 # FlaskS3Up Init
-s3up = FlaskS3Up()
-
-# FlaskS3Up Configs
-s3up.init_app(app, config={
-    'S3UP_BUCKET_CONFIGS': {
-        'flask-s3up': {
-            'bucket': 'hwjeongtest',
-            'profile': 'test',
-            'is_compatible': False,
-            'service_point': None,
-            'object_hostname': 'http://test.com',
-            'use_cache': True,
-            'region': '',
-            'ttl': 86400,
-            'cache_dir': '/tmp/flask_s3up'
-        }
+s3up = FlaskS3Up(
+    app,
+    url_prefix='/flask-s3up',
+    object_hostname='http://test.com',
+    config={
+        'profile_name': 'test',
+        'region_name': None,
+        'endpoint_url': None,
+        'bucket_name': 'hwjeongtest',
+        'cache_dir': '/tmp/flask_s3up',
+        'use_cache': True,
+        'ttl': 86400,
     }
-})
-app.register_blueprint(routers.FlaskS3UpViewRouter, url_prefix='/flask-s3up')
-app.register_blueprint(routers.FlaskS3UpViewRouter, url_prefix='/test')
+)
+
+app.register_blueprint(routers.FlaskS3UpViewRouter, url_prefix=s3up.url_prefix)
 
 if __name__ == '__main__':
     debug = False
