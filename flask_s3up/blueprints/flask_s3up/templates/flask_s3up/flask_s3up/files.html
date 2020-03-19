@@ -63,16 +63,19 @@
             {% include 'flask_s3up/contents.html' with context %}
         </tbody>
         <tfoot>
-            {% if STARTING_TOKEN %}
-                <td>
-                    <a href="{{ url_for('flask_s3up.files', prefix=PREFIX, starting_token=PREV_TOKEN) }}" target="_self">prev</a>
-                </td>
-            {% endif %}
-            {% if next_token %}
-                <td>
-                    <a href="{{ url_for('flask_s3up.files', prefix=PREFIX, prev_token=STARTING_TOKEN, starting_token=next_token) }}" target="_self">next</a>
-                </td>
-            {% endif %}
+            <td style="text-align: center;" colspan=5>
+                {% if STARTING_TOKEN %}
+                    <a href="{{ url_for('flask_s3up.files', prefix=PREFIX, search=SEARCH, starting_token=PREV_TOKEN, page=PREV_PAGE) }}" target="_self">prev</a>
+                {% endif %}
+                {% if pages %}
+                    {% for page in range(pages) %}
+                        <a style="{% if (loop.index | int == PAGE | int) or (PAGE is none and loop.index | int == 1) %} font-weight: bold; font-size: larger;{% endif %}" href="{{ url_for('flask_s3up.files', prefix=PREFIX, search=SEARCH, starting_token=STARTING_TOKEN, page=loop.index) }}" target="_self">{{ loop.index }}</a>
+                    {% endfor %}
+                {% endif %}
+                {% if next_token %}
+                    <a href="{{ url_for('flask_s3up.files', prefix=PREFIX, prev_token=STARTING_TOKEN, search=SEARCH, starting_token=next_token, prev_page=max_pages, page=1) }}" target="_self">next</a>
+                {% endif %}
+            </td>
         </tfoot>
     </table>
 {% endblock %}

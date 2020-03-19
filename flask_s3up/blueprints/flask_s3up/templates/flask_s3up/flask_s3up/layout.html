@@ -43,6 +43,8 @@
       var FLASK_S3UP_FILES_ENDPOINT = "{{ url_for('flask_s3up.files') }}";
     </script>
     {% set SEARCH = request.args.get('search') %}
+    {% set PAGE = request.args.get('page') %}
+    {% set PREV_PAGE = request.args.get('prev_page') %}
     {% set PREFIX = request.args.get('prefix') %}
     {% set PREFIX_WITH_EMPTY = request.args.get('prefix', '') %}
     {% set BEFORE_PREFIX = request.args.get('before_prefix') %}

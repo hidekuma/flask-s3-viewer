@@ -106,25 +106,33 @@ def files():
         prefix = urllib.parse.unquote_plus(prefix)
         starting_token = request.args.get('starting_token')
         search = request.args.get('search')
+        page = int(request.args.get('page', 1)) - 1
         if not starting_token:
             starting_token = None
 
         s3_client = FlaskS3Up.get_instance(g.FLASK_S3UP_BUCKET_NAMESPACE)
+        max_items = s3_client.max_items
+        max_pages = s3_client.max_pages
         if prefix:
             prefixes, contents, next_token = s3_client.list_objects(
                 prefix=prefix,
                 starting_token=starting_token,
+                max_items=max_items*max_pages,
                 search=search
             )
         else:
             prefixes, contents, next_token = s3_client.list_objects(
                 starting_token=starting_token,
+                max_items=max_items*max_pages,
                 search=search
             )
+        content_pages = [contents[i:i+max_items] for i in range(0, len(contents), max_items)]
 
         return render_template(
             f'{FLASK_S3UP_NAMESPACE}/files.html',
-            contents=contents,
+            max_pages=max_pages,
+            pages=len(content_pages),
+            contents=content_pages[page] if content_pages else [],
             prefixes=prefixes,
             next_token=next_token,
             object_hostname=s3_client.object_hostname
