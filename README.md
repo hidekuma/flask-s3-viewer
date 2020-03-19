@@ -2,6 +2,7 @@
 
 ## Todo list
 - JMESPath search only working in (EN)
-- pagination
+- pagination (searching reset)
 - Error Message
 - Prevent multiful event
+- parallel controll
