@@ -4,7 +4,4 @@
 - JMESPath search only working in (EN)
 - pagination
 - Error Message
-- Selects
 - Prevent multiful event
-- Settings
-- async count

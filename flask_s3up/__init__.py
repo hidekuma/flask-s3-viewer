@@ -1,6 +1,6 @@
 import logging
 
-from weakref import WeakValueDictionary
+# from weakref import WeakValueDictionary
 from collections import namedtuple
 
 # from .aws.ref import Region
@@ -20,22 +20,20 @@ FLASK_S3UP_NAMESPACE = 'flask_s3up'
 
 class Singleton(type):
 
-    _instances = WeakValueDictionary({})
+    # _instances = WeakValueDictionary({})
+    _instances = {}
 
     def __call__(cls, *args, **kwargs):
-        # if 'region_name' not in kwargs:
-            # kwargs['region_name'] = Region.SEOUL.value
-
-        key = f'{kwargs["url_prefix"]}'
+        key = kwargs["namespace"]
 
         if not cls._instances.get(key):
             i = super(Singleton, cls).__call__(*args, **kwargs)
             cls._instances[key] = i
             print('-'*150)
             logging.info(f"*** {i} Initialized ! ***")
-            logging.info(f"*** Clients info ***")
-            logging.info(f"{cls._instances.data}")
-            logging.info(f"{cls._instances}")
+            # logging.info(f"*** Clients info ***")
+            # logging.info(f"{cls._instances.data}")
+            # logging.info(f"{cls._instances}")
             print('-'*150)
             return cls._instances[key]
 
@@ -53,18 +51,14 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         cache_dir
         ttl
         use_cache
-        object_hostname
         '''
     )
-    def __init__(self, app, url_prefix=None, object_hostname=None, config=None):
-        if config:
-            self.init_app(app, url_prefix, object_hostname, config)
-
-    def init_app(self, app, url_prefix=None, object_hostname=None, config=None):
+    def __init__(self, app, namespace=None, object_hostname=None, config=None):
+        if not self.app:
+            self.app = app
         if object_hostname and object_hostname.endswith('/'):
             object_hostname = object_hostname[:-1]
-        self.__object_hostname = object_hostname
-        self.__url_prefix = url_prefix
+        self.object_hostname = object_hostname
 
         if config:
             # TODO: validation (type check)
@@ -72,18 +66,23 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
             config.setdefault('access_key', None)
             super().__init__(**config)
 
-        config['object_hostname'] = object_hostname
-        self.FLASK_S3UP_BUCKET_CONFIGS[url_prefix] = self.FLASK_S3UP_BUCKET(**config)
-
-    @property
-    def object_hostname(self):
-        return self.__object_hostname
-
-    @property
-    def url_prefix(self):
-        return self.__url_prefix
+        self.FLASK_S3UP_BUCKET_CONFIGS[namespace] = self.FLASK_S3UP_BUCKET(**config)
 
     @classmethod
     def get_instance(cls, path=None):
-        # print(cls._instances.data)
+        # print(cls._instances.data, path)
         return cls._instances[path]
+
+    def add_new_one(self, namespace=None, object_hostname=None, config=None):
+        return FlaskS3Up(
+            self.app,
+            namespace=namespace,
+            object_hostname=object_hostname,
+            config=config
+        )
+
+    def register(self):
+        # dynamic import
+        from .routers import FlaskS3UpViewRouter
+        self.app.register_blueprint(FlaskS3UpViewRouter)
+
