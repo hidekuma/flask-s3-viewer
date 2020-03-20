@@ -142,13 +142,22 @@ def files():
 
 @blueprint.context_processor
 def utility_processor():
-    def split(key):
-        return map(lambda k: f'{k}/', key.split('/'))
+    def list_append(l, k):
+        if k not in l:
+            l.append(k)
+        return l
+
+    def split(key, needle='/'):
+        if key:
+            # return map(lambda k: f'{k}', key.split(needle))
+            return key.split(needle)
+        return []
 
     def unquote_plus(key):
         return urllib.parse.unquote_plus(key)
 
     return dict(
         split=split,
-        unquote_plus=unquote_plus
+        unquote_plus=unquote_plus,
+        list_append=list_append
     )

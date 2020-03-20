@@ -43,13 +43,15 @@
       var FLASK_S3UP_FILES_ENDPOINT = "{{ url_for('flask_s3up.files') }}";
     </script>
     {% set SEARCH = request.args.get('search') %}
-    {% set PAGE = request.args.get('page') %}
+    {% set PAGE = request.args.get('page') | int %}
+    {% set PAGE_INDICATOR = request.args.get('page_indicator', 0) | int %}
     {% set PREV_PAGE = request.args.get('prev_page') %}
     {% set PREFIX = request.args.get('prefix') %}
     {% set PREFIX_WITH_EMPTY = request.args.get('prefix', '') %}
     {% set BEFORE_PREFIX = request.args.get('before_prefix') %}
     {% set STARTING_TOKEN = request.args.get('starting_token') %}
-    {% set PREV_TOKEN = request.args.get('prev_token') %}
+    {% set STARTING_TOKEN_WITH_EMPTY = request.args.get('starting_token', '') %}
+    {% set PREV_TOKENS = request.args.get('prev_tokens') %}
     <input class="mdl-textfield__input" type="hidden" name="prefix" value="{{ PREFIX_WITH_EMPTY }}" id="flask_s3up_prefix">
     <!--// ====== DEFINE FLASK_S3UP REQUIRED ====== -->
 

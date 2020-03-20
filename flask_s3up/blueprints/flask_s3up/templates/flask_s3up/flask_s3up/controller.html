@@ -10,9 +10,9 @@
       Go to root
     </div>
     {% for n in nav %}
-      {% if n != "/" %}
+      {% if n != "" %}
         <span style="padding: 0 5px;">/</span>
-        <a style="padding-right: 0; padding-left: 10px;" class="mdl-navigation__link" href="{{ url_for('flask_s3up.files', prefix=n) }}">
+        <a style="padding: 0 10px;" class="mdl-navigation__link" href="{{ url_for('flask_s3up.files', prefix=n) }}">
           {{ unquote_plus(n) | replace('/', '')}}
         </a>
       {% endif %}

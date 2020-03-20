@@ -53,14 +53,14 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         use_cache
         '''
     )
-    def __init__(self, app, namespace=None, object_hostname=None, config=None, max_pages=3, max_items=2):
+    def __init__(self, app, namespace=None, object_hostname=None, config=None):
         if not self.app:
             self.app = app
         if object_hostname and object_hostname.endswith('/'):
             object_hostname = object_hostname[:-1]
         self.object_hostname = object_hostname
-        self.max_pages = max_pages
-        self.max_items = max_items
+        self.max_pages = 3
+        self.max_items = 2
 
         if config:
             # TODO: validation (type check)
@@ -75,7 +75,7 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         # print(cls._instances.data, path)
         return cls._instances[path]
 
-    def add_new_one(self, namespace=None, object_hostname=None, config=None, max_pages=3, max_items=2):
+    def add_new_one(self, namespace=None, object_hostname=None, config=None):
         return FlaskS3Up(
             self.app,
             namespace=namespace,

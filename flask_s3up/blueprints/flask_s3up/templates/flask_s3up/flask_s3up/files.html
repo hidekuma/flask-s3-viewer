@@ -65,16 +65,43 @@
         <tfoot>
             <td style="text-align: center;" colspan=5>
                 {% if STARTING_TOKEN %}
-                    <a href="{{ url_for('flask_s3up.files', prefix=PREFIX, search=SEARCH, starting_token=PREV_TOKEN, page=PREV_PAGE) }}" target="_self">prev</a>
+                    <a href="{{ url_for(
+                        'flask_s3up.files',
+                        prefix=PREFIX,
+                        search=SEARCH,
+                        prev_tokens=PREV_TOKENS,
+                        starting_token=split(PREV_TOKENS, ',')[PAGE_INDICATOR - 1],
+                        page=max_pages,
+                        page_indicator=PAGE_INDICATOR - 1
+                    ) }}" target="_self">prev</a>
                 {% endif %}
                 {% if pages %}
                     {% for page in range(pages) %}
-                        <a style="{% if (loop.index | int == PAGE | int) or (PAGE is none and loop.index | int == 1) %} font-weight: bold; font-size: larger;{% endif %}" href="{{ url_for('flask_s3up.files', prefix=PREFIX, search=SEARCH, starting_token=STARTING_TOKEN, page=loop.index) }}" target="_self">{{ loop.index }}</a>
+                        <a style="{% if (loop.index | int == PAGE) or (PAGE is none and loop.index | int == 1) %} font-weight: bold; font-size: larger;{% endif %}" href="{{ url_for(
+                            'flask_s3up.files',
+                            prefix=PREFIX,
+                            search=SEARCH,
+                            prev_tokens=PREV_TOKENS,
+                            starting_token=STARTING_TOKEN,
+                            page=loop.index,
+                            page_indicator=PAGE_INDICATOR
+                        ) }}" target="_self">{{ loop.index + PAGE_INDICATOR * max_pages | int}}</a>
                     {% endfor %}
                 {% endif %}
                 {% if next_token %}
-                    <a href="{{ url_for('flask_s3up.files', prefix=PREFIX, prev_token=STARTING_TOKEN, search=SEARCH, starting_token=next_token, prev_page=max_pages, page=1) }}" target="_self">next</a>
+                    <a href="{{ url_for(
+                        'flask_s3up.files',
+                        prefix=PREFIX,
+                        prev_tokens=list_append(split(PREV_TOKENS, ','), STARTING_TOKEN_WITH_EMPTY) | unique | join(','),
+                        search=SEARCH,
+                        starting_token=next_token,
+                        page=1,
+                        page_indicator=PAGE_INDICATOR + 1
+                    ) }}" target="_self">next</a>
                 {% endif %}
+                <span style="margin-left: 20px; font-style: italic;">
+                    ( viewing {{ PAGE_INDICATOR + 1 }} )
+                </span>
             </td>
         </tfoot>
     </table>
