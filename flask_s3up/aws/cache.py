@@ -3,6 +3,7 @@ import shutil
 import hashlib
 import tempfile
 import time
+import logging
 
 try:
     import cPickle as pickle
@@ -45,7 +46,7 @@ class AWSCache:
             raise ValueError('key must be str.')
 
     def set(self, key, value, timeout=None, salt=None, division=None):
-        print(f'SET: "{key}"')
+        logging.debug(f'SET: "{key}"')
         file_handler, temp_path = tempfile.mkstemp(
             suffix = self.SUFFIX,
         )
@@ -66,7 +67,7 @@ class AWSCache:
     def get(self, key, salt=None, division=None):
         try:
             _, dpath = self.__make_key(key, salt=salt, division=division)
-            print(f'GET: "{key}"')
+            logging.debug(f'GET: "{key}"')
             with open(dpath, "rb") as f:
                 expires_at = pickle.load(f)
                 if expires_at == 0 or expires_at >= time.time():
@@ -79,7 +80,7 @@ class AWSCache:
 
     def remove(self, key, division=None):
         try:
-            print(f'REMOVED: "{key}"')
+            logging.debug(f'REMOVED: "{key}"')
             ddir, _ = self.__make_key(key, division=division)
             if os.path.isdir(ddir):
                 shutil.rmtree(ddir)

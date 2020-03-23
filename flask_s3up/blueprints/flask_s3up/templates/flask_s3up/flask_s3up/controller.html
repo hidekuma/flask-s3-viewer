@@ -12,7 +12,7 @@
     {% for n in nav %}
       {% if n != "" %}
         <span style="padding: 0 5px;">/</span>
-        <a style="padding: 0 10px;" class="mdl-navigation__link" href="{{ url_for('flask_s3up.files', prefix=n) }}">
+        <a style="padding: 0 10px;" class="mdl-navigation__link" href="{{ url_for('flask_s3up.files', prefix=n + '/') }}">
           {{ unquote_plus(n) | replace('/', '')}}
         </a>
       {% endif %}
@@ -46,7 +46,7 @@
 <span id="floading" class="mdl-spinner mdl-js-spinner is-active" style="display: none;"></span>
 <span id="file_chip" class="mdl-chip mdl-chip--deletable" style="display: none;">
   <span id="file_count" class="mdl-chip__text" style="margin-right: 8px;"></span>
-  <button onclick="uploadFiles(event, callbackUploadFiles); document.getElementById('file_chip').style.display='none';" class="mdl-chip__action"><i class="material-icons">cloud_upload</i></button>
+  <button onclick="uploadFiles(event, callbackUploadFiles, true, 10); document.getElementById('file_chip').style.display='none';" class="mdl-chip__action"><i class="material-icons">cloud_upload</i></button>
   <button onclick="preventDefaults(event); document.getElementById('upload_form').reset(); document.getElementById('file_chip').style.display='none';" class="mdl-chip__action"><i class="material-icons">cancel</i></button>
 </span>
 <!--// Else -->

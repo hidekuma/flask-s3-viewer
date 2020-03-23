@@ -98,7 +98,6 @@ function secure_name(text, el) {
   return true;
 }
 
-
 function makeDispatchEvent(eventName){
   var event;
   if(typeof(Event) === 'function') {
@@ -180,7 +179,7 @@ function initializeProgress(numFiles) {
   el.dispatchEvent(makeDispatchEvent('change'));
 }
 
-function uploadFiles(e, callback, async_flag){
+function uploadFiles(e, callback, async_flag, semaphore){
   async_flag = typeof async_flag !== 'undefined' ? async_flag : true;
   if (e != null) {
     e = e || window.event;
@@ -190,11 +189,20 @@ function uploadFiles(e, callback, async_flag){
   Array.prototype.forEach.call(files.files, uploadFile);
   function uploadFile(file, i, arr) {
     var prefix = document.getElementById('flask_s3up_prefix');
+    var local_async_flag = false;
     //console.log('uploadFile', prefix.value, file,i)
+    if (async_flag == true) local_async_flag = true;
+    else local_async_flag = false;
+    if (typeof semaphore == 'number' && async_flag == true) {
+      if ((i + 1) % semaphore == 0) {
+        local_async_flag = false;
+      }
+    }
+    //console.log(i,local_async_flag);
     var url = FLASK_S3UP_FILES_ENDPOINT;
     var xhr = new XMLHttpRequest();
     var formData = new FormData();
-    xhr.open('POST', url, async_flag);
+    xhr.open('POST', url, local_async_flag);
     //xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
     xhr.upload.addEventListener("progress", function(xe) {
       updateProgress(i, (xe.loaded * 100.0 / xe.total) || 100);

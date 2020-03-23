@@ -21,7 +21,7 @@
 {% endblock %}
 
 {% macro mdl_checkbox(type="", id="", val="") -%}
-<label style="padding-left: 0; margin-left: 30px;"class="mdl-checkbox mdl-js-checkbox" for="chkbox_{{ type }}_{{ id }}">
+<label style="padding-left: 0; margin-left: 33px;"class="mdl-checkbox mdl-js-checkbox" for="chkbox_{{ type }}_{{ id }}">
     <input type="checkbox" id="chkbox_{{ type }}_{{ id }}" class="mdl-checkbox__input", value="{{ val }}">
     <span class="mdl-checkbox__label"></span>
 </label>
@@ -64,7 +64,13 @@
         </tbody>
         <tfoot>
             <td style="text-align: center;" colspan=5>
-                {% if STARTING_TOKEN %}
+                {% if STARTING_TOKEN and PAGE_INDICATOR != 0 %}
+                    <a href="{{ url_for(
+                        'flask_s3up.files',
+                        prefix=PREFIX,
+                        search=SEARCH,
+                        prev_tokens=PREV_TOKENS,
+                    ) }}" target="_self"><<</a>
                     <a href="{{ url_for(
                         'flask_s3up.files',
                         prefix=PREFIX,
@@ -92,7 +98,7 @@
                     <a href="{{ url_for(
                         'flask_s3up.files',
                         prefix=PREFIX,
-                        prev_tokens=list_append(split(PREV_TOKENS, ','), STARTING_TOKEN_WITH_EMPTY) | unique | join(','),
+                        prev_tokens=list_append(split(PREV_TOKENS, ','), STARTING_TOKEN_WITH_NONE) | join(','),
                         search=SEARCH,
                         starting_token=next_token,
                         page=1,

@@ -40,7 +40,7 @@
   </tr>
 {% endif %}
 
-{% if prefixes%}
+{% if prefixes and PAGE == 1 %}
   {% for p in prefixes if p.Prefix %}
     <tr>
       <td>{{ mdl_checkbox(id=loop.index, type="pfx", val=p.Prefix) }}</td>

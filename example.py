@@ -2,6 +2,12 @@ import sys
 
 from flask import Flask
 from flask_s3up import FlaskS3Up
+import logging
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(levelname)s: %(asctime)s: %(message)s'
+)
 
 app = Flask(__name__)
 

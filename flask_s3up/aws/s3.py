@@ -11,8 +11,6 @@ from functools import wraps
 from .session import AWSSession
 from .cache import AWSCache
 
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(asctime)s: %(message)s')
-
 # TODO error extend
 class AWSS3Client(AWSSession):
     """
@@ -135,7 +133,7 @@ class AWSS3Client(AWSSession):
             return False
 
         # Put the object
-        print('PUT_OBJECT:', object_name)
+        logging.debug('PUT_OBJECT:', object_name)
         try:
             put_source = {
                 'Bucket': bucket_name,
@@ -176,7 +174,7 @@ class AWSS3Client(AWSSession):
             if isinstance(tagging, dict):
                 tagging = urllib.parse.urlencode(tagging, quote_via=urllib.parse.quote_plus)
             put_source['Tagging'] = tagging
-        print('UP_OBJECT:', object_name)
+        logging.debug('UP_OBJECT:', object_name)
         try:
             self._s3.put_object(**put_source)
             if self.use_cache:
@@ -233,7 +231,6 @@ class AWSS3Client(AWSSession):
                 if prefixes:
                     for prefix in prefixes:
                         self._cache.remove(prefix, division=bucket_name)
-                # print('2-DELETE', bucket_name, prefixes)
 
         except ClientError as e:
             logging.error(e)
@@ -294,7 +291,7 @@ class AWSS3Client(AWSSession):
                 division=bucket_name
             )
             if not data:
-                logging.info('NOT CACHED.')
+                logging.debug('NOT CACHED.')
                 data = run(True)
                 self._cache.set(
                     prefix,
@@ -375,8 +372,7 @@ class AWSS3Client(AWSSession):
                 self._s3.head_object(
                     Bucket=bucket_name
                 )
-        except ClientError as e:
-            logging.info(e)
-            return False
+        except ClientError:
+            pass
         else:
-            return True
+            raise FileExistsError

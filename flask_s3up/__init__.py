@@ -6,10 +6,6 @@ from collections import namedtuple
 # from .aws.ref import Region
 from .aws.s3 import AWSS3Client
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(levelname)s: %(asctime)s: %(message)s'
-)
 
 __version__ = "0.0.1"
 
@@ -59,8 +55,8 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         if object_hostname and object_hostname.endswith('/'):
             object_hostname = object_hostname[:-1]
         self.object_hostname = object_hostname
-        self.max_pages = 3
-        self.max_items = 2
+        self.__max_pages = 10
+        self.__max_items = 100
 
         if config:
             # TODO: validation (type check)
@@ -69,6 +65,14 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
             super().__init__(**config)
 
         self.FLASK_S3UP_BUCKET_CONFIGS[namespace] = self.FLASK_S3UP_BUCKET(**config)
+
+    @property
+    def max_pages(self):
+        return self.__max_pages
+
+    @property
+    def max_items(self):
+        return self.__max_items
 
     @classmethod
     def get_instance(cls, path=None):

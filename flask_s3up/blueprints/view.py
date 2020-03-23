@@ -4,7 +4,7 @@ import os
 
 from werkzeug.wsgi import FileWrapper
 from werkzeug.urls import url_quote
-from flask import Response, request, render_template, Blueprint, g
+from flask import Response, request, render_template, Blueprint, g, abort
 from .. import FlaskS3Up, FLASK_S3UP_NAMESPACE
 
 blueprint = Blueprint(
@@ -32,7 +32,6 @@ def files_download(key):
         key = urllib.parse.unquote_plus(key)
         s3_client = FlaskS3Up.get_instance(g.FLASK_S3UP_BUCKET_NAMESPACE)
         obj = s3_client.get_object(key)
-        # TODO: if obj is none
         if obj:
             try:
                 key = os.path.basename(key).encode('latin-1')
@@ -57,6 +56,12 @@ def files_download(key):
             rv.headers['Expires'] = '0'
             rv.headers.set('Content-Disposition', 'attachment', **filenames)
             return rv
+        else:
+            return render_template(
+                f'{FLASK_S3UP_NAMESPACE}/error.html',
+                message="Can't not found resource.",
+                code=404
+            ), 404
 
 @blueprint.route("/files/<path:key>", methods=['DELETE'])
 def files_delete(key):
@@ -68,7 +73,7 @@ def files_delete(key):
         s3_client.delete_objects(
             key
         )
-        return {}, 204
+        return '', 204
 
 @blueprint.route("/files", methods=['GET', 'POST'])
 def files():
@@ -84,17 +89,20 @@ def files():
         files = request.files.getlist("files[]")
         s3_client = FlaskS3Up.get_instance(g.FLASK_S3UP_BUCKET_NAMESPACE)
         prefix = s3_client.prefixer(prefix)
-        if not files and prefix:
-            is_exists = s3_client.is_exists(prefix)
-            if is_exists:
-                raise Exception('Already exists')
-            s3_client.put_object(prefix, mkdir=True)
-            return {}, 201
-        else:
-            for f in files:
-                f.filename = f'{prefix}{f.filename}'
-                s3_client.upload_object(f, f.filename)
-            return {}, 201
+        try:
+            if not files and prefix:
+                is_exists = s3_client.is_exists(prefix)
+                if is_exists:
+                    raise Exception('Already exists', 404)
+                s3_client.put_object(prefix, mkdir=True)
+                return {}, 201
+            else:
+                for f in files:
+                    f.filename = f'{prefix}{f.filename}'
+                    s3_client.upload_object(f, f.filename)
+                return {}, 201
+        except Exception as e:
+            abort(500, str(e))
 
     elif request.method == "GET":
         """
@@ -107,7 +115,7 @@ def files():
         starting_token = request.args.get('starting_token')
         search = request.args.get('search')
         page = int(request.args.get('page', 1)) - 1
-        if not starting_token:
+        if not starting_token or starting_token == 'None':
             starting_token = None
 
         s3_client = FlaskS3Up.get_instance(g.FLASK_S3UP_BUCKET_NAMESPACE)
@@ -136,15 +144,15 @@ def files():
             prefixes=prefixes,
             next_token=next_token,
             object_hostname=s3_client.object_hostname
-
         )
 
 
 @blueprint.context_processor
 def utility_processor():
     def list_append(l, k):
-        if k not in l:
-            l.append(k)
+        if k:
+            if k not in l:
+                l.append(k)
         return l
 
     def split(key, needle='/'):
