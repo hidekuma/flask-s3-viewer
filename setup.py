@@ -16,5 +16,10 @@ setup(
     keywords                      = ['aws', 's3', 'file', 'upload', 'flask', 'python', 'python3', 'browsing', 'uploader'],
     install_requires              = [],
     python_requires               = '>= 3.7',
-    test_suite                    = 'tests'
+    test_suite                    = 'tests',
+    entry_points                  = {
+        'console_scripts': [
+            'flask_s3up=flask_s3up.cli:handle',
+        ]
+    },
 )

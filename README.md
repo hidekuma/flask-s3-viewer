@@ -7,3 +7,4 @@
 - core.js
 - presigned
 - JMESPath search only working in (EN)
+- semaphore
