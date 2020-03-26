@@ -27,7 +27,6 @@ class FlaskS3UpCli:
             help="Get a base template for customzing view. mdl means material-design-lite and skeleton means not designed template)",
             choices=['skeleton', 'mdl']
         )
-        self.parser.print_help()
 
     def handle(self):
         args = self.parser.parse_args()
@@ -38,9 +37,7 @@ class FlaskS3UpCli:
             base_template_path = os.path.join(
                 file_path,
                 'blueprints',
-                'flask_s3up',
-                'templates',
-                'flask_s3up'
+                'templates'
             )
 
             i = 1
@@ -67,7 +64,7 @@ class FlaskS3UpCli:
                     elif args.template == 'skeleton':
                         origin_template_path = os.path.join(
                             base_template_path,
-                            'skeleton'
+                            'flask_s3up_skeleton'
                         )
                     shutil.copytree(origin_template_path, template_path)
                     click.echo(
@@ -88,6 +85,9 @@ class FlaskS3UpCli:
                     )
                     break
 
-if __name__ == "__main__":
+def handle():
     cli = FlaskS3UpCli()
     cli.handle()
+
+if __name__ == "__main__":
+    handle()

@@ -10,8 +10,9 @@ from .. import FlaskS3Up, FLASK_S3UP_NAMESPACE
 blueprint = Blueprint(
     FLASK_S3UP_NAMESPACE,
     __name__,
-    template_folder=f'./{FLASK_S3UP_NAMESPACE}/templates/{FLASK_S3UP_NAMESPACE}',
+    template_folder='templates',
     static_folder='static',
+    static_url_path='flasks3upassets',
     url_prefix='/<path:FLASK_S3UP_BUCKET_NAMESPACE>'
 )
 
@@ -66,7 +67,7 @@ def files_download(key):
             return rv
         else:
             return render_template(
-                f'{FLASK_S3UP_NAMESPACE}/error.html',
+                'flask_s3up/error.html',
                 message="Can't not found resource.",
                 code=404
             ), 404
@@ -154,7 +155,7 @@ def files():
         ]
 
         return render_template(
-            f'{FLASK_S3UP_NAMESPACE}/files.html',
+            'flask_s3up/files.html',
             max_pages=max_pages,
             pages=len(content_pages),
             contents=content_pages[page] if content_pages else [],
