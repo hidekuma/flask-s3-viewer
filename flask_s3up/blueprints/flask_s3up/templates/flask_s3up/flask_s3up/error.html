@@ -2,15 +2,14 @@
 {% block title %}Error{% endblock %}
 {% block header %}{% endblock %}
 {% block content %}
-<div class="mdl-grid">
-  <div class="mdl-layout-spacer"></div>
-  <div style="text-align: center; margin-top:280px; height: 300px; display: table-cell; vertical-align: middle;" class="mdl-cell mdl-cell--6-col mdl-cell--8-col-tablet">
-    <h1 class="typo-styles__demo mdl-typography--display-4"><b>{{ code }}</b></h1>
-    <h2 style="padding: 3px 0;" class="typo-styles__demo mdl-typography--headline">{{ message }}</h2>
-    <a href="{{ request.headers.get('Referer') }}" target="_self">Back to the last page</a>
-    
-  </div>
-  <div class="mdl-layout-spacer"></div>
-</div>
+    <div class="mdl-grid">
+        <div class="mdl-layout-spacer"></div>
+        <div style="text-align: center; margin-top:280px; height: 300px; display: table-cell; vertical-align: middle;" class="mdl-cell mdl-cell--6-col mdl-cell--8-col-tablet">
+            <h1 class="typo-styles__demo mdl-typography--display-4"><b>{{ code }}</b></h1>
+            <h2 style="padding: 3px 0;" class="typo-styles__demo mdl-typography--headline">{{ message }}</h2>
+            <a href="{{ request.headers.get('Referer') }}" target="_self">Back to the last page</a>
+        </div>
+        <div class="mdl-layout-spacer"></div>
+    </div>
 {% endblock %}
 {% block footer %}{% endblock %}

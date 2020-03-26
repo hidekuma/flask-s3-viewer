@@ -5,7 +5,7 @@ from collections import namedtuple
 
 # from .aws.ref import Region
 from .aws.s3 import AWSS3Client
-
+from .aws.ref import Region
 
 __version__ = "0.0.1"
 
@@ -25,15 +25,11 @@ class Singleton(type):
         if not cls._instances.get(key):
             i = super(Singleton, cls).__call__(*args, **kwargs)
             cls._instances[key] = i
-            print('-'*150)
             logging.info(f"*** {i} Initialized ! ***")
-            # logging.info(f"*** Clients info ***")
-            # logging.info(f"{cls._instances.data}")
-            # logging.info(f"{cls._instances}")
-            print('-'*150)
             return cls._instances[key]
 
 class FlaskS3Up(AWSS3Client, metaclass=Singleton):
+
     FLASK_S3UP_BUCKET_CONFIGS = {}
     FLASK_S3UP_BUCKET = namedtuple(
         'FlaskS3UpBucketConfig',
@@ -49,22 +45,36 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         use_cache
         '''
     )
-    def __init__(self, app, namespace=None, object_hostname=None, config=None):
-        if not self.app:
-            self.app = app
+    def __init__(
+        self,
+        app,
+        namespace=None,
+        object_hostname=None,
+        allowed_extensions=None,
+        config=None
+    ):
+        self.app = app
         if object_hostname and object_hostname.endswith('/'):
             object_hostname = object_hostname[:-1]
         self.object_hostname = object_hostname
+        self.allowed_extensions =  allowed_extensions
         self.__max_pages = 10
         self.__max_items = 100
 
         if config:
-            # TODO: validation (type check)
+            # bucket_name, profile_name is required
+            config.setdefault('region_name', None)
+            config.setdefault('endpoint_url', None)
             config.setdefault('secret_key', None)
             config.setdefault('access_key', None)
+            config.setdefault('cache_dir', None)
+            config.setdefault('ttl', None)
+            config.setdefault('use_cache', None)
             super().__init__(**config)
 
-        self.FLASK_S3UP_BUCKET_CONFIGS[namespace] = self.FLASK_S3UP_BUCKET(**config)
+        self.FLASK_S3UP_BUCKET_CONFIGS[namespace] = self.FLASK_S3UP_BUCKET(
+            **config
+        )
 
     @property
     def max_pages(self):
@@ -79,16 +89,32 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         # print(cls._instances.data, path)
         return cls._instances[path]
 
-    def add_new_one(self, namespace=None, object_hostname=None, config=None):
+    @classmethod
+    def get_boto_client(cls, path=None):
+        return cls._instances[path]._s3
+
+    @classmethod
+    def get_boto_session(cls, path=None):
+        return cls._instances[path]._session
+
+    def add_new_one(
+        self,
+        namespace=None,
+        object_hostname=None,
+        allowed_extensions=None,
+        config=None
+    ):
         return FlaskS3Up(
             self.app,
             namespace=namespace,
             object_hostname=object_hostname,
+            allowed_extensions=allowed_extensions,
             config=config
         )
 
     def register(self):
-        # dynamic import
+        # Dynamic import (have to)
         from .routers import FlaskS3UpViewRouter
         self.app.register_blueprint(FlaskS3UpViewRouter)
-
+        logging.info(f"*** registerd FlaskS3Up blueprint! ***")
+        logging.info(self.app.url_map)

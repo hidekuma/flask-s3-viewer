@@ -11,7 +11,6 @@ from functools import wraps
 from .session import AWSSession
 from .cache import AWSCache
 
-# TODO error extend
 class AWSS3Client(AWSSession):
     """
     Inheritance of AWSSession
@@ -38,12 +37,12 @@ class AWSS3Client(AWSSession):
         )
 
         if not self.runnable:
-            raise ValueError('AWSSession is not available. check your credentials!')
+            raise ValueError('AWSSession is not available. check your credentials.')
         # self.location = {'LocationConstraint': self.region_name}
         self.region_name = region_name
         self.use_cache = use_cache
         self._bucket_name = bucket_name
-        self._s3 = self.session.client(
+        self._s3 = self._session.client(
             's3',
             region_name=self.region_name,
             endpoint_url=endpoint_url
@@ -54,20 +53,7 @@ class AWSS3Client(AWSSession):
                 timeout=ttl
             )
 
-    def __getattr__(self, name):
-        if name == 'resource':
-            value = self.session.resource('s3')
-            setattr(self, name, value)
-            return value
-
-    # @property
-    # def s3(self):
-        # """
-        # s3 getter
-        # """
-        # return self._s3
-
-    def __bucket(bucket_name=None):
+    def bucket(bucket_name=None):
         def __wrapper(func):
             @wraps(func)
             def __decorartor(self, *args, **kwargs):
@@ -81,8 +67,6 @@ class AWSS3Client(AWSSession):
             return __decorartor
         return __wrapper
 
-
-
     def prefixer(self, prefix):
         if prefix:
             if prefix.startswith('/'):
@@ -95,33 +79,27 @@ class AWSS3Client(AWSSession):
         pattern = re.compile(r'\s+')
         return re.sub(pattern, '', string)
 
-    def __get_bucket_name(self, bucket_name):
-        if self._bucket_name or not bucket_name:
-            return self._bucket_name
-        return bucket_name
-
-    @__bucket()
-    def get_object(self, object_name, bucket_name=None):
+    @bucket()
+    def find_one(self, object_name, bucket_name=None):
         try:
             r = self._s3.get_object(
                 Bucket=bucket_name,
                 Key=object_name
             )
         except ClientError as e:
-            logging.info(e)
+            logging.error(e)
             return None
         else:
             return r
 
 
-    @__bucket()
-    def put_object(self, object_name, bucket_name=None, src_data=None, mkdir=False):
+    @bucket()
+    def put_one(self, object_name, bucket_name=None, src_data=None, mkdir=False):
         if isinstance(src_data, bytes):
             object_data = src_data
         elif isinstance(src_data, str):
             try:
                 object_data = open(src_data, 'rb')
-                # possible FileNotFoundError/IOError exception
             except Exception as e:
                 logging.error(e)
                 return False
@@ -132,7 +110,6 @@ class AWSS3Client(AWSSession):
                           ' for the argument \'src_data\' is not supported.')
             return False
 
-        # Put the object
         logging.debug('PUT_OBJECT:', object_name)
         try:
             put_source = {
@@ -148,6 +125,7 @@ class AWSS3Client(AWSSession):
                     put_source['ContentType'] = content_type
 
             self._s3.put_object(**put_source)
+
             if self.use_cache and mkdir:
                 self._cache.remove(os.path.dirname(object_name[:-1]), division=bucket_name)
         except ClientError as e:
@@ -160,10 +138,8 @@ class AWSS3Client(AWSSession):
                 object_data.close()
         return True
 
-    @__bucket()
-    def upload_object(self, f, object_name, bucket_name=None, tagging=None):
-        if self.is_exists(object_name):
-            raise Exception('Already exists')
+    @bucket()
+    def add_one(self, f, object_name, bucket_name=None, tagging=None):
         put_source = {
             'Bucket': bucket_name,
             'Key': object_name,
@@ -174,7 +150,9 @@ class AWSS3Client(AWSSession):
             if isinstance(tagging, dict):
                 tagging = urllib.parse.urlencode(tagging, quote_via=urllib.parse.quote_plus)
             put_source['Tagging'] = tagging
+
         logging.debug('UP_OBJECT:', object_name)
+
         try:
             self._s3.put_object(**put_source)
             if self.use_cache:
@@ -183,20 +161,8 @@ class AWSS3Client(AWSSession):
             logging.error(e)
             raise
 
-    @__bucket()
-    def copy_fileobj(self, copy_source, object_name, bucket_name=None):
-        try:
-            self._s3.copy_object(
-                CopySource=copy_source,
-                Bucket=bucket_name,
-                Key=object_name
-            )
-        except ClientError as e:
-            logging.error(e)
-            raise
-
-    @__bucket()
-    def delete_fileobj(self, object_name, bucket_name=None):
+    @bucket()
+    def remove_one(self, object_name, bucket_name=None):
         try:
             self._s3.delete_object(
                 Bucket=bucket_name,
@@ -212,8 +178,8 @@ class AWSS3Client(AWSSession):
                     division=bucket_name
                 )
 
-    @__bucket()
-    def delete_fileobjs(self, object_names, bucket_name=None):
+    @bucket()
+    def remove_all(self, object_names, bucket_name=None):
         try:
             if object_names:
                 prefixes = set()
@@ -236,8 +202,8 @@ class AWSS3Client(AWSSession):
             logging.error(e)
             raise
 
-    @__bucket()
-    def list_objects(
+    @bucket()
+    def find(
         self,
         prefix='',
         delimiter='/',
@@ -304,17 +270,18 @@ class AWSS3Client(AWSSession):
 
         return data
 
-    @__bucket()
-    def delete_objects(self, object_names, bucket_name=None):
+    @bucket()
+    def remove(self, object_names, bucket_name=None):
         if isinstance(object_names, str):
             if object_names.endswith('/'):
                 if object_names != '/':
                     # if == '' will deleted all
-                    self.delete_fileobjs(
-                        self.get_all_of_objects(
+                    self.remove_all(
+                        self.find_all(
                             object_names
                         )
                     )
+
                     if self.use_cache:
                         self._cache.remove(
                             os.path.dirname(object_names[:-1]),
@@ -323,19 +290,19 @@ class AWSS3Client(AWSSession):
                 else:
                     raise ValueError('object_names can\'t be ""')
             else:
-                self.delete_fileobj(
+                self.remove_one(
                     object_names
                 )
         elif isinstance(object_names, collections.Iterable):
-            self.delete_fileobjs(
+            self.remove_all(
                 object_names
             )
 
-    @__bucket()
-    def get_all_of_objects(self, prefix, bucket_name=None):
+    @bucket()
+    def find_all(self, prefix, bucket_name=None):
         next_token=None
         while True:
-            prefixes, contents, next_token = self.list_objects(
+            prefixes, contents, next_token = self.find(
                 prefix=prefix,
                 delimiter='',
                 starting_token=next_token,
@@ -351,8 +318,8 @@ class AWSS3Client(AWSSession):
             if not next_token:
                 break
 
-    @__bucket()
-    def download_fileobj(self, file_name, object_name, bucket_name=None):
+    @bucket()
+    def download_one(self, file_name, object_name, bucket_name=None):
         try:
             with open(file_name, 'wb') as f:
                 self._s3.download_fileobj(bucket_name, object_name, f)
@@ -360,7 +327,7 @@ class AWSS3Client(AWSSession):
             logging.info(e)
             raise
 
-    @__bucket()
+    @bucket()
     def is_exists(self, object_name=None, bucket_name=None):
         try:
             if object_name:
@@ -373,6 +340,6 @@ class AWSS3Client(AWSSession):
                     Bucket=bucket_name
                 )
         except ClientError:
-            pass
+            return False
         else:
-            raise FileExistsError
+            return True

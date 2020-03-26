@@ -12,7 +12,7 @@
         {{ c.Size | filesizeformat }}
       </td>
       <td class="mdl-data-table__cell--non-numeric">
-        <button id="tcopy{{ loop.index }}" onclick="copyToClipboard('flask_s3up_addr_copy_{{ loop.index }}');" class="mdl-button mdl-button--icon mdl-button--primary">
+        <button id="tcopy{{ loop.index }}" onclick="FLASK_S3UP_CORE.copyToClipboard('flask_s3up_addr_copy_{{ loop.index }}');" class="mdl-button mdl-button--icon mdl-button--primary">
           <i class="material-icons">link</i>
         </button>
         <div class="mdl-tooltip" data-mdl-for="tcopy{{ loop.index }}">
@@ -25,7 +25,7 @@
         <div class="mdl-tooltip" data-mdl-for="tdown{{ loop.index }}">
           Download file
         </div>
-        <button id="tdelf{{ loop.index }}" onclick="if (confirm('Are you sure you want to delete?')) deleteFile(event, '{{ c.Key }}', callbackDelFile);" class="mdl-button mdl-button--icon mdl-button--primary">
+        <button id="tdelf{{ loop.index }}" onclick="if (confirm('Are you sure you want to delete?')) FLASK_S3UP_CORE.deleteFile(event, '{{ c.Key }}', callbackDelFile);" class="mdl-button mdl-button--icon mdl-button--primary">
           <i class="material-icons">clear</i>
         </button>
         <div class="mdl-tooltip" data-mdl-for="tdelf{{ loop.index }}">
@@ -34,8 +34,8 @@
       </td>
     </tr>
   {% else %}
-    {{ mdl_tr(text="There are no files under this path.") }}
+    {{ mdl_tr(id="nothing", text="There are no files under this path.") }}
   {% endfor %}
 {% else %}
-  {{ mdl_tr(text="There are no files under this path.") }}
+  {{ mdl_tr(id="nothing", text="There are no files under this path.") }}
 {% endif %}
