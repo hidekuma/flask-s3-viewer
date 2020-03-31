@@ -24,7 +24,7 @@ class FlaskS3UpCli:
             "--template",
             type=str,
             default='skeleton',
-            help="Get a base template for customzing view. mdl means material-design-lite and skeleton means not designed template)",
+            help="Get a base template for customizing view. mdl means material-design-lite and skeleton means not designed template)",
             choices=['skeleton', 'mdl']
         )
 
@@ -78,7 +78,7 @@ class FlaskS3UpCli:
                             os.path.abspath(template_path),
                             click.style(
                                 f'- ex) mv {template_path} [your.flask.template_folder]/flask_s3up \
-                                \n Move the created template to your flask\'s templates folder and rerun your python application, then customzie the template.',
+                                \n Move the created template to your flask\'s templates folder and rerun your python application, then customize the template.',
                                 bold=True
                             )
                         )

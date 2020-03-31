@@ -5,7 +5,7 @@ import os
 from werkzeug.wsgi import FileWrapper
 from werkzeug.urls import url_quote
 from flask import Response, request, render_template, Blueprint, g, abort
-from .. import FlaskS3Up, FLASK_S3UP_NAMESPACE
+from .. import FlaskS3Up, FLASK_S3UP_NAMESPACE, FLASK_S3UP_TEMPLATE_NAMESPACE
 
 blueprint = Blueprint(
     FLASK_S3UP_NAMESPACE,
@@ -66,8 +66,10 @@ def files_download(key):
             rv.headers.set('Content-Disposition', 'attachment', **filenames)
             return rv
         else:
+            g.setdefault('template_namespace', FLASK_S3UP_TEMPLATE_NAMESPACE)
             return render_template(
-                'flask_s3up/error.html',
+                f'{FLASK_S3UP_TEMPLATE_NAMESPACE}/error.html',
+                g=g,
                 message="Can't not found resource.",
                 code=404
             ), 404
@@ -154,8 +156,10 @@ def files():
             )
         ]
 
+        g.setdefault('template_namespace', FLASK_S3UP_TEMPLATE_NAMESPACE)
         return render_template(
-            'flask_s3up/files.html',
+            f'{FLASK_S3UP_TEMPLATE_NAMESPACE}/files.html',
+            g=g,
             max_pages=max_pages,
             pages=len(content_pages),
             contents=content_pages[page] if content_pages else [],

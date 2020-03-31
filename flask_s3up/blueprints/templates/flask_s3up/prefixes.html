@@ -43,7 +43,7 @@
 {% if prefixes and PAGE == 1 %}
   {% for p in prefixes if p.Prefix %}
     <tr>
-      <td>{{ mdl_checkbox(id=loop.index, type="pfx", val=p.Prefix) }}</td>
+      <td>{{ checkbox(id=loop.index, type="pfx", val=p.Prefix) }}</td>
       <td class="mdl-data-table__cell--non-numeric">
         <a href="{{ url_for('flask_s3up.files', prefix=p.Prefix|urlencode, before_prefix=PREFIX) }}" target="_self">{{ p.Prefix | replace(unquote_plus(PREFIX_WITH_EMPTY), '', 1) }}</a>
       </td>

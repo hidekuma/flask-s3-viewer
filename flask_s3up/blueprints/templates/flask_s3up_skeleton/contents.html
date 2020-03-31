@@ -1,0 +1,32 @@
+{% if contents %}
+  {% for c in contents if c.Key %}
+    <tr>
+      <td>{{ checkbox(id=loop.index, type="cnt",  val=c.Key) }}</td>
+      <td>
+        {{ c.Key | replace(unquote_plus(PREFIX_WITH_EMPTY), '', 1)}}
+      </td>
+      <td>
+        {{ c.LastModified }}
+      </td>
+      <td>
+        {{ c.Size | filesizeformat }}
+      </td>
+      <td>
+        <button id="tcopy{{ loop.index }}" onclick="FLASK_S3UP_CORE.copyToClipboard('flask_s3up_addr_copy_{{ loop.index }}');">
+          copyToClipboard
+        </button>
+        <input style="opacity: 0; width: 1px; height: 0px; position: absolute; top: -9999px; height: -9999px;" type="text" value="{{ object_hostname }}/{{ c.Key|urlencode }}" id="flask_s3up_addr_copy_{{ loop.index }}">
+        <button onclick="location.href='{{ url_for('flask_s3up.files_download', key=c.Key|urlencode) }}';">
+          download
+        </button>
+        <button onclick="if (confirm('Are you sure you want to delete?')) FLASK_S3UP_CORE.deleteFile(event, '{{ c.Key }}', callbackDelFile);">
+          delete
+        </button>
+      </td>
+    </tr>
+  {% else %}
+    {{ tr(id="nothing", text="There are no files under this path.") }}
+  {% endfor %}
+{% else %}
+  {{ tr(id="nothing", text="There are no files under this path.") }}
+{% endif %}

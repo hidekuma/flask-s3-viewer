@@ -1,7 +1,7 @@
 {% if contents %}
   {% for c in contents if c.Key %}
     <tr>
-      <td>{{ mdl_checkbox(id=loop.index, type="cnt",  val=c.Key) }}</td>
+      <td>{{ checkbox(id=loop.index, type="cnt",  val=c.Key) }}</td>
       <td class="mdl-data-table__cell--non-numeric">
         {{ c.Key | replace(unquote_plus(PREFIX_WITH_EMPTY), '', 1)}}
       </td>
@@ -34,8 +34,8 @@
       </td>
     </tr>
   {% else %}
-    {{ mdl_tr(id="nothing", text="There are no files under this path.") }}
+    {{ tr(id="nothing", text="There are no files under this path.") }}
   {% endfor %}
 {% else %}
-  {{ mdl_tr(id="nothing", text="There are no files under this path.") }}
+  {{ tr(id="nothing", text="There are no files under this path.") }}
 {% endif %}

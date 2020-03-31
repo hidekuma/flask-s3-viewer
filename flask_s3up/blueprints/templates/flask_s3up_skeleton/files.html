@@ -1,0 +1,229 @@
+{% extends g.get('template_namespace') + "/layout.html" %}
+{% block title %}Files{% endblock %}
+{% block controller %}
+    {% include g.get('template_namespace') + '/controller.html' with context %}
+{% endblock %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+
+{% macro checkbox(type="", id="", val="") -%}
+    <label for="chkbox_{{ type }}_{{ id }}">
+        <input class="fs3up-checkbox" type="checkbox" id="chkbox_{{ type }}_{{ id }}", value="{{ val }}">
+    </label>
+{%- endmacro %}
+
+{% macro tr(id='', display='', text='') -%}
+    <tr style="{% if display != '' %}display: {{ display }};{% endif %}" {% if id != '' %}id="{{ id }}"{% endif %}>
+        <td></td>
+        <td><em>{{ text }}</em></td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+{%- endmacro %}
+
+{% block content %}
+    <table>
+        <thead>
+            <tr>
+                <th>{{ checkbox(id='all') }}</th>
+                <th>Name</th>
+                <th>Created at</th>
+                <th>Size</th>
+                <th>Functions</th>
+            </tr>
+        </thead>
+        <tbody id="playground">
+            {{ tr('clone', 'none') }}
+            {% include g.get('template_namespace') + '/prefixes.html' with context %}
+            <tr id="divider" style="display: none;"></tr>
+            {% include g.get('template_namespace') + '/contents.html' with context %}
+        </tbody>
+        <tfoot>
+            <td colspan=5>
+                {% if STARTING_TOKEN and PAGE_INDICATOR != 0 %}
+                    <a href="{{ url_for(
+                        'flask_s3up.files',
+                        prefix=PREFIX,
+                        search=SEARCH,
+                        prev_tokens=PREV_TOKENS,
+                    ) }}" target="_self"></a>
+                    <a href="{{ url_for(
+                        'flask_s3up.files',
+                        prefix=PREFIX,
+                        search=SEARCH,
+                        prev_tokens=PREV_TOKENS,
+                        starting_token=split(PREV_TOKENS, ',')[PAGE_INDICATOR - 1],
+                        page=max_pages,
+                        page_indicator=PAGE_INDICATOR - 1
+                    ) }}" target="_self">prev</a>
+                {% endif %}
+                {% if pages %}
+                    {% for page in range(pages) %}
+                        <a style="{% if (loop.index | int == PAGE) or (PAGE is none and loop.index | int == 1) %} font-weight: bold; font-size: larger;{% endif %}" href="{{ url_for(
+                            'flask_s3up.files',
+                            prefix=PREFIX,
+                            search=SEARCH,
+                            prev_tokens=PREV_TOKENS,
+                            starting_token=STARTING_TOKEN,
+                            page=loop.index,
+                            page_indicator=PAGE_INDICATOR
+                        ) }}" target="_self">{{ loop.index + PAGE_INDICATOR * max_pages | int}}</a>
+                    {% endfor %}
+                {% endif %}
+                {% if next_token %}
+                    <a href="{{ url_for(
+                        'flask_s3up.files',
+                        prefix=PREFIX,
+                        prev_tokens=list_append(split(PREV_TOKENS, ','), STARTING_TOKEN_WITH_NONE) | join(','),
+                        search=SEARCH,
+                        starting_token=next_token,
+                        page=1,
+                        page_indicator=PAGE_INDICATOR + 1
+                    ) }}" target="_self">next</a>
+                {% endif %}
+                <span>
+                    ( viewing {{ PAGE_INDICATOR + 1 }} )
+                </span>
+            </td>
+        </tfoot>
+    </table>
+{% endblock %}
+
+{% block tail %}
+    <script src="{{ url_for('flask_s3up.static', filename="/js/flask.s3up.core.js") }}" charset="utf-8"></script>
+    <script charset="utf-8">
+        document.getElementById('chkbox__all').addEventListener('click', checkAll, false);
+        function checkAll(e){
+            var chkboxs = document.getElementsByClassName('fs3up-checkbox');
+            if(e.target.checked){
+                Array.prototype.forEach.call(
+                    chkboxs,
+                    function(v, k){
+                        v.checked = true;
+                    }
+                );
+            } else {
+                Array.prototype.forEach.call(
+                    chkboxs,
+                    function(v, k){
+                        v.checked = false;
+                    }
+                );
+            }
+        }
+
+        var chkboxs = document.getElementsByClassName('fs3up-checkbox');
+        for (var i = 0; i < chkboxs.length; i++) {
+            chkboxs[i].addEventListener('change', isChecked, false);
+        }
+
+        function isChecked(e){
+            var chkboxs = document.getElementsByClassName('fs3up-checkbox');
+            var isCheck = false;
+            Array.prototype.some.call(
+                chkboxs,
+                function(el, k){
+                    if (el.checked && el.value != ''){
+                        isCheck = true;
+                        return true;
+                    }
+                }
+            );
+            var delAll = document.getElementById('delAll');
+            if (isCheck == true) {
+                delAll.disabled = false;
+            } else {
+                delAll.disabled = true;
+
+            }
+        }
+
+        function deleteAll(){
+            var chkboxs = document.getElementsByClassName('fs3up-checkbox');
+            Array.prototype.forEach.call(
+                chkboxs,
+                function(el, i){
+                    if (el.checked && el.value != ''){
+                        FLASK_S3UP_CORE.deleteFile(null, el.value, callbackDelFile, el);
+                        el.checked = false;
+                    }
+                }
+            );
+        }
+
+        function callbackDelFile(e, xhr, key, el){
+            var target = e == null ? el : e.target;
+            if (xhr.readyState == 4) {
+                //console.log('callback:', e, xhr, key);
+                if(xhr.status == 204){
+                    var clone = document.getElementById('clone').cloneNode(true);
+                    clone.children[0].innerHTML = '-';
+                    clone.children[1].innerHTML = '<em><span style="text-decoration: line-through;">' + key + '</span> (Deleted)</em>';
+                    clone.removeAttribute('id');
+                    clone.removeAttribute('style');
+                    clone.style.opacity = 0.3;
+                    document.getElementById('playground').replaceChild(clone, target.closest('tr'));
+                } else {
+                    alert('Error');
+                }
+            }
+        }
+
+        function callbackMkdir(e, xhr, pfx){
+            if (xhr.readyState == 4) {
+                //console.log('callback:', e, xhr, pfx);
+                var clone = document.getElementById('clone').cloneNode(true);
+                var suffix = document.getElementById('flask_s3up_suffix');
+                clone.removeAttribute('id');
+                clone.removeAttribute('style');
+                if(xhr.status == 201){
+                    clone.style.opacity = 0.6;
+                    clone.children[0].innerHTML = '+';
+                    clone.children[1].innerHTML = '<em>' + suffix.value + ' (Created)</em>';
+                } else {
+                    clone.style.opacity = 0.3;
+                    if (xhr.status == 409) {
+                        clone.children[1].innerHTML = '<em><span style="text-decoration: line-through;">' + suffix.value + '</span> (Already exists)</em>';
+                    } else {
+                        clone.children[1].innerHTML = '<em><span style="text-decoration: line-through;">' + suffix.value + '</span> (Failed)</em>';
+                    }
+                }
+                document.getElementById('playground').insertBefore(clone, document.getElementById('tr_maker').nextSibling);
+                suffix.value = '';
+            }
+        }
+
+        function callbackReadyFileHandling(e, files){
+            //console.log('callback', e, files);
+            document.getElementById('file_count').innerHTML=files.length == 1? files.length + ' file' : files.length + ' files';
+            document.getElementById('file_chip').removeAttribute('style');
+        }
+
+        function callbackUploadFiles(e, xhr, file){
+            if (xhr.readyState == 4) {
+                //console.log('callback', e, xhr, file);
+                var tbody = document.getElementById('playground');
+                var clone = document.getElementById('clone').cloneNode(true);
+                clone.removeAttribute('id');
+                clone.removeAttribute('style');
+                if(xhr.status == 201){
+                    clone.style.opacity = 0.6;
+                    clone.children[0].innerHTML = '+';
+                    clone.children[1].innerHTML = '<em>' + file.name + ' (Uploaded)</em>';
+                } else {
+                    clone.style.opacity = 0.3;
+                    if (xhr.status == 409) {
+                        clone.children[1].innerHTML = '<em><span style="text-decoration: line-through;">' + file.name + '</span> (Already exists)</em>';
+                    } else if(xhr.status == 403) {
+                        clone.children[1].innerHTML = '<em><span style="text-decoration: line-through;">' + file.name + '</span> (Not allowed file extension)</em>';
+                    } else {
+                        clone.children[1].innerHTML = '<em><span style="text-decoration: line-through;">' + file.name + '</span> (Failed)</em>';
+                    }
+                }
+                document.getElementById('playground').insertBefore(clone, document.getElementById('divider').nextSibling);
+            }
+        }
+    </script>
+{% endblock %}

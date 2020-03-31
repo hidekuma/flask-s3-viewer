@@ -1,0 +1,85 @@
+<html>
+  <head>
+
+    <!-- ====== BLOCK HEAD ====== -->
+    {% block head %}
+      <meta charset="UTF-8" />
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+      <!-- ====== BLOCK TITLE ====== -->
+      <title>{% block title %}{% endblock %} | Flask_s3up</title>
+      <!--// ====== BLOCK TITLE ====== -->
+
+      <!-- Dependecies -->
+      <!--// Dependecies -->
+
+    {% endblock %}
+    <!-- ====== BLOCK HEAD ====== -->
+
+  </head>
+  <body>
+
+    <!-- ====== DEFINE FLASK_S3UP REQUIRED ====== -->
+    <script charset="utf-8">
+      var FLASK_S3UP_FILES_ENDPOINT = "{{ url_for('flask_s3up.files') }}";
+    </script>
+    {% set SEARCH = request.args.get('search') %}
+    {% set PAGE = request.args.get('page', 1) | int %}
+    {% set PAGE_INDICATOR = request.args.get('page_indicator', 0) | int %}
+    {% set PREV_PAGE = request.args.get('prev_page') %}
+    {% set PREFIX = request.args.get('prefix') %}
+    {% set PREFIX_WITH_EMPTY = request.args.get('prefix', '') %}
+    {% set BEFORE_PREFIX = request.args.get('before_prefix') %}
+    {% set STARTING_TOKEN = request.args.get('starting_token') %}
+    {% set STARTING_TOKEN_WITH_EMPTY = request.args.get('starting_token', '') %}
+    {% set STARTING_TOKEN_WITH_NONE = request.args.get('starting_token', 'None') %}
+    {% set PREV_TOKENS = request.args.get('prev_tokens') %}
+    <input class="mdl-textfield__input" type="hidden" name="prefix" value="{{ PREFIX_WITH_EMPTY }}" id="flask_s3up_prefix">
+    <!--// ====== DEFINE FLASK_S3UP REQUIRED ====== -->
+
+      <div id="header">
+
+        <!-- ====== BLOCK HEADER ====== -->
+        {% block header %}
+          <div>
+
+            <!-- ====== BLOCK CONTROLLER ====== -->
+            {% block controller %}
+
+            {% endblock %}
+            <!--// ====== BLOCK CONTROLLER ====== -->
+
+          </div>
+        {% endblock %}
+        <!--// ====== BLOCK HEADER ====== -->
+
+      </div>
+      <div id="content" >
+        <div>
+
+          <!-- ====== BLOCK CONTENT ====== -->
+          {% block content %}
+
+          {% endblock %}
+          <!--// ====== BLOCK CONTENT ====== -->
+
+        </div>
+      </div>
+      <div id="footer">
+
+        <!-- ====== BLOCK FOOTER ====== -->
+        {% block footer %}
+        {% endblock %}
+        <!--// ====== BLOCK FOOTER ====== -->
+
+      </div>
+    </div>
+
+    <!-- ====== BLOCK TAIL ====== -->
+    {% block tail %}
+    {% endblock %}
+    <!--// ====== BLOCK TAIL ====== -->
+
+  </body>
+</html>

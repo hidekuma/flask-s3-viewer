@@ -1,11 +1,12 @@
-boto3==1.12.2
-botocore==1.15.2
-Click==7.0
+boto3==1.12.29
+botocore==1.15.29
+click==7.1.1
 docutils==0.15.2
 Flask==1.1.1
+flask-s3up==0.0.6
 itsdangerous==1.1.0
 Jinja2==2.11.1
-jmespath==0.9.4
+jmespath==0.9.5
 MarkupSafe==1.1.1
 python-dateutil==2.8.1
 s3transfer==0.3.3

@@ -3,9 +3,7 @@ import logging
 # from weakref import WeakValueDictionary
 from collections import namedtuple
 
-# from .aws.ref import Region
 from .aws.s3 import AWSS3Client
-from .aws.ref import Region
 
 __version__ = "0.0.1"
 
@@ -13,6 +11,7 @@ __all__ = ['FlaskS3up']
 
 
 FLASK_S3UP_NAMESPACE = 'flask_s3up'
+FLASK_S3UP_TEMPLATE_NAMESPACE = 'flask_s3up_skeleton'
 
 class Singleton(type):
 

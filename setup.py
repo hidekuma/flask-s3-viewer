@@ -9,7 +9,7 @@ setup(
     author                        = 'Hidekuma',
     author_email                  = 'd.hidekuma@gmail.com',
     download_url                  = f'https://github.com/hidekuma/flask_s3up/archive/{VERSION}.tar.gz',
-    description                   = 'Flask S3up is an extension for Flask that adds s3\'s browsing support to any Flask application.',
+    description                   = 'Flask S3Up is an extension for Flask that adds s3\'s browsing support to any Flask application.',
     packages                      = find_packages(exclude = ['tests*', 'example.py']),
     long_description              = open('README.md').read(),
     long_description_content_type = 'text/markdown',

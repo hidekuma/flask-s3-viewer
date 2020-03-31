@@ -1,0 +1,11 @@
+{% extends "flask_s3up/layout.html" %}
+{% block title %}Error{% endblock %}
+{% block header %}{% endblock %}
+{% block content %}
+    <div>
+        <h1><b>{{ code }}</b></h1>
+        <h2>{{ message }}</h2>
+        <a href="{{ request.headers.get('Referer') }}" target="_self">Back to the last page</a>
+    </div>
+{% endblock %}
+{% block footer %}{% endblock %}
