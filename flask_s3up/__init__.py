@@ -11,7 +11,7 @@ __all__ = ['FlaskS3up']
 
 
 FLASK_S3UP_NAMESPACE = 'flask_s3up'
-FLASK_S3UP_TEMPLATE_NAMESPACE = 'flask_s3up_skeleton'
+FLASK_S3UP_TEMPLATE_NAMESPACE = FLASK_S3UP_NAMESPACE
 
 class Singleton(type):
 
