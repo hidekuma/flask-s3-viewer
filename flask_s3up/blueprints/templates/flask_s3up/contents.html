@@ -1,5 +1,5 @@
-{% if contents %}
-  {% for c in contents if c.Key %}
+{% if FS3UP_CONTENTS %}
+  {% for c in FS3UP_CONTENTS if c.Key %}
     <tr>
       <td>{{ checkbox(id=loop.index, type="cnt",  val=c.Key) }}</td>
       <td class="mdl-data-table__cell--non-numeric">

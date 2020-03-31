@@ -40,8 +40,8 @@
   </tr>
 {% endif %}
 
-{% if prefixes and PAGE == 1 %}
-  {% for p in prefixes if p.Prefix %}
+{% if FS3UP_PREFIXES and PAGE == 1 %}
+  {% for p in FS3UP_PREFIXES if p.Prefix %}
     <tr>
       <td>{{ checkbox(id=loop.index, type="pfx", val=p.Prefix) }}</td>
       <td class="mdl-data-table__cell--non-numeric">

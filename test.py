@@ -37,7 +37,7 @@ s3up = FlaskS3Up(
 # Init another one
 s3up.add_new_one(
     namespace='namespace2',
-    object_hostname='http://why.com',
+    object_hostname='http://namespace2.com',
     config={
         'profile_name': 'test',
         'bucket_name': 'hwjeongtest'

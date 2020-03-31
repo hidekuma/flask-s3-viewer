@@ -1,7 +1,7 @@
-{% extends g.get('template_namespace') + "/layout.html" %}
+{% extends FS3UP_TEMPLATE_NAMESPACE + "/layout.html" %}
 {% block title %}Files{% endblock %}
 {% block controller %}
-    {% include g.get('template_namespace') + '/controller.html' with context %}
+    {% include FS3UP_TEMPLATE_NAMESPACE + '/controller.html' with context %}
 {% endblock %}
 {% block head %}
     {{ super() }}
@@ -36,9 +36,9 @@
         </thead>
         <tbody id="playground">
             {{ tr('clone', 'none') }}
-            {% include g.get('template_namespace') + '/prefixes.html' with context %}
+            {% include FS3UP_TEMPLATE_NAMESPACE + '/prefixes.html' with context %}
             <tr id="divider" style="display: none;"></tr>
-            {% include g.get('template_namespace') + '/contents.html' with context %}
+            {% include FS3UP_TEMPLATE_NAMESPACE + '/contents.html' with context %}
         </tbody>
         <tfoot>
             <td colspan=5>
@@ -55,12 +55,12 @@
                         search=SEARCH,
                         prev_tokens=PREV_TOKENS,
                         starting_token=split(PREV_TOKENS, ',')[PAGE_INDICATOR - 1],
-                        page=max_pages,
+                        page=FS3UP_MAX_PAGES,
                         page_indicator=PAGE_INDICATOR - 1
                     ) }}" target="_self">prev</a>
                 {% endif %}
-                {% if pages %}
-                    {% for page in range(pages) %}
+                {% if FS3UP_PAGES %}
+                    {% for page in range(FS3UP_PAGES) %}
                         <a style="{% if (loop.index | int == PAGE) or (PAGE is none and loop.index | int == 1) %} font-weight: bold; font-size: larger;{% endif %}" href="{{ url_for(
                             'flask_s3up.files',
                             prefix=PREFIX,
@@ -69,16 +69,16 @@
                             starting_token=STARTING_TOKEN,
                             page=loop.index,
                             page_indicator=PAGE_INDICATOR
-                        ) }}" target="_self">{{ loop.index + PAGE_INDICATOR * max_pages | int}}</a>
+                        ) }}" target="_self">{{ loop.index + PAGE_INDICATOR * FS3UP_MAX_PAGES | int}}</a>
                     {% endfor %}
                 {% endif %}
-                {% if next_token %}
+                {% if FS3UP_NEXT_TOKEN %}
                     <a href="{{ url_for(
                         'flask_s3up.files',
                         prefix=PREFIX,
                         prev_tokens=list_append(split(PREV_TOKENS, ','), STARTING_TOKEN_WITH_NONE) | join(','),
                         search=SEARCH,
-                        starting_token=next_token,
+                        starting_token=FS3UP_NEXT_TOKEN,
                         page=1,
                         page_indicator=PAGE_INDICATOR + 1
                     ) }}" target="_self">next</a>

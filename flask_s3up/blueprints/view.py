@@ -5,7 +5,7 @@ import os
 from werkzeug.wsgi import FileWrapper
 from werkzeug.urls import url_quote
 from flask import Response, request, render_template, Blueprint, g, abort
-from .. import FlaskS3Up, FLASK_S3UP_NAMESPACE, FLASK_S3UP_TEMPLATE_NAMESPACE
+from .. import FlaskS3Up, FLASK_S3UP_NAMESPACE
 
 blueprint = Blueprint(
     FLASK_S3UP_NAMESPACE,
@@ -66,12 +66,11 @@ def files_download(key):
             rv.headers.set('Content-Disposition', 'attachment', **filenames)
             return rv
         else:
-            g.setdefault('template_namespace', FLASK_S3UP_TEMPLATE_NAMESPACE)
             return render_template(
-                f'{FLASK_S3UP_TEMPLATE_NAMESPACE}/error.html',
-                g=g,
-                message="Can't not found resource.",
-                code=404
+                f'{fs3up.template_namespace}/error.html',
+                FS3UP_TEMPLATE_NAMESPACE=fs3up.template_namespace,
+                FS3UP_MESSAGE="Can't not found resource.",
+                FS3UP_CODE=404
             ), 404
 
 @blueprint.route("/files/<path:key>", methods=['DELETE'])
@@ -156,16 +155,15 @@ def files():
             )
         ]
 
-        g.setdefault('template_namespace', FLASK_S3UP_TEMPLATE_NAMESPACE)
         return render_template(
-            f'{FLASK_S3UP_TEMPLATE_NAMESPACE}/files.html',
-            g=g,
-            max_pages=max_pages,
-            pages=len(content_pages),
-            contents=content_pages[page] if content_pages else [],
-            prefixes=prefixes,
-            next_token=next_token,
-            object_hostname=fs3up.object_hostname
+            f'{fs3up.template_namespace}/files.html',
+            FS3UP_TEMPLATE_NAMESPACE=fs3up.template_namespace,
+            FS3UP_MAX_PAGES=max_pages,
+            FS3UP_PAGES=len(content_pages),
+            FS3UP_CONTENTS=content_pages[page] if content_pages else [],
+            FS3UP_PREFIXES=prefixes,
+            FS3UP_NEXT_TOKEN=next_token,
+            FS3UP_OBJECT_HOSTNAME=fs3up.object_hostname
         )
 
 

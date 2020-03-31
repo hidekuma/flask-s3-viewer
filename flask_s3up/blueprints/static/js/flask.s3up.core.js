@@ -165,8 +165,6 @@ var FLASK_S3UP_CORE = (function(){
   function handleFiles(e, files, callback) {
     if (e != null) e = e || window.event;
     initializeProgress(files.length);
-    //document.getElementById('flask_s3up_gallery').innerHTML = '';
-    //Array.prototype.forEach.call(files, previewFile);
     if (typeof callback === 'function') {
       callback(e, files);
     }

@@ -23,8 +23,12 @@ setup(
             'blueprints/templates/flask_s3up/files.html',
             'blueprints/templates/flask_s3up/layout.html',
             'blueprints/templates/flask_s3up/prefixes.html',
-            'blueprints/templates/flask_s3up_skeleton/layout.html',
+            'blueprints/templates/flask_s3up_skeleton/contents.html',
+            'blueprints/templates/flask_s3up_skeleton/controller.html',
+            'blueprints/templates/flask_s3up_skeleton/error.html',
             'blueprints/templates/flask_s3up_skeleton/files.html',
+            'blueprints/templates/flask_s3up_skeleton/layout.html',
+            'blueprints/templates/flask_s3up_skeleton/prefixes.html',
         ]
     },
     include_package_data=True,

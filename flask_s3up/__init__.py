@@ -11,8 +11,6 @@ __all__ = ['FlaskS3up']
 
 
 FLASK_S3UP_NAMESPACE = 'flask_s3up'
-FLASK_S3UP_TEMPLATE_NAMESPACE = FLASK_S3UP_NAMESPACE
-# FLASK_S3UP_TEMPLATE_NAMESPACE = 'flask_s3up_skeleton'
 
 class Singleton(type):
 
@@ -45,12 +43,15 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         use_cache
         '''
     )
+    template_namespace = FLASK_S3UP_NAMESPACE
+
     def __init__(
         self,
         app,
         namespace=None,
         object_hostname=None,
         allowed_extensions=None,
+        template_namespace=None,
         config=None
     ):
         self.app = app
@@ -58,6 +59,8 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
             object_hostname = object_hostname[:-1]
         self.object_hostname = object_hostname
         self.allowed_extensions =  allowed_extensions
+        if template_namespace:
+            self.template_namespace = template_namespace
         self.__max_pages = 10
         self.__max_items = 100
 
@@ -102,6 +105,7 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         namespace=None,
         object_hostname=None,
         allowed_extensions=None,
+        template_namespace=None,
         config=None
     ):
         return FlaskS3Up(
@@ -109,6 +113,7 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
             namespace=namespace,
             object_hostname=object_hostname,
             allowed_extensions=allowed_extensions,
+            template_namespace=template_namespace,
             config=config
         )
 
