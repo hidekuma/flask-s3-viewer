@@ -116,10 +116,15 @@ var FLASK_S3UP_CORE = (function(){
     e.stopPropagation();
   }
 
-  function copyToClipboard(id){
-    var dummy = document.getElementById(id);
-    dummy.select();
-    document.execCommand('copy');
+  function copyToClipboard(txt){
+    var tempElem = document.createElement('textarea');
+    tempElem.value = txt;
+    document.body.appendChild(tempElem);
+
+    tempElem.select();
+    tempElem.setSelectionRange(0, 9999);
+    document.execCommand("copy");
+    document.body.removeChild(tempElem);
   }
 
   function resetSearching(e, callback) {

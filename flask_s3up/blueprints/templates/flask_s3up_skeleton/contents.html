@@ -12,10 +12,9 @@
         {{ c.Size | filesizeformat }}
       </td>
       <td>
-        <button id="tcopy{{ loop.index }}" onclick="FLASK_S3UP_CORE.copyToClipboard('flask_s3up_addr_copy_{{ loop.index }}');">
+        <button onclick="FLASK_S3UP_CORE.copyToClipboard('{{ object_hostname }}/{{ c.Key|urlencode }}');">
           copyToClipboard
         </button>
-        <input style="opacity: 0; width: 1px; height: 0px; position: absolute; top: -9999px; height: -9999px;" type="text" value="{{ object_hostname }}/{{ c.Key|urlencode }}" id="flask_s3up_addr_copy_{{ loop.index }}">
         <button onclick="location.href='{{ url_for('flask_s3up.files_download', key=c.Key|urlencode) }}';">
           download
         </button>
