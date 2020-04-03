@@ -20,6 +20,7 @@
     </style>
 {% endblock %}
 
+<!-- checkbox jinja macro -->
 {% macro checkbox(type="", id="", val="") -%}
 <label style="padding-left: 0; margin-left: 33px;"class="mdl-checkbox mdl-js-checkbox" for="chkbox_{{ type }}_{{ id }}">
         <input type="checkbox" id="chkbox_{{ type }}_{{ id }}" class="mdl-checkbox__input", value="{{ val }}">
@@ -27,6 +28,7 @@
     </label>
 {%- endmacro %}
 
+<!-- tr jinja macro -->
 {% macro tr(id='', display='', text='') -%}
     <tr style="{% if display != '' %}display: {{ display }};{% endif %}" {% if id != '' %}id="{{ id }}"{% endif %}>
         <td>
@@ -115,6 +117,7 @@
 
 {% block tail %}
     <script src="{{ url_for('flask_s3up.static', filename="/js/flask.s3up.core.js") }}" charset="utf-8"></script>
+    <!-- customzing javascript with flask.s3up.core.js's callback function -->
     <script charset="utf-8">
         document.getElementById('chkbox__all').addEventListener('click', checkAll, false);
         function checkAll(e){
@@ -153,7 +156,7 @@
                     }
                 }
             );
-            var delAll = document.getElementById('delAll');
+            var delAll = document.getElementById('del_all');
             if (isCheck == true) {
                 delAll.disabled = false;
             } else {
@@ -197,7 +200,7 @@
             if (xhr.readyState == 4) {
                 //console.log('callback:', e, xhr, pfx);
                 var clone = document.getElementById('clone').cloneNode(true);
-                var suffix = document.getElementById('flask_s3up_suffix');
+                var suffix = document.getElementById('fs3up_suffix');
                 clone.removeAttribute('id');
                 clone.removeAttribute('style');
                 if(xhr.status == 201){

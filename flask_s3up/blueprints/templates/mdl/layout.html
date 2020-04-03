@@ -53,7 +53,7 @@
     {% set STARTING_TOKEN_WITH_EMPTY = request.args.get('starting_token', '') %}
     {% set STARTING_TOKEN_WITH_NONE = request.args.get('starting_token', 'None') %}
     {% set PREV_TOKENS = request.args.get('prev_tokens') %}
-    <input class="mdl-textfield__input" type="hidden" name="prefix" value="{{ PREFIX_WITH_EMPTY }}" id="flask_s3up_prefix">
+    <input class="mdl-textfield__input" type="hidden" name="prefix" value="{{ PREFIX_WITH_EMPTY }}" id="fs3up_prefix">
     <!--// ====== DEFINE FLASK_S3UP REQUIRED ====== -->
 
     <div class="demo-layout-waterfall mdl-layout mdl-js-layout mdl-layout--fixed-header">

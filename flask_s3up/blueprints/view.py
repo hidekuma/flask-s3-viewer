@@ -5,15 +5,20 @@ import os
 from werkzeug.wsgi import FileWrapper
 from werkzeug.urls import url_quote
 from flask import Response, request, render_template, Blueprint, g, abort
-from .. import FlaskS3Up, FLASK_S3UP_NAMESPACE
+from .. import FlaskS3Up, APP_TEMPLATE_FOLDER
+from ..config import NAMESPACE
+
+print()
+print(APP_TEMPLATE_FOLDER)
+print()
 
 blueprint = Blueprint(
-    FLASK_S3UP_NAMESPACE,
+    NAMESPACE,
     __name__,
-    template_folder='templates',
+    template_folder=APP_TEMPLATE_FOLDER,
     static_folder='static',
     static_url_path='flasks3upassets',
-    url_prefix='/<path:FLASK_S3UP_BUCKET_NAMESPACE>'
+    url_prefix='/<path:BUCKET_NAMESPACE>'
 )
 
 def is_allowed(fs3up, filename):
@@ -24,13 +29,13 @@ def is_allowed(fs3up, filename):
 @blueprint.url_defaults
 def add_division(endpoint, values):
     values.setdefault(
-        'FLASK_S3UP_BUCKET_NAMESPACE',
-        g.FLASK_S3UP_BUCKET_NAMESPACE
+        'BUCKET_NAMESPACE',
+        g.BUCKET_NAMESPACE
     )
 
 @blueprint.url_value_preprocessor
 def pull_division(endpoint, values):
-    g.FLASK_S3UP_BUCKET_NAMESPACE = values.pop('FLASK_S3UP_BUCKET_NAMESPACE')
+    g.BUCKET_NAMESPACE = values.pop('BUCKET_NAMESPACE')
 
 @blueprint.route("/files/<path:key>", methods=['GET'])
 def files_download(key):
@@ -39,7 +44,7 @@ def files_download(key):
         key: encoded
         """
         key = urllib.parse.unquote_plus(key)
-        fs3up = FlaskS3Up.get_instance(g.FLASK_S3UP_BUCKET_NAMESPACE)
+        fs3up = FlaskS3Up.get_instance(g.BUCKET_NAMESPACE)
         obj = fs3up.find_one(key)
         if obj:
             try:
@@ -79,7 +84,7 @@ def files_delete(key):
         """
         key: decoded
         """
-        fs3up = FlaskS3Up.get_instance(g.FLASK_S3UP_BUCKET_NAMESPACE)
+        fs3up = FlaskS3Up.get_instance(g.BUCKET_NAMESPACE)
         try:
             fs3up.remove(key)
             return '', 204
@@ -98,7 +103,7 @@ def files():
         prefix = request.form.get('prefix', '')
         prefix = urllib.parse.unquote_plus(prefix)
         files = request.files.getlist("files[]")
-        fs3up = FlaskS3Up.get_instance(g.FLASK_S3UP_BUCKET_NAMESPACE)
+        fs3up = FlaskS3Up.get_instance(g.BUCKET_NAMESPACE)
         prefix = fs3up.prefixer(prefix)
         if not files and prefix:
             if fs3up.is_exists(prefix):
@@ -131,7 +136,7 @@ def files():
         if not starting_token or starting_token == 'None':
             starting_token = None
 
-        fs3up = FlaskS3Up.get_instance(g.FLASK_S3UP_BUCKET_NAMESPACE)
+        fs3up = FlaskS3Up.get_instance(g.BUCKET_NAMESPACE)
         max_items = fs3up.max_items
         max_pages = fs3up.max_pages
         if prefix:

@@ -139,7 +139,7 @@ var FLASK_S3UP_CORE = (function(){
 
   function runSearching(e, callback){
     if (e != null) e = e || window.event;
-    var value = document.getElementById('flask_s3up_search').value;
+    var value = document.getElementById('fs3up_search').value;
     var search = setUrlParam('search', value);
 
     if (typeof callback === 'function') {
@@ -150,7 +150,7 @@ var FLASK_S3UP_CORE = (function(){
   }
 
   function addRefreshingBadge(count) {
-    var el = document.getElementById('flask_s3up_refresh');
+    var el = document.getElementById('fs3up_refresh');
     el.value = count + parseInt(el.value);
     el.dispatchEvent(makeDispatchEvent('change'));
 
@@ -158,7 +158,7 @@ var FLASK_S3UP_CORE = (function(){
 
   function readyFileHandling(e, callback){
     if (e != null) e = e || window.event;
-    target = document.getElementById('flask_s3up_files');
+    target = document.getElementById('fs3up_files');
     handleFiles(e, target.files, callback);
   }
 
@@ -177,7 +177,7 @@ var FLASK_S3UP_CORE = (function(){
     for(var i = numFiles; i > 0; i--) {
       uploadProgress.push(0);
     }
-    var el = document.getElementById('flask_s3up_progress')
+    var el = document.getElementById('fs3up_progress')
     el.value = 0;
     el.dispatchEvent(makeDispatchEvent('change'));
   }
@@ -187,10 +187,10 @@ var FLASK_S3UP_CORE = (function(){
       e = e || window.event;
       preventDefaults(e);
     }
-    var files = document.getElementById('flask_s3up_files');
+    var files = document.getElementById('fs3up_files');
     Array.prototype.forEach.call(files.files, uploadFile);
     function uploadFile(file, i, arr) {
-      var prefix = document.getElementById('flask_s3up_prefix');
+      var prefix = document.getElementById('fs3up_prefix');
       //console.log('uploadFile', prefix.value, file,i)
       var url = FLASK_S3UP_FILES_ENDPOINT;
       var xhr = new XMLHttpRequest();
@@ -223,7 +223,7 @@ var FLASK_S3UP_CORE = (function(){
       return tot + curr;
     }, 0) / uploadProgress.length;
     //console.log('updateProgress', fileNumber, percent, total);
-    var el = document.getElementById('flask_s3up_progress');
+    var el = document.getElementById('fs3up_progress');
     el.value = total;
     el.dispatchEvent(makeDispatchEvent('change'));
   }
@@ -234,8 +234,8 @@ var FLASK_S3UP_CORE = (function(){
       preventDefaults(e);
     }
     preventDefaults(e);
-    var prefix = document.getElementById('flask_s3up_prefix');
-    var suffix = document.getElementById('flask_s3up_suffix');
+    var prefix = document.getElementById('fs3up_prefix');
+    var suffix = document.getElementById('fs3up_suffix');
     if (secure_name(suffix.value, suffix) == false){
       alert('Not secure name');
       return false;

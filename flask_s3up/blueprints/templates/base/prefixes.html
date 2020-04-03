@@ -20,7 +20,7 @@
     <td>
       <!-- create folder -->
       <div>
-        <input onkeydown="if(event.key == 'Enter') if (confirm('Are you sure you want to make folder?')){ FLASK_S3UP_CORE.makeDir(event, callbackMkdir); } else { value = ''; }" type="text" name="suffix" value="" id="flask_s3up_suffix">
+        <input onkeydown="if(event.key == 'Enter') if (confirm('Are you sure you want to make folder?')){ FLASK_S3UP_CORE.makeDir(event, callbackMkdir); } else { value = ''; }" type="text" name="suffix" value="" id="fs3up_suffix">
         <label for="suffix">Folder Name</label>
       </div>
       <!--// create folder -->
@@ -28,7 +28,7 @@
     <td></td>
     <td></td>
     <td>
-      <button id="tmkdir" onclick="if (confirm('Are you sure you want to make folder?')){ FLASK_S3UP_CORE.makeDir(event, callbackMkdir); } else { document.getElementById('flask_s3up_suffix').value = ''; }" type="button">
+      <button id="tmkdir" onclick="if (confirm('Are you sure you want to make folder?')){ FLASK_S3UP_CORE.makeDir(event, callbackMkdir); } else { document.getElementById('fs3up_suffix').value = ''; }" type="button">
         createNewFolder
       </button>
       <button disabled>-</button>

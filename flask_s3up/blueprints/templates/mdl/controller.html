@@ -23,18 +23,18 @@
 
 <div class="mdl-layout-spacer"></div>
 <!-- Delete all -->
-<button id="delAll" onclick="deleteAll(); this.disabled=true;" class="mdl-button mdl-button--icon" disabled>
+<button id="del_all" onclick="deleteAll(); this.disabled=true;" class="mdl-button mdl-button--icon" disabled>
     <i class="material-icons">delete_sweep</i>
 </button>
-<div class="mdl-tooltip" data-mdl-for="delAll">
+<div class="mdl-tooltip" data-mdl-for="del_all">
   Delete selected files
 </div>
 <!--// Delete all -->
 <!-- Form -->
 <form id="upload_form" action="{{ url_for('flask_s3up.files') }}" method="post" accept-charset="utf-8" enctype="multipart/form-data">
-  <label id='tattach' class="mdl-button mdl-js-button mdl-button--icon" for="flask_s3up_files">
+  <label id='tattach' class="mdl-button mdl-js-button mdl-button--icon" for="fs3up_files">
     <i class="material-icons">attachment</i>
-    <input style="display: none;" onchange="FLASK_S3UP_CORE.readyFileHandling(event, callbackReadyFileHandling)" multiple="multiple" type="file" name="files[]" id="flask_s3up_files">
+    <input style="display: none;" onchange="FLASK_S3UP_CORE.readyFileHandling(event, callbackReadyFileHandling)" multiple="multiple" type="file" name="files[]" id="fs3up_files">
   </label>
   <div class="mdl-tooltip" data-mdl-for="tattach">
     Attach files
@@ -74,7 +74,7 @@
 <!--// Search -->
 
 <!-- Refresh -->
-<input type="hidden" onchange="document.getElementById('badge').setAttribute('data-badge', value);" name="flask_s3up_refresh" value="0" id="flask_s3up_refresh">
+<input type="hidden" onchange="document.getElementById('badge').setAttribute('data-badge', value);" name="fs3up_refresh" value="0" id="fs3up_refresh">
 <div style="cursor: pointer;" onclick="document.location.reload();" id="badge" class="material-icons mdl-badge mdl-badge--overlap">cached</div>
 <div class="mdl-tooltip" data-mdl-for="badge">
   Refresh page
@@ -83,7 +83,7 @@
 
 <!-- Loading -->
 <div>
-  <input type="hidden" name="flask_s3up_progress" onchange="if (value == 100) setTimeout(function(){document.getElementById('floading').style.display='none';}, 500); document.getElementById('progress_bar').MaterialProgress.setProgress(value);" value="0" id="flask_s3up_progress">
+  <input type="hidden" name="fs3up_progress" onchange="if (value == 100) setTimeout(function(){document.getElementById('floading').style.display='none';}, 500); document.getElementById('progress_bar').MaterialProgress.setProgress(value);" value="0" id="fs3up_progress">
   <div style="position: fixed; z-index: 4; bottom: 0; left: 0; width: 100%;" id="progress_bar" class="mdl-progress mdl-js-progress"></div>
 </div>
 <!--// Loading -->

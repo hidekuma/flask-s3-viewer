@@ -7,12 +7,14 @@
     {{ super() }}
 {% endblock %}
 
+<!-- checkbox jinja macro -->
 {% macro checkbox(type="", id="", val="") -%}
     <label for="chkbox_{{ type }}_{{ id }}">
-        <input class="fs3up-checkbox" type="checkbox" id="chkbox_{{ type }}_{{ id }}", value="{{ val }}">
+        <input class="chkboxs" type="checkbox" id="chkbox_{{ type }}_{{ id }}", value="{{ val }}">
     </label>
 {%- endmacro %}
 
+<!-- tr jinja macro -->
 {% macro tr(id='', display='', text='') -%}
     <tr style="{% if display != '' %}display: {{ display }};{% endif %}" {% if id != '' %}id="{{ id }}"{% endif %}>
         <td></td>
@@ -93,10 +95,11 @@
 
 {% block tail %}
     <script src="{{ url_for('flask_s3up.static', filename="/js/flask.s3up.core.js") }}" charset="utf-8"></script>
+    <!-- customzing javascript with flask.s3up.core.js's callback function -->
     <script charset="utf-8">
         document.getElementById('chkbox__all').addEventListener('click', checkAll, false);
         function checkAll(e){
-            var chkboxs = document.getElementsByClassName('fs3up-checkbox');
+            var chkboxs = document.getElementsByClassName('chkboxs');
             if(e.target.checked){
                 Array.prototype.forEach.call(
                     chkboxs,
@@ -114,13 +117,13 @@
             }
         }
 
-        var chkboxs = document.getElementsByClassName('fs3up-checkbox');
+        var chkboxs = document.getElementsByClassName('chkboxs');
         for (var i = 0; i < chkboxs.length; i++) {
             chkboxs[i].addEventListener('change', isChecked, false);
         }
 
         function isChecked(e){
-            var chkboxs = document.getElementsByClassName('fs3up-checkbox');
+            var chkboxs = document.getElementsByClassName('chkboxs');
             var isCheck = false;
             Array.prototype.some.call(
                 chkboxs,
@@ -131,7 +134,7 @@
                     }
                 }
             );
-            var delAll = document.getElementById('delAll');
+            var delAll = document.getElementById('del_all');
             if (isCheck == true) {
                 delAll.disabled = false;
             } else {
@@ -141,7 +144,7 @@
         }
 
         function deleteAll(){
-            var chkboxs = document.getElementsByClassName('fs3up-checkbox');
+            var chkboxs = document.getElementsByClassName('chkboxs');
             Array.prototype.forEach.call(
                 chkboxs,
                 function(el, i){
@@ -175,7 +178,7 @@
             if (xhr.readyState == 4) {
                 //console.log('callback:', e, xhr, pfx);
                 var clone = document.getElementById('clone').cloneNode(true);
-                var suffix = document.getElementById('flask_s3up_suffix');
+                var suffix = document.getElementById('fs3up_suffix');
                 clone.removeAttribute('id');
                 clone.removeAttribute('style');
                 if(xhr.status == 201){
