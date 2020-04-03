@@ -4,13 +4,20 @@ import logging
 from collections import namedtuple
 
 from .aws.s3 import AWSS3Client
+from .errors import (
+    NotConfiguredCacheDir
+)
+from .config import (
+    NAMESPACE,
+    FIXED_TEMPLATE_FOLDER
+)
+
+APP_TEMPLATE_FOLDER = FIXED_TEMPLATE_FOLDER
 
 __version__ = "0.0.1"
 
 __all__ = ['FlaskS3up']
 
-
-FLASK_S3UP_NAMESPACE = 'flask_s3up'
 
 class Singleton(type):
 
@@ -43,7 +50,7 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         use_cache
         '''
     )
-    template_namespace = FLASK_S3UP_NAMESPACE
+    template_namespace = NAMESPACE
 
     def __init__(
         self,
@@ -51,7 +58,7 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         namespace=None,
         object_hostname=None,
         allowed_extensions=None,
-        template_namespace=None,
+        template_namespace='base',
         config=None
     ):
         self.app = app
@@ -59,8 +66,7 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
             object_hostname = object_hostname[:-1]
         self.object_hostname = object_hostname
         self.allowed_extensions =  allowed_extensions
-        if template_namespace:
-            self.template_namespace = template_namespace
+        self.template_namespace = template_namespace
         self.__max_pages = 10
         self.__max_items = 100
 
@@ -70,6 +76,9 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
             config.setdefault('endpoint_url', None)
             config.setdefault('secret_key', None)
             config.setdefault('access_key', None)
+            if config.get('use_cache'):
+                if not config.get('cache_dir'):
+                    raise NotConfiguredCacheDir
             config.setdefault('cache_dir', None)
             config.setdefault('ttl', None)
             config.setdefault('use_cache', None)
@@ -105,7 +114,7 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         namespace=None,
         object_hostname=None,
         allowed_extensions=None,
-        template_namespace=None,
+        template_namespace='base',
         config=None
     ):
         return FlaskS3Up(
@@ -117,7 +126,12 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
             config=config
         )
 
-    def register(self):
+    def register(self, template_folder=None):
+        if template_folder:
+            # FIXME: 하나에만 적용불가..
+            raise ValueError('not ready')
+            global APP_TEMPLATE_FOLDER
+            APP_TEMPLATE_FOLDER = template_folder
         # Dynamic import (have to)
         from .routers import FlaskS3UpViewRouter
         self.app.register_blueprint(FlaskS3UpViewRouter)

@@ -20,6 +20,7 @@ S3UP_NAMESPACE = 'flask-s3up'
 s3up = FlaskS3Up(
     app, # Flask app
     namespace=S3UP_NAMESPACE, # namespace be unique
+    template_namespace='mdl',
     object_hostname='http://flask-s3up.com', # file's hostname
     config={ # Bucket configs and else
         'profile_name': 'test',
@@ -36,8 +37,8 @@ s3up = FlaskS3Up(
 
 # Init another one
 s3up.add_new_one(
-    namespace='namespace2',
     object_hostname='http://namespace2.com',
+    namespace='np2', # namespace be unique
     config={
         'profile_name': 'test',
         'bucket_name': 'hwjeongtest'
