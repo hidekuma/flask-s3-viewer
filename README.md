@@ -1,19 +1,22 @@
-# Flask S3Up
-Flask S3Up is an extension for Flask that adds s3's browsing support to any Flask application.
+# TL;DR
+`FlaskS3Up` is an extension for Flask that adds s3's browsing support to any Flask application.
 
-## Support Python versions
-- python >= 3.7
-
-## Dependencies
+## Support Python versions and Dependencies
+- Python >= 3.7
 - boto3 >= 1.12.2
 
+---
+
 ## Installation
-- not ready
+- Not ready
 
 ### Using pip
 ```python
 pip install flask-s3up
 ```
+
+---
+
 ## Usage
 Import flask and flask_s3up
 ```python
@@ -21,7 +24,7 @@ from flask_s3up import FlaskS3Up
 from flask_s3up.aws.ref import Region
 ```
 
-Initiailize Flask application and Flask S3Up.
+Initiailize Flask application and FlaskS3Up.
 ```python
 # Init Flask
 app = Flask(__name__)
@@ -42,6 +45,8 @@ s3up.register()
 
 The values in the examples above are mandatory. And you can Initiailize another bucket. Moreover you can limit the file extensions that are uploaded, if you want.
 ```python
+...
+
 # Init another bucket
 s3up.add_new_one(
     namespace='another_namespace',
@@ -52,7 +57,30 @@ s3up.add_new_one(
         'bucket_name': 'S3_BUCKET_NAME'
     }
 )
+s3up.register()
 ```
+
+### Support design templates
+| Template namespace | Design               | Description               |
+| :-:                | :-:                  | :-:                       |
+| base               | Default              | Not designed at all       |
+| mdl                | Material Design Lite | [link](https://getmdl.io) |
+```python
+
+s3up = FlaskS3Up(
+    app,
+    namespace=S3UP_NAMESPACE,
+    template_namespace='mdl', # Enter template namespace (default: base)
+    object_hostname='http://flask-s3up.com',
+    config={
+        'profile_name': 'PROFILE_NAME',
+        'bucket_name': 'S3_BUCKET_NAME'
+    }
+)
+s3up.register()
+```
+
+---
 
 ### Use caching
 S3 is charged per call. Therefore, Flask S3Up supports caching (currently only supports file caching, in-memory database will be supported later).
@@ -72,6 +100,8 @@ s3up = FlaskS3Up(
 )
 ```
 
+---
+
 ### Full example
 You can also configure flask_s3up through AWS IAM credentials.
 
@@ -79,13 +109,14 @@ You can also configure flask_s3up through AWS IAM credentials.
 s3up = FlaskS3Up(
     app, # Flask app
     namespace=S3UP_NAMESPACE, # namespace must be unique
+    template_namespace='mdl', # Enter template namespace(default: base)
     object_hostname='http://flask-s3up.com', # file's hostname
     allowed_extensions={}, # allowed extension
     config={ # Bucket configs and else
         'profile_name': 'PROFILE_NAME', # Required
         'bucket_name': 'S3_BUCKET_NAME', # Required
-        'access_key': None, # Not necessary, if you configure aws settings, e.g. ~/.aws
-        'secret_key': None, # Not necessary, if you configure aws settings, e.g. ~/.aws
+        'access_key': 'AWS_IAM_ACCESS_KEY', # Not necessary, if you configure aws settings, e.g. ~/.aws
+        'secret_key': 'AWS_IAM_SECRET_KEY', # Not necessary, if you configure aws settings, e.g. ~/.aws
         'region_name': Region.SEOUL.value, # or input like 'ap-northease-2'
         'endpoint_url': None, # For S3 compatible
         'use_cache': True, # Flask S3Up will cache the list of s3 objects, if you set True
@@ -95,14 +126,35 @@ s3up = FlaskS3Up(
 )
 ```
 
-## Cli
-You can customizing templates.
+---
+
+## Customize template with CLI tool
+You can customize template.
 ```bash
-flask_s3up -h
-flask_s3up -t mdl # Get a Material-design-litre template
-flask_s3up -t skeleton # Get a base template (not designed at all)
+flask_s3up -p templates/mdl -t mdl # Get a Material-design-lite template
+flask_s3up -p templates/base -t base # Get a base template (not designed at all)
+# or flask_s3up -p templates/base
+
+flask_s3up -h # You can see details
 ```
-When you run the command, you can see that the `./templates/flask_s3up` folder has been created. After editing the template, restart the Flask application.
+When you run the command, you can see the `./templates/{template_namespace}` has been created on your repository. then rerun the Flask application.
+
+And you can change template directory if you want.
+```bash
+# Get a Material-design-lite template to templates/customized directory 
+flask_s3up -p templates/customized -t mdl
+```
+
+```python
+# then change template_namespace. it will be routed to defined directory (templates/customized)
+s3up = FlaskS3Up(
+    ...
+    template_namespace='customized',
+    ...
+)
+```
+### 🚨 Caution
+The template folder of flask_s3up is fixed as `templates`. so if you change `template_namespace`, it will be routed `{repository}/templates/{defined template_namespace by you}`.
 
 ----
 
@@ -111,11 +163,12 @@ When you run the command, you can see that the `./templates/flask_s3up` folder h
 - Search only working in EN, because of JMESPath.
 
 ## TODOs
-- error controll
+- error controlls
 - mode (api, view)
-- skeleton
 - presigned url
 - semaphore
+
+---
 
 [License](LICENSE)
 ------------------
