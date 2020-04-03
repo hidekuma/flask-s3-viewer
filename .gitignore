@@ -213,4 +213,7 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# for vim
+*.swp
 # End of https://www.gitignore.io/api/macos,flask,python,windows
+
