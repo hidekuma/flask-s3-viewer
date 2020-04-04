@@ -1,14 +1,17 @@
 # TL;DR
-`FlaskS3Up` is an extension for Flask that adds s3's browsing support to any Flask application.
+`FlaskS3Up` is an extension for Flask that adds support for quickly browsing S3 or S3 compatible. If you are familiar with Flask, FlaskS3up should be easy to pick up.
 
 ## Support Python versions and Dependencies
-- Python >= 3.7
-- boto3 >= 1.12.2
+|Type|Name|Version|
+|:-:|:-:|:-:|
+|Runtime|Python|>=3.7|
+|Library|boto3|>=1.12.2|
+|Library|Flask|>=1.1.1|
 
 ---
 
 ## Installation
-- Not ready
+You can [download FlaskS3Up executable](https://github.com/hidekuma/flask-s3up/releases) and [binary distributions from PyPI](https://pypi.org/project/flask-s3up/)
 
 ### Using pip
 ```python
@@ -103,7 +106,7 @@ s3up = FlaskS3Up(
 ---
 
 ### Full example
-You can also configure flask_s3up through AWS IAM credentials.
+You can also configure FlaskS3Up through AWS IAM credentials.
 
 ```python
 s3up = FlaskS3Up(
@@ -154,7 +157,7 @@ s3up = FlaskS3Up(
 )
 ```
 ### 🚨 Caution
-The template folder of flask_s3up is fixed as `templates`. so if you change `template_namespace`, it will be routed `{repository}/templates/{defined template_namespace by you}`.
+The template folder of FlaskS3Up is fixed as `templates`. so if you change `template_namespace`, it will be routed `{repository}/templates/{defined template_namespace by you}`.
 
 ----
 
@@ -173,4 +176,4 @@ The template folder of flask_s3up is fixed as `templates`. so if you change `tem
 [License](LICENSE)
 ------------------
 
-not ready
+Copyright (c) 2020 by Hidekuma
