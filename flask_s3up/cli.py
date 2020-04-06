@@ -3,7 +3,7 @@ import shutil
 import argparse
 import textwrap
 import click
-from config import (
+from flask_s3up.config import (
     SUPPORT_TEMPLATES,
     FIXED_TEMPLATE_FOLDER,
     NAMESPACE
