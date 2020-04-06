@@ -18,19 +18,19 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 1
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 # FlaskS3Up Init
-S3UP_NAMESPACE = 'flask-s3up'
 s3up = FlaskS3Up(
     app, # Flask app
-    namespace=S3UP_NAMESPACE, # namespace be unique
+    namespace='flask-s3up', # namespace be unique
+    template_namespace='mdl', # set template
     object_hostname='http://flask-s3up.com', # file's hostname
     allowed_extensions={}, # allowed extension
     config={ # Bucket configs and else
-        'profile_name': 'test',
+        'profile_name': 'PROFILE_NAME',
         'access_key': None,
         'secret_key': None,
         'region_name': Region.SEOUL.value,
         'endpoint_url': None,
-        'bucket_name': 'hwjeongtest',
+        'bucket_name': 'BUCKET_NAME',
         'cache_dir': '/tmp/flask_s3up',
         'use_cache': True,
         'ttl': 86400,
@@ -39,11 +39,11 @@ s3up = FlaskS3Up(
 
 # Init another one
 s3up.add_new_one(
-    namespace='namespace2',
-    object_hostname='http://why.com',
+    namespace='example',
+    object_hostname='http://example.com',
     config={
-        'profile_name': 'test',
-        'bucket_name': 'hwjeongtest'
+        'profile_name': 'PROFILE_NAME',
+        'bucket_name': 'BUCKET_NAME'
     }
 )
 

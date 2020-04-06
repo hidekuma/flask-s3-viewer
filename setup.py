@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.6'
+VERSION = '0.0.7'
 setup(
     name                          = 'flask_s3up',
     version                       = VERSION,
@@ -10,7 +10,7 @@ setup(
     author_email                  = 'd.hidekuma@gmail.com',
     download_url                  = f'https://github.com/hidekuma/flask_s3up/archive/{VERSION}.tar.gz',
     description                   = 'Flask S3Up is an extension for Flask that adds s3\'s browsing support to any Flask application.',
-    packages                      = find_packages(exclude = ['tests*', 'example.py']),
+    packages                      = find_packages(exclude = ['tests*', 'test*', 'example*']),
     long_description              = open('README.md').read(),
     long_description_content_type = 'text/markdown',
     package_data = {
