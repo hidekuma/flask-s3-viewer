@@ -1,4 +1,6 @@
 # TL;DR
+![logo](./i/logo.png)
+
 `FlaskS3Up` is an extension for Flask that adds support for quickly browsing S3 or S3 compatible. If you are familiar with Flask, FlaskS3up should be easy to pick up.
 
 ## Support Python versions and Dependencies
