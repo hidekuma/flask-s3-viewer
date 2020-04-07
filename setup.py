@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.8'
+VERSION = '0.0.9'
 setup(
     name                          = 'flask_s3up',
     version                       = VERSION,
@@ -22,6 +22,8 @@ setup(
             'blueprints/templates/mdl/files.html',
             'blueprints/templates/mdl/layout.html',
             'blueprints/templates/mdl/prefixes.html',
+            'blueprints/templates/mdl/NOTICE',
+            'blueprints/templates/mdl/LICENSE',
             'blueprints/templates/base/contents.html',
             'blueprints/templates/base/controller.html',
             'blueprints/templates/base/error.html',
