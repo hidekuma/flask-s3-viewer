@@ -76,6 +76,9 @@ s3up.add_new_one(
 s3up.register()
 ```
 
+Visit `http://localhost/{namespace}/files` after flask application has started, e.g. http://localhost:3000/flask-s3up/files
+
+
 ### Support design templates
 | Template namespace | Design               | Description               |
 | :-:                | :-:                  | :-:                       |
