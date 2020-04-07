@@ -5,11 +5,12 @@
 `FlaskS3Up` is an extension for Flask that adds support for quickly browsing S3 or S3 compatible. If you are familiar with Flask, FlaskS3up should be easy to pick up.
 
 ## Support Python versions and Dependencies
-|Type|Name|Version|
-|:-:|:-:|:-:|
-|Runtime|Python|>=3.7|
-|Library|boto3|>=1.12.2|
-|Library|Flask|>=1.1.1|
+| Type    | Name   | Version  |
+| :-:     | :-:    | :-:      |
+| Runtime | Python | >=3.7    |
+| Library | boto3  | >=1.12.2 |
+| Library | click  | >=7.1.1  |
+| Library | Flask  | >=1.1.1  |
 
 ---
 
