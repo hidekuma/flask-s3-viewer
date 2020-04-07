@@ -1,4 +1,5 @@
 ![logo](https://raw.githubusercontent.com/hidekuma/flask-s3up/master/i/logo.png)
+
 ## Flask S3Up - browsing S3 with Flask
 [![PyPI version](https://badge.fury.io/py/flask-s3up.svg)](https://badge.fury.io/py/flask-s3up)
 [![Build Status](https://travis-ci.org/hidekuma/flask-s3up.svg?branch=master)](https://travis-ci.org/hidekuma/flask-s3up)
@@ -9,7 +10,7 @@
 `FlaskS3Up` is an extension for Flask that adds support for quickly  or S3 compatible. If you are familiar with Flask, FlaskS3up should be easy to pick up.
 
 #### Show video
-[![flask-s3up-video](http://img.youtube.com/vi/GtK2rsQf9Yk/0.jpg)](https://youtu.be/GtK2rsQf9Yk?t=0s "Click to play on Youtube")
+[![flask-s3up-video](http://img.youtube.com/vi/yk6h6ym6Diw/0.jpg)](https://youtu.be/yk6h6ym6Diw?t=0s "Click to play on Youtube")
 
 
 ## Support Python versions and Dependencies
