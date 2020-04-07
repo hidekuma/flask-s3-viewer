@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.9'
+VERSION = '0.0.10'
 setup(
     name                          = 'flask_s3up',
     version                       = VERSION,
@@ -36,7 +36,8 @@ setup(
     zip_safe                      = False,
     keywords                      = ['aws', 's3', 'file', 'upload', 'flask', 'python', 'python3', 'browsing', 'uploader'],
     install_requires              = [
-        'boto3>=1.12.2'
+        'boto3>=1.12.2',
+        'click>=7.1.1'
     ],
     python_requires               = '>= 3.7',
     test_suite                    = 'tests',
