@@ -1,5 +1,6 @@
 # TL;DR
 ![logo](./i/logo.png)
+[![Build Status](https://travis-ci.org/hidekuma/flask-s3up.svg?branch=master)](https://travis-ci.org/hidekuma/flask-s3up)
 
 `FlaskS3Up` is an extension for Flask that adds support for quickly browsing S3 or S3 compatible. If you are familiar with Flask, FlaskS3up should be easy to pick up.
 
@@ -178,4 +179,4 @@ The template folder of FlaskS3Up is fixed as `templates`. so if you change `temp
 [License](LICENSE)
 ------------------
 
-Copyright (c) 2020 by Hidekuma
+Copyright (c) 2020 by Hoiwoong Jung
