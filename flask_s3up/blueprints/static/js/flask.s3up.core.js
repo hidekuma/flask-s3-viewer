@@ -33,8 +33,11 @@
 /* ==========// CLOSEST POLYFILL ========== */
 
 var FLASK_S3UP_CORE = (function(){
+  var uploadProgress = [];
+  var postSigns = [];
+
   /* ========== URI PARSER ========== */
-  function getUrlParam(name){
+  function __getUrlParam(name){
     var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
     if (results == null){
       return null;
@@ -44,7 +47,7 @@ var FLASK_S3UP_CORE = (function(){
     }
   }
 
-  function setUrlParam(key, value) {
+  function __setUrlParam(key, value) {
     key = encodeURIComponent(key);
     value = encodeURIComponent(value);
     var kvp = [];
@@ -77,7 +80,7 @@ var FLASK_S3UP_CORE = (function(){
 
 
   /* ========== UTILS  ========== */
-  function checkBrowser() {
+  function __checkBrowser() {
     var userAgent = navigator.userAgent;
     if (userAgent.indexOf("Opera") !== -1) return 'Opera';
     if (userAgent.indexOf("compatible") !== -1 && userAgent.indexOf('MSIE') && !(userAgent.indexOf("Opera") !== -1)) return 'IE';
@@ -88,7 +91,7 @@ var FLASK_S3UP_CORE = (function(){
     if (userAgent.indexOf('Trident') !== -1 && userAgent.indexOf('rv:11.0') !== -1) return 'IE11';
   };
 
-  function secure_name(text, el) {
+  function __secure_name(text, el) {
     var regex = /([\\\\\\/:*?\"<>|.])/g;
     var result = text.match(regex);
     if (result !== null && result.length > 0) {
@@ -98,7 +101,7 @@ var FLASK_S3UP_CORE = (function(){
     return true;
   }
 
-  function makeDispatchEvent(eventName){
+  function __makeDispatchEvent(eventName){
     var event;
     if(typeof(Event) === 'function') {
       event = new Event(eventName);
@@ -129,7 +132,7 @@ var FLASK_S3UP_CORE = (function(){
 
   function resetSearching(e, callback) {
     if (e != null) e = e || window.event;
-    var search = setUrlParam('search', '');
+    var search = __setUrlParam('search', '');
     if (typeof callback === 'function') {
       callback(e, search);
     } else {
@@ -140,7 +143,7 @@ var FLASK_S3UP_CORE = (function(){
   function runSearching(e, callback){
     if (e != null) e = e || window.event;
     var value = document.getElementById('fs3up_search').value;
-    var search = setUrlParam('search', value);
+    var search = __setUrlParam('search', value);
 
     if (typeof callback === 'function') {
       callback(e, redirection);
@@ -149,44 +152,96 @@ var FLASK_S3UP_CORE = (function(){
     }
   }
 
-  function addRefreshingBadge(count) {
+  function __addRefreshingBadge(count) {
     var el = document.getElementById('fs3up_refresh');
     el.value = count + parseInt(el.value);
-    el.dispatchEvent(makeDispatchEvent('change'));
+    el.dispatchEvent(__makeDispatchEvent('change'));
 
   }
 
   function readyFileHandling(e, callback){
     if (e != null) e = e || window.event;
     target = document.getElementById('fs3up_files');
-    handleFiles(e, target.files, callback);
+    if (FLASK_S3UP_UPLOAD_TYPE == 'presign') __postPresigns(e, target.files, callback);
+    else __handleFiles(e, target.files, [], callback);
   }
 
-  function handleFiles(e, files, callback) {
-    if (e != null) e = e || window.event;
-    initializeProgress(files.length);
+  function __handleFiles(e, files, presigns, callback) {
+    __initializeProgress(files.length);
     if (typeof callback === 'function') {
-      callback(e, files);
+      callback(e, files, presigns);
     }
   }
 
-  var uploadProgress = [];
-
-  function initializeProgress(numFiles) {
+  function __initializeProgress(numFiles) {
     uploadProgress = [];
-    for(var i = numFiles; i > 0; i--) {
-      uploadProgress.push(0);
-    }
+    for(var i = numFiles; i > 0; i--) uploadProgress.push(0);
     var el = document.getElementById('fs3up_progress')
     el.value = 0;
-    el.dispatchEvent(makeDispatchEvent('change'));
+    el.dispatchEvent(__makeDispatchEvent('change'));
   }
 
-  function uploadFiles(e, callback){
-    if (e != null) {
-      e = e || window.event;
-      preventDefaults(e);
+  function __postPresigns(e, files, callback){
+    var url = FLASK_S3UP_FILES_ENDPOINT + '/presign';
+    var prefix = document.getElementById('fs3up_prefix');
+    var xhr = new XMLHttpRequest();
+    var formData = new FormData();
+    var fileList = [];
+    for (var i = 0; i < files.length; i++) {
+      fileList.push(files[i]['name']);
     }
+    xhr.open('POST', url, true);
+    xhr.addEventListener('readystatechange', function(xe) {
+      if (xhr.readyState == 4) {
+        if (xhr.status == 200) {
+          postSigns = JSON.parse(xhr.responseText);
+        }
+        __handleFiles(e, files, postSigns, callback);
+      }
+    });
+
+    formData.append('file_list',fileList.join(','));
+    formData.append('prefix', prefix.value);
+    xhr.send(formData);
+  }
+
+  function __uploadWithPresign(e, callback){
+    var files = document.getElementById('fs3up_files');
+    Array.prototype.forEach.call(files.files, uploadFile);
+    function uploadFile(file, i, arr) {
+      var url = postSigns[i]['url'];
+      if(url !== undefined) {
+        var xhr = new XMLHttpRequest();
+        var formData = new FormData();
+        xhr.open('POST', url, true);
+        //xhr.setRequestHeader('Content-Type', 'multipart/form-data');
+        xhr.upload.addEventListener("progress", function(xe) {
+          __updateProgress(i, (xe.loaded * 100.0 / xe.total) || 100);
+        });
+
+        xhr.addEventListener('readystatechange', function(xe) {
+          if (xhr.readyState == 4) {
+            if (xhr.status >= 200 && xhr.status < 300) __addRefreshingBadge(1);
+            __updateProgress(i, 100);
+          }
+          if (typeof callback === 'function') {
+            callback(e, xhr, file);
+          }
+        });
+
+        Object.keys(postSigns[i]['fields']).forEach(function(key){
+          //console.log(key, postSigns[i]['fields'][key]);
+          formData.append(key, postSigns[i]['fields'][key]);
+        });
+        formData.append('file', file);
+        xhr.send(formData);
+      } else {
+          __updateProgress(i, 100);
+      }
+    }
+  }
+
+  function __upload(e, callback){
     var files = document.getElementById('fs3up_files');
     Array.prototype.forEach.call(files.files, uploadFile);
     function uploadFile(file, i, arr) {
@@ -198,13 +253,13 @@ var FLASK_S3UP_CORE = (function(){
       xhr.open('POST', url, true);
       //xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
       xhr.upload.addEventListener("progress", function(xe) {
-        updateProgress(i, (xe.loaded * 100.0 / xe.total) || 100);
+        __updateProgress(i, (xe.loaded * 100.0 / xe.total) || 100);
       });
 
       xhr.addEventListener('readystatechange', function(xe) {
         if (xhr.readyState == 4) {
-          if (xhr.status == 201) addRefreshingBadge(1);
-          updateProgress(i, 100);
+          if (xhr.status == 201) __addRefreshingBadge(1);
+          __updateProgress(i, 100);
         }
         if (typeof callback === 'function') {
           callback(e, xhr, file);
@@ -217,15 +272,27 @@ var FLASK_S3UP_CORE = (function(){
     }
   }
 
-  function updateProgress(fileNumber, percent) {
+  function uploadFiles(e, callback){
+    if (e != null) {
+      e = e || window.event;
+      preventDefaults(e);
+    }
+    if (FLASK_S3UP_UPLOAD_TYPE == 'default') {
+      __upload(e, callback);
+    } else if (FLASK_S3UP_UPLOAD_TYPE == 'presign') {
+      __uploadWithPresign(e, callback);
+    }
+  }
+
+  function __updateProgress(fileNumber, percent) {
     uploadProgress[fileNumber] = percent;
     var total = uploadProgress.reduce(function(tot, curr) {
       return tot + curr;
     }, 0) / uploadProgress.length;
-    //console.log('updateProgress', fileNumber, percent, total);
+    //console.log('__updateProgress', fileNumber, percent, total);
     var el = document.getElementById('fs3up_progress');
     el.value = total;
-    el.dispatchEvent(makeDispatchEvent('change'));
+    el.dispatchEvent(__makeDispatchEvent('change'));
   }
 
   function makeDir(e, callback) {
@@ -236,7 +303,7 @@ var FLASK_S3UP_CORE = (function(){
     preventDefaults(e);
     var prefix = document.getElementById('fs3up_prefix');
     var suffix = document.getElementById('fs3up_suffix');
-    if (secure_name(suffix.value, suffix) == false){
+    if (__secure_name(suffix.value, suffix) == false){
       alert('Not secure name');
       return false;
     }
@@ -253,14 +320,15 @@ var FLASK_S3UP_CORE = (function(){
     xhr.open('POST', url, true);
     xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
     xhr.addEventListener('readystatechange', function(xe) {
-      if (xhr.readyState == 4 && xhr.status == 201) {
-        addRefreshingBadge(1);
-      }
-      else if (xhr.readyState == 4 && xhr.status != 201) {
+      if (xhr.readyState == 4) {
+        if (xhr.status == 201) {
+          __addRefreshingBadge(1);
+        } else {
 
-      }
-      if (typeof callback === 'function') {
-        callback(e, xhr, realPrefix);
+        }
+        if (typeof callback === 'function') {
+          callback(e, xhr, realPrefix);
+        }
       }
     });
     formData.append('prefix', realPrefix);
@@ -276,13 +344,15 @@ var FLASK_S3UP_CORE = (function(){
     var xhr = new XMLHttpRequest();
     xhr.open('DELETE', FLASK_S3UP_FILES_ENDPOINT + '/' + encodeURIComponent(key), true);
     xhr.addEventListener('readystatechange', function(xe) {
-      if (xhr.readyState == 4 && xhr.status == 204) {
-        addRefreshingBadge(1);
-      } else if (xhr.readyState == 4 && xhr.status != 204) {
+      if (xhr.readyState == 4) {
+        if (xhr.status == 204) {
+          __addRefreshingBadge(1);
+        } else {
 
-      }
-      if (typeof callback === 'function') {
-        callback(e, xhr, key, el);
+        }
+        if (typeof callback === 'function') {
+          callback(e, xhr, key, el);
+        }
       }
     });
     xhr.send();

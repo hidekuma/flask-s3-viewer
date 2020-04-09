@@ -4,12 +4,35 @@ import urllib
 import collections
 import mimetypes
 import logging
+import sys
+import threading
 
+from boto3.s3.transfer import TransferConfig
+from botocore.client import Config
 from botocore.errorfactory import ClientError
 from functools import wraps
 
 from .session import AWSSession
 from .cache import AWSCache
+
+class ProgressPercentage(object):
+
+    def __init__(self, f):
+        self._filename = f.filename
+        self._size = len(f.read())
+        self._seen_so_far = 0
+        self._lock = threading.Lock()
+
+    def __call__(self, bytes_amount):
+        # To simplify, assume this is hooked up to a single filename
+        with self._lock:
+            self._seen_so_far += bytes_amount
+            percentage = (self._seen_so_far / self._size) * 100
+            sys.stdout.write(
+                "\r%s  %s / %s  (%.2f%%)" % (
+                    self._filename, self._seen_so_far, self._size,
+                    percentage))
+            sys.stdout.flush()
 
 class AWSS3Client(AWSSession):
     """
@@ -45,7 +68,8 @@ class AWSS3Client(AWSSession):
         self._s3 = self._session.client(
             's3',
             region_name=self.region_name,
-            endpoint_url=endpoint_url
+            endpoint_url=endpoint_url,
+            config=Config(signature_version='s3v4')
         )
         if use_cache:
             self._cache = AWSCache(
@@ -92,6 +116,11 @@ class AWSS3Client(AWSSession):
         else:
             return r
 
+    @bucket()
+    def purge(self, object_name, bucket_name=None):
+        if self.use_cache:
+            logging.debug('PURGE:', object_name)
+            self._cache.remove(os.path.dirname(object_name[:-1]), division=bucket_name)
 
     @bucket()
     def put_one(self, object_name, bucket_name=None, src_data=None, mkdir=False):
@@ -139,22 +168,56 @@ class AWSS3Client(AWSSession):
         return True
 
     @bucket()
-    def add_one(self, f, object_name, bucket_name=None, tagging=None):
-        put_source = {
-            'Bucket': bucket_name,
-            'Key': object_name,
-            'Body': f,
-            'ContentType': f.headers.get('Content-Type')
-        }
-        if tagging:
-            if isinstance(tagging, dict):
-                tagging = urllib.parse.urlencode(tagging, quote_via=urllib.parse.quote_plus)
-            put_source['Tagging'] = tagging
-
-        logging.debug('UP_OBJECT:', object_name)
-
+    def post_presign(self, object_name, bucket_name=None, tagging=None):
         try:
-            self._s3.put_object(**put_source)
+            content_type = mimetypes.guess_type(object_name)
+            r = self._s3.generate_presigned_post(
+                bucket_name,
+                object_name,
+                Fields={
+                    "Content-Type": content_type[0]
+                },
+                Conditions=[
+                    {"Content-Type": content_type[0]}
+                ],
+                ExpiresIn=600
+            )
+            return r
+        except ClientError as e:
+            logging.error(e)
+            raise
+
+    @bucket()
+    def add_one(self, f, object_name, bucket_name=None, tagging=None):
+        logging.debug('UP_OBJECT:', object_name)
+        try:
+            # config = TransferConfig()
+            config = TransferConfig(
+                multipart_threshold=1024 * 25,
+                max_concurrency=10,
+                multipart_chunksize=1024 * 25,
+                use_threads=True
+            )
+
+            self._s3.upload_fileobj(
+                f,
+                bucket_name,
+                object_name,
+                ExtraArgs={
+                    'ContentType': f.headers.get('Content-Type')
+                },
+                # Callback=ProgressPercentage(f),
+                Config=config
+            )
+
+            if tagging:
+                if isinstance(tagging, dict):
+                    tagging = urllib.parse.urlencode(tagging, quote_via=urllib.parse.quote_plus)
+                self._s3.put_object_tagging(
+                    Bucket=bucket_name,
+                    Key=object_name,
+                    Tagging=tagging
+                )
             if self.use_cache:
                 self._cache.remove(os.path.dirname(object_name), division=bucket_name)
         except ClientError as e:

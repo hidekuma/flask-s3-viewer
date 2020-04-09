@@ -23,6 +23,7 @@
     <!-- ====== DEFINE FLASK_S3UP REQUIRED ====== -->
     <script charset="utf-8">
       var FLASK_S3UP_FILES_ENDPOINT = "{{ url_for('flask_s3up.files') }}";
+      var FLASK_S3UP_UPLOAD_TYPE = "{{ FS3UP_UPLOAD_TYPE }}";
     </script>
     {% set SEARCH = request.args.get('search') %}
     {% set PAGE = request.args.get('page', 1) | int %}

@@ -2,17 +2,20 @@
 <!-- Nav -->
   {% with %}
     {% set nav = split(PREFIX_WITH_EMPTY) %}
-    <a href="{{ url_for('flask_s3up.files') }}">
-      home
-    </a>
-    {% for n in nav %}
-      {% if n != "" %}
-        <span style="padding: 0 5px;">/</span>
-        <a href="{{ url_for('flask_s3up.files', prefix=n + '/') }}">
-          {{ unquote_plus(n) | replace('/', '')}}
-        </a>
-      {% endif %}
-    {% endfor %}
+    <div>
+      Navigation 
+      <a href="{{ url_for('flask_s3up.files') }}">
+        home
+      </a>
+      {% for n in nav %}
+        {% if n != "" %}
+          <span style="padding: 0 5px;">/</span>
+          <a href="{{ url_for('flask_s3up.files', prefix=n + '/') }}">
+            {{ unquote_plus(n) | replace('/', '')}}
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
   {% endwith %}
 <!--// Nav -->
 
@@ -21,10 +24,11 @@
   deleteAll
 </button>
 <!--// Delete all -->
+
 <!-- Form -->
 <form id="upload_form" action="{{ url_for('flask_s3up.files') }}" method="post" accept-charset="utf-8" enctype="multipart/form-data">
   <label for="fs3up_files">
-    select files
+    select files (click to upload)
     <input style="display: none;" onchange="FLASK_S3UP_CORE.readyFileHandling(event, callbackReadyFileHandling)" multiple="multiple" type="file" name="files[]" id="fs3up_files">
   </label>
 </form>
@@ -34,23 +38,21 @@
 <span id="floading" style="display: none;">loading</span>
 <span id="file_chip" style="display: none;">
   <span id="file_count"></span>
-  <button onclick="document.getElementById('floading').style.display='inline-block'; FLASK_S3UP_CORE.uploadFiles(event, callbackUploadFiles); document.getElementById('file_chip').style.display='none';">upload</button>
+  <button onclick="document.getElementById('floading').style.display='inline'; FLASK_S3UP_CORE.uploadFiles(event, callbackUploadFiles); document.getElementById('file_chip').style.display='none';">upload</button>
   <button onclick="FLASK_S3UP_CORE.preventDefaults(event); document.getElementById('upload_form').reset(); document.getElementById('file_chip').style.display='none';">cancel</button>
 </span>
 <!--// Else -->
 
 <!-- Search -->
-<div class="">
+<div>
   <label for="fs3up_search">
     search
   </label>
-  <div>
-    <input onkeydown="if(event.key == 'Enter') FLASK_S3UP_CORE.runSearching(event);" type="text" name="search" id="fs3up_search">
-  </div>
+  <input onkeydown="if(event.key == 'Enter') FLASK_S3UP_CORE.runSearching(event);" type="text" name="search" id="fs3up_search">
 </div>
 {% if SEARCH and SEARCH != '' %}
-<span class="">
-  <span class="">
+<span>
+  <span>
     {{ SEARCH }}
   </span>
   <button onclick="FLASK_S3UP_CORE.resetSearching(event);" type="button">reset</button>
@@ -59,8 +61,9 @@
 <!--// Search -->
 
 <!-- Refresh -->
-<input type="hidden" onchange="document.getElementById('badge').setAttribute('data-badge', value);" name="fs3up_refresh" value="0" id="fs3up_refresh">
-<button onclick="document.location.reload();" id="badge">reload</button>
+<input type="text" name="some_name" value="" id="badge" readonly>
+<input type="hidden" onchange="console.log(value);document.getElementById('badge').value=value;" name="fs3up_refresh" value="0" id="fs3up_refresh">
+<button onclick="document.location.reload();">reload</button>
 <!--// Refresh -->
 
 <!-- Loading -->

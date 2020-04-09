@@ -20,8 +20,8 @@
     <td>
       <!-- create folder -->
       <div>
-        <input onkeydown="if(event.key == 'Enter') if (confirm('Are you sure you want to make folder?')){ FLASK_S3UP_CORE.makeDir(event, callbackMkdir); } else { value = ''; }" type="text" name="suffix" value="" id="fs3up_suffix">
         <label for="suffix">Folder Name</label>
+        <input onkeydown="if(event.key == 'Enter') if (confirm('Are you sure you want to make folder?')){ FLASK_S3UP_CORE.makeDir(event, callbackMkdir); } else { value = ''; }" type="text" name="suffix" value="" id="fs3up_suffix">
       </div>
       <!--// create folder -->
     </td>
@@ -37,8 +37,8 @@
   </tr>
 {% endif %}
 
-{% if prefixes and PAGE == 1 %}
-  {% for p in prefixes if p.Prefix %}
+{% if FS3UP_PREFIXES and PAGE == 1 %}
+  {% for p in FS3UP_PREFIXES if p.Prefix %}
     <tr>
       <td>{{ checkbox(id=loop.index, type="pfx", val=p.Prefix) }}</td>
       <td>

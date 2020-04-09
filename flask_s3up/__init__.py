@@ -5,11 +5,13 @@ from collections import namedtuple
 
 from .aws.s3 import AWSS3Client
 from .errors import (
-    NotConfiguredCacheDir
+    NotConfiguredCacheDir,
+    NotSupportUploadType
 )
 from .config import (
     NAMESPACE,
-    FIXED_TEMPLATE_FOLDER
+    FIXED_TEMPLATE_FOLDER,
+    UPLOAD_TYPES
 )
 
 APP_TEMPLATE_FOLDER = FIXED_TEMPLATE_FOLDER
@@ -59,6 +61,7 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         object_hostname=None,
         allowed_extensions=None,
         template_namespace='base',
+        upload_type='default',
         config=None
     ):
         self.app = app
@@ -67,6 +70,9 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         self.object_hostname = object_hostname
         self.allowed_extensions =  allowed_extensions
         self.template_namespace = template_namespace
+        if upload_type not in UPLOAD_TYPES:
+            raise NotSupportUploadType
+        self.upload_type = upload_type
         self.__max_pages = 10
         self.__max_items = 100
 
@@ -80,7 +86,7 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
                 if not config.get('cache_dir'):
                     raise NotConfiguredCacheDir
             config.setdefault('cache_dir', None)
-            config.setdefault('ttl', None)
+            config.setdefault('ttl', 300)
             config.setdefault('use_cache', None)
             super().__init__(**config)
 
@@ -115,6 +121,7 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         object_hostname=None,
         allowed_extensions=None,
         template_namespace='base',
+        upload_type='default',
         config=None
     ):
         return FlaskS3Up(
@@ -123,6 +130,7 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
             object_hostname=object_hostname,
             allowed_extensions=allowed_extensions,
             template_namespace=template_namespace,
+            upload_type=upload_type,
             config=config
         )
 

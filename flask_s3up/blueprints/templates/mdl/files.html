@@ -220,10 +220,29 @@
             }
         }
 
-        function callbackReadyFileHandling(e, files){
-            //console.log('callback', e, files);
+        function callbackReadyFileHandling(e, files, presigns){
             document.getElementById('file_count').innerHTML=files.length == 1? files.length + ' file' : files.length + ' files';
             document.getElementById('file_chip').removeAttribute('style');
+            for (var i = 0; i < presigns.length; i++) {
+                var tbody = document.getElementById('playground');
+                var clone = document.getElementById('clone').cloneNode(true);
+                clone.removeAttribute('id');
+                clone.removeAttribute('style');
+                clone.style.opacity = 0.3;
+                if (presigns[i]['url'] === undefined) {
+                    switch (presigns[i]['status_code']) {
+                        case 409:
+                            clone.children[1].innerHTML = '<em><span style="text-decoration: line-through;">' + files[i]['name'] + '</span> (Already exists)</em>';
+                            break;
+                        case 403:
+                            clone.children[1].innerHTML = '<em><span style="text-decoration: line-through;">' + files[i]['name'] + '</span> (Not allowed file extension)</em>';
+                            break;
+                        default:
+                            clone.children[1].innerHTML = '<em><span style="text-decoration: line-through;">' + files[i]['name'] + '</span> (Failed)</em>';
+                    }
+                    document.getElementById('playground').insertBefore(clone, document.getElementById('divider').nextSibling);
+                }
+            }
         }
 
         function callbackUploadFiles(e, xhr, file){
@@ -233,7 +252,7 @@
                 var clone = document.getElementById('clone').cloneNode(true);
                 clone.removeAttribute('id');
                 clone.removeAttribute('style');
-                if(xhr.status == 201){
+                if(xhr.status == 201 || xhr.status == 204){
                     clone.style.opacity = 0.6;
                     clone.children[0].children[0].children[0].innerHTML = 'attachment';
                     clone.children[1].innerHTML = '<em>' + file.name + ' (Uploaded)</em>';

@@ -43,6 +43,7 @@ s3up.add_new_one(
     object_hostname='http://example.com',
     config={
         'profile_name': 'PROFILE_NAME',
+        'region_name': Region.SEOUL.value,
         'bucket_name': 'BUCKET_NAME'
     }
 )

@@ -39,8 +39,10 @@ s3up = FlaskS3Up(
 s3up.add_new_one(
     object_hostname='http://namespace2.com',
     namespace='np2', # namespace be unique
+    upload_type='presign',
     config={
         'profile_name': 'test',
+        'region_name': Region.SEOUL.value,
         'bucket_name': 'hwjeongtest'
     }
 )

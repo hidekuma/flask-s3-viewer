@@ -101,6 +101,31 @@ s3up.register()
 
 ---
 
+### Controll large files
+If you want to controll large files (maybe larger than 5MB), I recommand to set `upload_type='presign'`.
+```python
+s3up = FlaskS3Up(
+    ...
+    app,
+    upload_type='presign', # Flask S3Up is going to use S3's presigned URL, It's nice to controll large files.
+    config={
+        ...
+    }
+    ...
+)
+```
+but you must do S3's CORS settings before like set above.
+```xml
+<CORSConfiguration>
+ <CORSRule>
+   <AllowedOrigin>http://www.flask-s3up.com</AllowedOrigin>
+   <AllowedMethod>POST</AllowedMethod>
+   <AllowedHeader>*</AllowedHeader>
+ </CORSRule>
+</CORSConfiguration>
+```
+
+---
 ### Use caching
 S3 is charged per call. Therefore, Flask S3Up supports caching (currently only supports file caching, in-memory database will be supported later).
 ```python
@@ -134,9 +159,9 @@ s3up = FlaskS3Up(
     config={ # Bucket configs and else
         'profile_name': 'PROFILE_NAME', # Required
         'bucket_name': 'S3_BUCKET_NAME', # Required
+        'region_name': Region.SEOUL.value, # Required
         'access_key': 'AWS_IAM_ACCESS_KEY', # Not necessary, if you configure aws settings, e.g. ~/.aws
         'secret_key': 'AWS_IAM_SECRET_KEY', # Not necessary, if you configure aws settings, e.g. ~/.aws
-        'region_name': Region.SEOUL.value, # or input like 'ap-northease-2'
         'endpoint_url': None, # For S3 compatible
         'use_cache': True, # Flask S3Up will cache the list of s3 objects, if you set True
         'cache_dir': '/tmp/flask_s3up', # Where cached files will be written
@@ -182,9 +207,7 @@ The template folder of FlaskS3Up is fixed as `templates`. so if you change `temp
 - Search only working in EN, because of JMESPath.
 
 ## TODOs
-- error controlls
-- mode (api, view)
-- presigned url
+- mode (api / view)
 - semaphore
 
 ---

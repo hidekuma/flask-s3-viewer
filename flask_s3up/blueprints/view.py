@@ -4,13 +4,9 @@ import os
 
 from werkzeug.wsgi import FileWrapper
 from werkzeug.urls import url_quote
-from flask import Response, request, render_template, Blueprint, g, abort
+from flask import Response, request, render_template, Blueprint, g, abort, jsonify
 from .. import FlaskS3Up, APP_TEMPLATE_FOLDER
 from ..config import NAMESPACE
-
-print()
-print(APP_TEMPLATE_FOLDER)
-print()
 
 blueprint = Blueprint(
     NAMESPACE,
@@ -91,6 +87,30 @@ def files_delete(key):
         except Exception:
             abort(500)
 
+@blueprint.route("/files/presign", methods=['POST'])
+def files_presign():
+    prefix = request.form.get('prefix', '')
+    prefix = urllib.parse.unquote_plus(prefix)
+    fs3up = FlaskS3Up.get_instance(g.BUCKET_NAMESPACE)
+    prefix = fs3up.prefixer(prefix)
+    file_list = request.form.get("file_list").split(',')
+    rtns = []
+    for f in file_list:
+        try:
+            filename = os.path.join(prefix, f)
+            if fs3up.is_exists(filename):
+                rtns.append({'status_code': 409})
+            elif not is_allowed(fs3up, filename):
+                rtns.append({'status_code': 403})
+            else:
+                r = fs3up.post_presign(filename)
+                rtns.append(r)
+        except Exception:
+            rtns.append({'status_code': 500})
+    fs3up.purge(prefix)
+
+    return jsonify(rtns), 200
+
 @blueprint.route("/files", methods=['GET', 'POST'])
 def files():
     if request.method == "POST":
@@ -114,11 +134,11 @@ def files():
                 abort(500)
         else:
             for f in files:
-                f.filename = f'{prefix}{f.filename}'
+                f.filename = os.path.join(prefix, f.filename)
                 if fs3up.is_exists(f.filename):
                     abort(409, 'Already exists.')
                 if not is_allowed(fs3up, f.filename):
-                    abort(403, 'Already exists.')
+                    abort(403, 'Not allowd file extension')
                 fs3up.add_one(f, f.filename)
                 return {}, 201
 
@@ -162,6 +182,7 @@ def files():
 
         return render_template(
             f'{fs3up.template_namespace}/files.html',
+            FS3UP_UPLOAD_TYPE=fs3up.upload_type,
             FS3UP_TEMPLATE_NAMESPACE=fs3up.template_namespace,
             FS3UP_MAX_PAGES=max_pages,
             FS3UP_PAGES=len(content_pages),
