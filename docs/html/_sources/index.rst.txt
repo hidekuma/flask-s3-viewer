@@ -4,9 +4,8 @@
    contain the root `toctree` directive.
 
 .. meta::
-    :description: The Sphinx documentation builder
-    :keywords: Sphinx, documentation, builder
-
+    :description: Flask S3up is a powerful extension that makes it easy to browse S3 in any Flask application
+    :keywords: Flask, s3, aws, upload, uploader, browsing, python3, python, mount, objectstorage, s3up
 
 Welcome to Flask-S3Up's documentation!
 ======================================
