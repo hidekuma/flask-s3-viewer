@@ -18,8 +18,6 @@ APP_TEMPLATE_FOLDER = FIXED_TEMPLATE_FOLDER
 
 __version__ = "0.0.14"
 
-__all__ = ['FlaskS3up']
-
 
 class Singleton(type):
 
@@ -36,6 +34,8 @@ class Singleton(type):
             return cls._instances[key]
 
 class FlaskS3Up(AWSS3Client, metaclass=Singleton):
+    """FlaskS3Up."""
+
 
     FLASK_S3UP_BUCKET_CONFIGS = {}
     FLASK_S3UP_BUCKET = namedtuple(
@@ -64,6 +64,16 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         upload_type='default',
         config=None
     ):
+        """__init__.
+
+        :param app:
+        :param namespace:
+        :param object_hostname:
+        :param allowed_extensions:
+        :param template_namespace:
+        :param upload_type:
+        :param config:
+        """
         self.app = app
         if object_hostname and object_hostname.endswith('/'):
             object_hostname = object_hostname[:-1]
