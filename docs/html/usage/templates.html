@@ -1,0 +1,165 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Controll Templates &#8212; Flask-S3Up 0.0.13 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Quick Start" href="quickstart.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="controll-templates">
+<h1>Controll Templates<a class="headerlink" href="#controll-templates" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="use-cli-tool">
+<h2>Use CLI tool<a class="headerlink" href="#use-cli-tool" title="Permalink to this headline">¶</a></h2>
+<p>You can customize template with CLI tool.</p>
+<p>See help.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># You can see the details</span>
+flask_s3up -h
+
+ ____  __     __   ____  __ _    ____  ____  _  _  ____
+<span class="o">(</span>  __<span class="o">)(</span>  <span class="o">)</span>   / _<span class="se">\ </span>/ ___<span class="o">)(</span>  / <span class="o">)</span>  / ___<span class="o">)(</span> __ <span class="se">\/</span> <span class="o">)(</span> <span class="se">\(</span>  _ <span class="se">\</span>
+ <span class="o">)</span> _<span class="o">)</span> / <span class="o">(</span>_/<span class="se">\/</span>    <span class="se">\\</span>___ <span class="se">\ </span><span class="o">)</span>  <span class="o">(</span>   <span class="se">\_</span>__ <span class="se">\ </span><span class="o">(</span>__ <span class="o">()</span> <span class="se">\/</span> <span class="o">(</span> <span class="o">)</span> __/
+<span class="o">(</span>__<span class="o">)</span>  <span class="se">\_</span>___/<span class="se">\_</span>/<span class="se">\_</span>/<span class="o">(</span>____/<span class="o">(</span>__<span class="se">\_</span><span class="o">)</span>  <span class="o">(</span>____/<span class="o">(</span>____/<span class="se">\_</span>___/<span class="o">(</span>__<span class="o">)</span>
+
+<span class="o">=============</span> Flask S3Up Command Line <span class="nv">Tool</span> <span class="o">==============</span>
+
+optional arguments:
+  -h, --help            show this <span class="nb">help</span> message and <span class="nb">exit</span>
+  -p PATH, --path PATH  Enter the directory path where the template will be
+                        located
+  -t <span class="o">{</span>base,mdl<span class="o">}</span>, --template <span class="o">{</span>base,mdl<span class="o">}</span>
+                        Enter the name of the template to import. <span class="o">(</span>mdl means
+                        material-design-lite and base means not designed
+                        template<span class="o">)</span>.
+</pre></div>
+</div>
+<p>Get the template to your repository.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get a Material-design-lite template</span>
+flask_s3up --path templates/mdl --template mdl
+
+<span class="c1"># Get a base template (not designed at all)</span>
+flask_s3up -p templates/base -t base
+</pre></div>
+</div>
+<p>When you run the command, you can see the
+<code class="docutils literal notranslate"><span class="pre">{repository}/{path}/{template}</span></code> has been created on your
+repository. then rerun the Flask application.</p>
+<p>And you can also change template directory if you want.</p>
+<p>For examples, Get Material-design-lite template to <code class="docutils literal notranslate"><span class="pre">templates/customized</span></code> directory on your root path.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>flask_s3up -p templates/customized -t mdl
+</pre></div>
+</div>
+<p>Then change template_namespace. it will be routed to defined directory (<code class="docutils literal notranslate"><span class="pre">templates/customized</span></code>).</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">s3up</span> <span class="o">=</span> FlaskS3Up<span class="o">(</span>
+    ...
+    <span class="nv">template_namespace</span><span class="o">=</span><span class="s1">&#39;customized&#39;</span>,
+    ...
+<span class="o">)</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The template folder of Flask S3Up is fixed as <code class="docutils literal notranslate"><span class="pre">templates</span></code>. so if you change <code class="docutils literal notranslate"><span class="pre">template_namespace</span></code>, It will be routed <code class="docutils literal notranslate"><span class="pre">{repository}/templates/{defined</span> <span class="pre">template_namespace_by_you}</span></code>.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Flask-S3Up</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html"> Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html"> Quick start</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#"> Controll Templates</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#use-cli-tool">Use CLI tool</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/hidekuma/flask-s3up/blob/master/LICENSE"> License</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="quickstart.html" title="previous chapter">Quick Start</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, hidekuma.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/usage/templates.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
