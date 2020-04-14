@@ -16,7 +16,7 @@ from .config import (
 
 APP_TEMPLATE_FOLDER = FIXED_TEMPLATE_FOLDER
 
-__version__ = "0.0.13"
+__version__ = "0.0.14"
 
 __all__ = ['FlaskS3up']
 

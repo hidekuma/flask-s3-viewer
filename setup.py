@@ -1,5 +1,14 @@
+import re
+import ast
 from setuptools import setup, find_packages
-from flask_s3up import __version__ as VERSION
+
+_version_re = re.compile(r"__version__\s+=\s+(.*)")
+
+with open("flask_s3up/__init__.py", "rb") as f:
+    VERSION = str(
+        ast.literal_eval(_version_re.search(f.read().decode("utf-8")).group(1))
+    )
+
 
 setup(
     name                          = 'flask_s3up',
