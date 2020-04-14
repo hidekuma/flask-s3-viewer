@@ -66,4 +66,4 @@ Then change template_namespace. it will be routed to defined directory (``templa
    )
 
 .. warning::
-    The template folder of Flask S3Up is fixed as ``templates``. so if you change ``template_namespace``, It will be routed ``{repository}/templates/{defined template_namespace_by_you}``.
+    The template folder of Flask S3Up is fixed as ``templates``. so if you change ``template_namespace``, It will be routed **{repository}/templates/{defined template_namespace_by_you}**.

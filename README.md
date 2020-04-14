@@ -3,6 +3,7 @@
 ## Flask S3Up - browsing S3 with Flask
 [![PyPI version](https://badge.fury.io/py/flask-s3up.svg)](https://badge.fury.io/py/flask-s3up)
 [![Build Status](https://travis-ci.org/hidekuma/flask-s3up.svg?branch=master)](https://travis-ci.org/hidekuma/flask-s3up)
+[![Documentation Status](https://readthedocs.org/projects/flask-s3up/badge/?version=latest)](https://flask-s3up.readthedocs.io/en/latest/?badge=latest)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/hidekuma/flask-s3up/graphs/commit-activity)
 [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
 

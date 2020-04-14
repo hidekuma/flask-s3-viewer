@@ -15,7 +15,7 @@ Flask S3up is a powerful extension that makes it easy to browse S3 in any Flask 
     :width: 200
     :alt: Flask-S3Up-logo
 
-|PyPI version| |Build Status| |Maintenance| |made-with-python|
+|PyPI version| |Build Status| |Documentation Status| |Maintenance| |made-with-python|
 
 .. toctree::
    :maxdepth: 2
@@ -37,6 +37,8 @@ Show video on youtube:
    :target: https://badge.fury.io/py/flask-s3up
 .. |Build Status| image:: https://travis-ci.org/hidekuma/flask-s3up.svg?branch=master
    :target: https://travis-ci.org/hidekuma/flask-s3up
+.. |Documentation Status| image:: https://readthedocs.org/projects/flask-s3up/badge/?version=latest
+    :target: https://flask-s3up.readthedocs.io/en/latest/?badge=latest
 .. |Maintenance| image:: https://img.shields.io/badge/Maintained%3F-yes-green.svg
    :target: https://github.com/hidekuma/flask-s3up/graphs/commit-activity
 .. |made-with-python| image:: https://img.shields.io/badge/Made%20with-Python-1f425f.svg
