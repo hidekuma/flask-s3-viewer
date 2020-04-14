@@ -20,7 +20,7 @@ You can [download FlaskS3Up executable](https://github.com/hidekuma/flask-s3up/r
 pip install flask_s3up
 ```
 ## Documentation
-The latest documentation for Flask-S3Up can be found [here](http://hidekuma.github.io/flask-s3up/).
+The latest documentation for Flask-S3Up can be found [here](https://flask-s3up.readthedocs.io).
 
 [License](LICENSE)
 ------------------
