@@ -4,13 +4,6 @@ from flask import Flask
 from flask_s3up import FlaskS3Up
 from flask_s3up.aws.ref import Region
 
-import logging
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(levelname)s: %(asctime)s: %(message)s'
-)
-
 app = Flask(__name__)
 
 # For test, disable template caching
