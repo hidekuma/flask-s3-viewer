@@ -10,7 +10,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Quick Start &mdash; Flask-S3Up 0.0.14 documentation</title>
+  <title>Configuration &mdash; Flask-S3Up 0.0.14 documentation</title>
   
 
   
@@ -37,7 +37,7 @@
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Controll Templates" href="templates.html" />
+    <link rel="next" title="Templates" href="templates.html" />
     <link rel="prev" title="Installation" href="installation.html" /> 
 </head>
 
@@ -85,8 +85,12 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="installation.html"> Installation</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#"> Quick start</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#minimum-setting">Minimum setting</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#configure-credentials">Configure credentials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#minimum-settings">Minimum settings</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#user-guides">User Guides</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#multiple-bucket-settings">Multiple bucket settings</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#limit-the-file-extensions">Limit the file extensions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#choose-the-design-template">Choose the design template</a></li>
@@ -99,8 +103,9 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="templates.html"> Controll Templates</a></li>
-<li class="toctree-l1"><a class="reference external" href="https://github.com/hidekuma/flask-s3up/blob/master/LICENSE"> License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="templates.html"> Templates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html"> License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html"> Changelog</a></li>
 </ul>
 
             
@@ -146,13 +151,13 @@
     
       <li><a href="../index.html">Docs</a> &raquo;</li>
         
-      <li>Quick Start</li>
+      <li>Configuration</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="../_sources/usage/quickstart.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/usage/configuration.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -165,11 +170,25 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="quick-start">
-<h1>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="minimum-setting">
-<h2>Minimum setting<a class="headerlink" href="#minimum-setting" title="Permalink to this headline">¶</a></h2>
-<p>First install the dependency packages and configure.</p>
+  <div class="section" id="configuration">
+<h1>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h1>
+<p>Before you can begin using Flask S3Up, you should set up authentication credentials. Credentials for your AWS account can be found in the IAM Console. You can create or use an existing user. Go to manage access keys and generate a new set of keys.</p>
+<div class="section" id="configure-credentials">
+<h2>Configure credentials<a class="headerlink" href="#configure-credentials" title="Permalink to this headline">¶</a></h2>
+<p>Install AWS CLI.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install awscli
+</pre></div>
+</div>
+<p>If you have the AWS CLI installed, then you can use it to configure your credentials file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>aws configure
+</pre></div>
+</div>
+<p>Alternatively, you can create the credential file yourself. By default, its location is at ~/.aws/credentials. and Flask S3Up is going to use the credential file.</p>
+</div>
+<div class="section" id="minimum-settings">
+<h2>Minimum settings<a class="headerlink" href="#minimum-settings" title="Permalink to this headline">¶</a></h2>
+<p>This is a minimal setup for using flask s3up.
+First install the dependency packages.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install flask flask_s3up
 </pre></div>
 </div>
@@ -234,6 +253,11 @@
 <p>The values in the code above are mandatory. If the setting is finished, run your Flask application and visit <code class="docutils literal notranslate"><span class="pre">http://localhost/{namespace}/files</span></code>, e.g.&nbsp;<a class="reference external" href="http://localhost:3000/flask-s3up/files">http://localhost:3000/flask-s3up/files</a>.</p>
 <p>You can get example codes over <a class="reference external" href="https://github.com/hidekuma/flask-s3up/tree/master/example">here</a>.</p>
 </div>
+</div>
+<hr class="docutils" />
+<div class="section" id="user-guides">
+<h1>User Guides<a class="headerlink" href="#user-guides" title="Permalink to this headline">¶</a></h1>
+<p>It is about various advanced settings.</p>
 <div class="section" id="multiple-bucket-settings">
 <h2>Multiple bucket settings<a class="headerlink" href="#multiple-bucket-settings" title="Permalink to this headline">¶</a></h2>
 <p>You can also initiailize multiple bucket.</p>
@@ -502,7 +526,7 @@ Flask S3Up is going to use S3’s presigned URL. It’s nice to controll large f
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="templates.html" class="btn btn-neutral float-right" title="Controll Templates" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="templates.html" class="btn btn-neutral float-right" title="Templates" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

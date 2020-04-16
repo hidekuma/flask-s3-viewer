@@ -35,7 +35,7 @@ release = VERSION
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'recommonmark',
+    'm2r',
     'sphinx_rtd_theme'
 ]
 
@@ -64,3 +64,8 @@ html_static_path = ['_static']
 html_scaled_image_link = False
 
 # -- Extension configuration -------------------------------------------------
+
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.md': 'markdown',
+}

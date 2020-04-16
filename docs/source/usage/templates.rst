@@ -2,12 +2,13 @@
     :description: Flask S3up is a powerful extension that makes it easy to browse S3 in any Flask application
     :keywords: Flask, s3, aws, upload, uploader, browsing, python3, python, mount, objectstorage, s3up
 
-Controll Templates
-==================
+Templates
+=========
+Flask S3Up provides CLI to help customize templates.
 
-Use CLI tool
-------------
-You can customize template with CLI tool.
+Get template source
+--------------------------------------
+You can customize the template with CLI tool.
 
 See help.
 

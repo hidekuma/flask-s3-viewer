@@ -22,24 +22,29 @@ Flask S3up is a powerful extension that makes it easy to browse S3 in any Flask 
    :caption: Contents:
 
     Installation <usage/installation>
-    Quick start <usage/quickstart>
-    Controll Templates <usage/templates>
-    License <https://github.com/hidekuma/flask-s3up/blob/master/LICENSE>
+    Configuration <usage/configuration>
+    Reference <reference>
+    Templates <usage/templates>
+    License <license>
+    Changelog <changelog>
 
-.. Indices and tables
-.. ------------------
+Indices and tables
+------------------
+* :ref:`modindex`
+
 .. * :ref:`genindex`
-.. * :ref:`modindex`
 
 .. * :ref:`search`
 
 Useful links
 ------------
-    *  Github_
+    * `Flask S3Up @ Github`_
+    * `Flask S3Up @ PyPi`_
 
 Show video on youtube:
 
 |flask-s3up-video|
+
 
 .. |PyPI version| image:: https://badge.fury.io/py/flask-s3up.svg
    :target: https://badge.fury.io/py/flask-s3up
@@ -53,4 +58,5 @@ Show video on youtube:
    :target: https://www.python.org/
 .. |flask-s3up-video| image:: http://img.youtube.com/vi/yk6h6ym6Diw/0.jpg
    :target: https://youtu.be/yk6h6ym6Diw?t=0s
-.. _Github: https://github.com/hidekuma/flask-s3up
+.. _Flask S3Up @ Github: https://github.com/hidekuma/flask-s3up
+.. _Flask S3Up @ PyPi: https://pypi.org/project/flask-s3up

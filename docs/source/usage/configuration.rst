@@ -2,13 +2,30 @@
     :description: Flask S3up is a powerful extension that makes it easy to browse S3 in any Flask application
     :keywords: Flask, s3, aws, upload, uploader, browsing, python3, python, mount, objectstorage, s3up
 
-Quick Start
-============
+Configuration
+=============
+Before you can begin using Flask S3Up, you should set up authentication credentials. Credentials for your AWS account can be found in the IAM Console. You can create or use an existing user. Go to manage access keys and generate a new set of keys.
 
-Minimum setting
----------------
+Configure credentials
+---------------------
+Install AWS CLI.
 
-First install the dependency packages and configure.
+.. code-block:: bash
+
+    pip install awscli
+
+If you have the AWS CLI installed, then you can use it to configure your credentials file:
+
+.. code-block:: bash
+
+    aws configure
+
+Alternatively, you can create the credential file yourself. By default, its location is at ~/.aws/credentials. and Flask S3Up is going to use the credential file.
+
+Minimum settings
+----------------
+This is a minimal setup for using flask s3up.
+First install the dependency packages.
 
 .. code-block:: bash
 
@@ -60,6 +77,12 @@ The values in the code above are mandatory. If the setting is finished, run your
 You can get example codes over here_.
 
 .. _here: https://github.com/hidekuma/flask-s3up/tree/master/example
+
+----
+
+User Guides
+=================
+It is about various advanced settings.
 
 
 Multiple bucket settings
