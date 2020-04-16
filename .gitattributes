@@ -1,0 +1,3 @@
+docs/* linguist-vendored
+flask_s3up/blueprints/static/* linguist-vendored
+flask_s3up/blueprints/templates/* linguist-vendored
