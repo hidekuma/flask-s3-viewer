@@ -16,7 +16,9 @@ itsdangerous==1.1.0
 Jinja2==2.11.2
 jmespath==0.9.5
 keyring==21.2.0
+m2r==0.2.1
 MarkupSafe==1.1.1
+mistune==0.8.4
 packaging==20.3
 pkginfo==1.5.0.1
 Pygments==2.6.1
@@ -24,7 +26,6 @@ pyparsing==2.4.7
 python-dateutil==2.8.1
 pytz==2019.3
 readme-renderer==25.0
-recommonmark==0.6.0
 requests==2.23.0
 requests-toolbelt==0.9.1
 s3transfer==0.3.3
