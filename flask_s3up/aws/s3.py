@@ -4,8 +4,6 @@ import urllib
 import collections
 import mimetypes
 import logging
-import sys
-import threading
 
 from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
@@ -14,25 +12,6 @@ from functools import wraps
 
 from .session import AWSSession
 from .cache import AWSCache
-
-class ProgressPercentage(object):
-
-    def __init__(self, f):
-        self._filename = f.filename
-        self._size = len(f.read())
-        self._seen_so_far = 0
-        self._lock = threading.Lock()
-
-    def __call__(self, bytes_amount):
-        # To simplify, assume this is hooked up to a single filename
-        with self._lock:
-            self._seen_so_far += bytes_amount
-            percentage = (self._seen_so_far / self._size) * 100
-            sys.stdout.write(
-                "\r%s  %s / %s  (%.2f%%)" % (
-                    self._filename, self._seen_so_far, self._size,
-                    percentage))
-            sys.stdout.flush()
 
 class AWSS3Client(AWSSession):
     """
@@ -206,7 +185,6 @@ class AWSS3Client(AWSSession):
                 ExtraArgs={
                     'ContentType': f.headers.get('Content-Type')
                 },
-                # Callback=ProgressPercentage(f),
                 Config=config
             )
 

@@ -34,9 +34,6 @@ class Singleton(type):
             return cls._instances[key]
 
 class FlaskS3Up(AWSS3Client, metaclass=Singleton):
-    """FlaskS3Up."""
-
-
     FLASK_S3UP_BUCKET_CONFIGS = {}
     FLASK_S3UP_BUCKET = namedtuple(
         'FlaskS3UpBucketConfig',
@@ -64,15 +61,14 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         upload_type='default',
         config=None
     ):
-        """__init__.
-
-        :param app:
-        :param namespace:
-        :param object_hostname:
-        :param allowed_extensions:
-        :param template_namespace:
-        :param upload_type:
-        :param config:
+        """
+        :param Flask.app app: Required
+        :param str namespace: Unique namespace of Flask S3Up
+        :param url object_hostname: Hostname, e.g. Cloudfront endpoint
+        :param set allowed_extensions: e.g. {'jpg', 'png'}
+        :param str template_namespace: Template name
+        :param str upload_type: Upload type
+        :param dict config: Bucket configs
         """
         self.app = app
         if object_hostname and object_hostname.endswith('/'):
@@ -113,17 +109,41 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         return self.__max_items
 
     @classmethod
-    def get_instance(cls, path=None):
-        # print(cls._instances.data, path)
-        return cls._instances[path]
+    def get_instance(cls, namespace=None):
+        """
+        Return a Flask S3Up instance.
+
+        :param str namespace: namespace
+
+        Return:
+            :class:`FlaskS3Up`
+        """
+        # print(cls._instances.data, namespace)
+        return cls._instances[namespace]
 
     @classmethod
-    def get_boto_client(cls, path=None):
-        return cls._instances[path]._s3
+    def get_boto_client(cls, namespace=None):
+        """
+        Return a Boto3's S3 client.
+
+        :param str namespace: namespace
+
+        Return:
+            boto3's S3 client.
+        """
+        return cls._instances[namespace]._s3
 
     @classmethod
-    def get_boto_session(cls, path=None):
-        return cls._instances[path]._session
+    def get_boto_session(cls, namespace=None):
+        """
+        Return a Boto3's Sesson.
+
+        :param str namespace: namespace
+
+        Return:
+            boto3's Session.
+        """
+        return cls._instances[namespace]._session
 
     def add_new_one(
         self,
@@ -134,6 +154,19 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         upload_type='default',
         config=None
     ):
+        """
+        Initialize another bucket
+
+        :param str namespace: Unique namespace of Flask S3Up
+        :param url object_hostname: Hostname, e.g. Cloudfront endpoint
+        :param set allowed_extensions: e.g. {'jpg', 'png'}
+        :param str template_namespace: Template name
+        :param str upload_type: Upload type
+        :param dict config: Bucket configs
+
+        Return:
+            :class:`FlaskS3Up`
+        """
         return FlaskS3Up(
             self.app,
             namespace=namespace,
@@ -145,6 +178,15 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         )
 
     def register(self, template_folder=None):
+        """
+        Register FlaskS3Up to Flask's blueprint.
+
+        :param path template_folder: FIXME
+
+        .. warning::
+
+            `template_folder` is Not ready yet. DON'T USE THIS PARAM.
+        """
         if template_folder:
             # FIXME: 하나에만 적용불가..
             raise ValueError('not ready')

@@ -5,7 +5,7 @@ class Region(enum.Enum):
     AWS Service Regions
 
     Reference:
-        kttps://docs.aws.amazon.com/general/latest/gr/rande.html
+        https://docs.aws.amazon.com/general/latest/gr/rande.html
     Usage:
         Region.SEOUL.value
     """
