@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.0.16](https://github.com/hidekuma/flask-s3up/compare/0.0.15...0.0.16)
+
+> 25 April 2020
+
+- Updated changelog [4197794](https://github.com/hidekuma/flask-s3up/commit/4197794b40cdc780e7f3cd3c97dbcad5d853fb61)
+- Added gitattributes [50b13bd](https://github.com/hidekuma/flask-s3up/commit/50b13bdc317a25eebe6323f06489613f6e493901)
+- Updated version [150b971](https://github.com/hidekuma/flask-s3up/commit/150b971e163996c03e0a2efbe62f38c3386eca4a)
+
+#### [0.0.15](https://github.com/hidekuma/flask-s3up/compare/0.0.14...0.0.15)
+
+> 16 April 2020
+
+- Updated docs [2ef0c0a](https://github.com/hidekuma/flask-s3up/commit/2ef0c0a40936f1051a1ee81633983b5fd8ba393b)
+- Updated docs [e5973c3](https://github.com/hidekuma/flask-s3up/commit/e5973c3f1e41c2781e8a0fad94e333433a104f95)
+- Updated docs [b92f93d](https://github.com/hidekuma/flask-s3up/commit/b92f93d44e8ed3ebf17d0e528e0028f4a7a1f180)
+
 #### [0.0.14](https://github.com/hidekuma/flask-s3up/compare/0.0.13...0.0.14)
 
 > 14 April 2020
