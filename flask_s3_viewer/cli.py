@@ -3,23 +3,25 @@ import shutil
 import argparse
 import textwrap
 import click
-from flask_s3up.config import (
+from flask_s3_viewer.config import (
     SUPPORT_TEMPLATES,
     FIXED_TEMPLATE_FOLDER,
     NAMESPACE
 )
 
-class FlaskS3UpCli:
+class FlaskS3ViewerCli:
     def __init__(self):
         self.parser = argparse.ArgumentParser(
             prog=NAMESPACE,
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description=textwrap.dedent("""\n
-         ____  __     __   ____  __ _    ____  ____  _  _  ____
-        (  __)(  )   / _\ / ___)(  / )  / ___)( __ \/ )( \(  _ \\
-         ) _) / (_/\/    \\\___ \ )  (   \___ \ (__ () \/ ( ) __/
-        (__)  \____/\_/\_/(____/(__\_)  (____/(____/\____/(__)\n
-        ============= Flask S3Up Command Line Tool ==============
+         ______ _           _       _____ ____   __      ___                        
+        |  ____| |         | |     / ____|___ \  \ \    / (_)                       
+        | |__  | | __ _ ___| | __ | (___   __) |  \ \  / / _  _____      _____ _ __ 
+        |  __| | |/ _` / __| |/ /  \___ \ |__ <    \ \/ / | |/ _ \ \ /\ / / _ \ '__|
+        | |    | | (_| \__ \   <   ____) |___) |    \  /  | |  __/\ V  V /  __/ |   
+        |_|    |_|\__,_|___/_|\_\ |_____/|____/      \/   |_|\___| \_/\_/ \___|_|\n
+        =================== Flask S3Viewer Command Line Tool ====================
         """)
         )
         self.parser.add_argument(
@@ -82,7 +84,7 @@ class FlaskS3UpCli:
             pass
 
 def handle():
-    cli = FlaskS3UpCli()
+    cli = FlaskS3ViewerCli()
     cli.handle()
 
 if __name__ == "__main__":

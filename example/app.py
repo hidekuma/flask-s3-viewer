@@ -1,8 +1,8 @@
 import sys
 
 from flask import Flask
-from flask_s3up import FlaskS3Up
-from flask_s3up.aws.ref import Region
+from flask_s3_viewer import FlaskS3Viewer
+from flask_s3_viewer.aws.ref import Region
 
 app = Flask(__name__)
 
@@ -10,12 +10,12 @@ app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 1
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
-# FlaskS3Up Init
-s3up = FlaskS3Up(
+# FlaskS3Viewer Init
+s3viewer = FlaskS3Viewer(
     app, # Flask app
-    namespace='flask-s3up', # namespace be unique
+    namespace='flask-s3-viewer', # namespace be unique
     template_namespace='mdl', # set template
-    object_hostname='http://flask-s3up.com', # file's hostname
+    object_hostname='http://flask-s3-viewer.com', # file's hostname
     allowed_extensions={}, # allowed extension
     config={ # Bucket configs and else
         'profile_name': 'PROFILE_NAME',
@@ -24,14 +24,14 @@ s3up = FlaskS3Up(
         'region_name': Region.SEOUL.value,
         'endpoint_url': None,
         'bucket_name': 'BUCKET_NAME',
-        'cache_dir': '/tmp/flask_s3up',
+        'cache_dir': '/tmp/flask_s3_viewer',
         'use_cache': True,
         'ttl': 86400,
     }
 )
 
 # Init another one
-s3up.add_new_one(
+s3viewer.add_new_one(
     namespace='example',
     object_hostname='http://example.com',
     config={
@@ -42,14 +42,14 @@ s3up.add_new_one(
 )
 
 # You can see registerd configs
-# print(s3up.FLASK_S3UP_BUCKET_CONFIGS)
+# print(s3viewer.FLASK_S3_VIEWER_BUCKET_CONFIGS)
 
 # You can use boto3's session and client if you want
-# print(FlaskS3Up.get_boto_client(S3UP_NAMESPACE))
-# print(FlaskS3Up.get_boto_session(S3UP_NAMESPACE))
+# print(FlaskS3Viewer.get_boto_client(FS3V_NAMESPACE))
+# print(FlaskS3Viewer.get_boto_session(FS3V_NAMESPACE))
 
-# Apply FlaskS3Up blueprint
-s3up.register()
+# Apply FlaskS3Viewer blueprint
+s3viewer.register()
 
 @app.route('/index')
 def index ():

@@ -23,7 +23,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
       <!-- ====== BLOCK TITLE ====== -->
-      <title>{% block title %}{% endblock %} | Flask_s3up</title>
+      <title>{% block title %}{% endblock %} | Flask_s3viewer</title>
       <!--// ====== BLOCK TITLE ====== -->
 
       <!-- Dependecies -->
@@ -38,10 +38,10 @@
   </head>
   <body>
 
-    <!-- ====== DEFINE FLASK_S3UP REQUIRED ====== -->
+    <!-- ====== DEFINE FLASK_S3_VIEWER REQUIRED ====== -->
     <script charset="utf-8">
-      var FLASK_S3UP_FILES_ENDPOINT = "{{ url_for('flask_s3up.files') }}";
-      var FLASK_S3UP_UPLOAD_TYPE = "{{ FS3UP_UPLOAD_TYPE }}";
+      var FLASK_S3_VIEWER_FILES_ENDPOINT = "{{ url_for('flask_s3_viewer.files') }}";
+      var FLASK_S3_VIEWER_UPLOAD_TYPE = "{{ FS3V_UPLOAD_TYPE }}";
     </script>
     {% set SEARCH = request.args.get('search') %}
     {% set PAGE = request.args.get('page', 1) | int %}
@@ -54,8 +54,8 @@
     {% set STARTING_TOKEN_WITH_EMPTY = request.args.get('starting_token', '') %}
     {% set STARTING_TOKEN_WITH_NONE = request.args.get('starting_token', 'None') %}
     {% set PREV_TOKENS = request.args.get('prev_tokens') %}
-    <input class="mdl-textfield__input" type="hidden" name="prefix" value="{{ PREFIX_WITH_EMPTY }}" id="fs3up_prefix">
-    <!--// ====== DEFINE FLASK_S3UP REQUIRED ====== -->
+    <input class="mdl-textfield__input" type="hidden" name="prefix" value="{{ PREFIX_WITH_EMPTY }}" id="fs3viewer_prefix">
+    <!--// ====== DEFINE FLASK_S3_VIEWER REQUIRED ====== -->
 
     <div class="demo-layout-waterfall mdl-layout mdl-js-layout mdl-layout--fixed-header">
       <div id="header" class="mdl-layout__header">
@@ -63,7 +63,7 @@
         <!-- ====== BLOCK HEADER ====== -->
         {% block header %}
           <div class="mdl-layout__header-row">
-            <span style="font-size: 17px;" class="mdl-layout-title">Flask S3up</span>
+            <span style="font-size: 17px;" class="mdl-layout-title">Flask S3 Viewer</span>
 
             <!-- ====== BLOCK CONTROLLER ====== -->
             {% block controller %}
@@ -92,10 +92,10 @@
         <!-- ====== BLOCK FOOTER ====== -->
         {% block footer %}
           <div class="mdl-mini-footer__left-section">
-            <div class="mdl-logo">Flask S3up</div>
+            <div class="mdl-logo">Flask S3 Viewer</div>
             <ul class="mdl-mini-footer__link-list">
-              <li><a href="https://github.com/hidekuma/flask-s3up/blob/master/README.md" target="_blank">Help</a></li>
-              <li><a href="https://github.com/hidekuma/flask-s3up" target="_blank">Github</a></li>
+              <li><a href="https://github.com/hidekuma/flask-s3-viewer/blob/master/README.md" target="_blank">Help</a></li>
+              <li><a href="https://github.com/hidekuma/flask-s3-viewer" target="_blank">Github</a></li>
             </ul>
           </div>
         {% endblock %}

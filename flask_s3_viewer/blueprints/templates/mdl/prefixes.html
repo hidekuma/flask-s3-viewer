@@ -2,7 +2,7 @@
   <tr>
     <td></td>
     <td class="mdl-data-table__cell--non-numeric">
-      <a href="{{ url_for('flask_s3up.files', prefix=BEFORE_PREFIX) }}" target="_self">..</a>
+      <a href="{{ url_for('flask_s3_viewer.files', prefix=BEFORE_PREFIX) }}" target="_self">..</a>
     </td>
     <td class="mdl-data-table__cell--non-numeric"></td>
     <td class="mdl-data-table__cell--non-numeric"></td>
@@ -20,7 +20,7 @@
     <td style="padding-top: 0; padding-bottom: 0;" class="mdl-data-table__cell--non-numeric">
       <!-- create folder -->
       <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-        <input onkeydown="if(event.key == 'Enter') if (confirm('Are you sure you want to make folder?')){ FLASK_S3UP_CORE.makeDir(event, callbackMkdir); } else { value = ''; }" class="mdl-textfield__input" type="text" name="suffix" value="" id="fs3up_suffix">
+        <input onkeydown="if(event.key == 'Enter') if (confirm('Are you sure you want to make folder?')){ FLASK_S3_VIEWER_CORE.makeDir(event, callbackMkdir); } else { value = ''; }" class="mdl-textfield__input" type="text" name="suffix" value="" id="fs3viewer_suffix">
         <label class="mdl-textfield__label" for="suffix">Folder Name</label>
       </div>
       <!--// create folder -->
@@ -28,7 +28,7 @@
     <td class="mdl-data-table__cell--non-numeric"></td>
     <td class="mdl-data-table__cell--non-numeric"></td>
     <td class="mdl-data-table__cell--non-numeric">
-      <button id="tmkdir" onclick="if (confirm('Are you sure you want to make folder?')){ FLASK_S3UP_CORE.makeDir(event, callbackMkdir); } else { document.getElementById('fs3up_suffix').value = ''; }" type="button" class="mdl-button mdl-button--icon mdl-button--primary">
+      <button id="tmkdir" onclick="if (confirm('Are you sure you want to make folder?')){ FLASK_S3_VIEWER_CORE.makeDir(event, callbackMkdir); } else { document.getElementById('fs3viewer_suffix').value = ''; }" type="button" class="mdl-button mdl-button--icon mdl-button--primary">
         <i class="material-icons">create_new_folder</i>
       </button>
       <div class="mdl-tooltip" data-mdl-for="tmkdir">
@@ -40,19 +40,19 @@
   </tr>
 {% endif %}
 
-{% if FS3UP_PREFIXES and PAGE == 1 %}
-  {% for p in FS3UP_PREFIXES if p.Prefix %}
+{% if FS3V_PREFIXES and PAGE == 1 %}
+  {% for p in FS3V_PREFIXES if p.Prefix %}
     <tr>
       <td>{{ checkbox(id=loop.index, type="pfx", val=p.Prefix) }}</td>
       <td class="mdl-data-table__cell--non-numeric">
-        <a href="{{ url_for('flask_s3up.files', prefix=p.Prefix|urlencode, before_prefix=PREFIX) }}" target="_self">{{ p.Prefix | replace(unquote_plus(PREFIX_WITH_EMPTY), '', 1) }}</a>
+        <a href="{{ url_for('flask_s3_viewer.files', prefix=p.Prefix|urlencode, before_prefix=PREFIX) }}" target="_self">{{ p.Prefix | replace(unquote_plus(PREFIX_WITH_EMPTY), '', 1) }}</a>
       </td>
       <td class="mdl-data-table__cell--non-numeric"></td>
       <td class="mdl-data-table__cell--non-numeric"></td>
       <td class="mdl-data-table__cell--non-numeric">
         <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
         <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
-        <button id="tdeld{{ loop.index }}" onclick="if (confirm('Are you sure you want to delete?')) FLASK_S3UP_CORE.deleteFile(event, '{{ p.Prefix }}', callbackDelFile);" type="button" class="mdl-button mdl-button--icon mdl-button--primary">
+        <button id="tdeld{{ loop.index }}" onclick="if (confirm('Are you sure you want to delete?')) FLASK_S3_VIEWER_CORE.deleteFile(event, '{{ p.Prefix }}', callbackDelFile);" type="button" class="mdl-button mdl-button--icon mdl-button--primary">
           <i class="material-icons">clear</i>
         </button>
         <div class="mdl-tooltip" data-mdl-for="tdeld{{ loop.index }}">

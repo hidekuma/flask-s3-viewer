@@ -5,12 +5,12 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta content="Flask S3up is a powerful extension that makes it easy to browse S3 in any Flask application" name="description" />
-<meta content="Flask, s3, aws, upload, uploader, browsing, python3, python, mount, objectstorage, s3up" name="keywords" />
+  <meta content="Flask S3 Viewer is a powerful extension that makes it easy to browse S3 in any Flask application" name="description" />
+<meta content="Flask, s3, aws, upload, uploader, browsing, python3, python, mount, objectstorage, s3viewer" name="keywords" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Configuration &mdash; Flask-S3Up 0.0.14 documentation</title>
+  <title>Configuration &mdash; Flask-S3-Viewer 0.1.0 documentation</title>
   
 
   
@@ -37,7 +37,7 @@
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Templates" href="templates.html" />
+    <link rel="next" title="Reference" href="../reference.html" />
     <link rel="prev" title="Installation" href="installation.html" /> 
 </head>
 
@@ -52,7 +52,7 @@
           
 
           
-            <a href="../index.html" class="icon icon-home"> Flask-S3Up
+            <a href="../index.html" class="icon icon-home"> Flask-S3-Viewer
           
 
           
@@ -103,6 +103,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../reference.html"> Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="templates.html"> Templates</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../license.html"> License</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html"> Changelog</a></li>
@@ -120,7 +121,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">Flask-S3Up</a>
+          <a href="../index.html">Flask-S3-Viewer</a>
         
       </nav>
 
@@ -172,7 +173,7 @@
             
   <div class="section" id="configuration">
 <h1>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h1>
-<p>Before you can begin using Flask S3Up, you should set up authentication credentials. Credentials for your AWS account can be found in the IAM Console. You can create or use an existing user. Go to manage access keys and generate a new set of keys.</p>
+<p>Before you can begin using Flask S3Viewer, you should set up authentication credentials. Credentials for your AWS account can be found in the IAM Console. You can create or use an existing user. Go to manage access keys and generate a new set of keys.</p>
 <div class="section" id="configure-credentials">
 <h2>Configure credentials<a class="headerlink" href="#configure-credentials" title="Permalink to this headline">¶</a></h2>
 <p>Install AWS CLI.</p>
@@ -183,26 +184,26 @@
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>aws configure
 </pre></div>
 </div>
-<p>Alternatively, you can create the credential file yourself. By default, its location is at ~/.aws/credentials. and Flask S3Up is going to use the credential file.</p>
+<p>Alternatively, you can create the credential file yourself. By default, its location is at ~/.aws/credentials. and Flask S3Viewer is going to use the credential file.</p>
 </div>
 <div class="section" id="minimum-settings">
 <h2>Minimum settings<a class="headerlink" href="#minimum-settings" title="Permalink to this headline">¶</a></h2>
-<p>This is a minimal setup for using flask s3up.
+<p>This is a minimal setup for using flask s3viewer.
 First install the dependency packages.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install flask flask_s3up
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install flask flask_s3_viewer
 </pre></div>
 </div>
-<p>Import flask and flask_s3up</p>
+<p>Import flask and flask_s3_viewer</p>
 <div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
 3
 4</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">flask</span>
 
-<span class="hll"><span class="kn">from</span> <span class="nn">flask_s3up</span> <span class="kn">import</span> <span class="n">FlaskS3Up</span>
-</span><span class="hll"><span class="kn">from</span> <span class="nn">flask_s3up.aws.ref</span> <span class="kn">import</span> <span class="n">Region</span>
+<span class="hll"><span class="kn">from</span> <span class="nn">flask_s3_viewer</span> <span class="kn">import</span> <span class="n">FlaskS3Viewer</span>
+</span><span class="hll"><span class="kn">from</span> <span class="nn">flask_s3_viewer.aws.ref</span> <span class="kn">import</span> <span class="n">Region</span>
 </span></pre></div>
 </td></tr></table></div>
-<p>Initiailize Flask application and FlaskS3Up.</p>
+<p>Initiailize Flask application and FlaskS3Viewer.</p>
 <div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
  2
  3
@@ -228,14 +229,14 @@ First install the dependency packages.</p>
 23</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="c1"># Init Flask</span>
 <span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
-<span class="hll"><span class="c1"># Init Flask S3Up</span>
-</span><span class="hll"><span class="n">s3up</span> <span class="o">=</span> <span class="n">FlaskS3Up</span><span class="p">(</span>
+<span class="hll"><span class="c1"># Init Flask S3Viewer</span>
+</span><span class="hll"><span class="n">s3viewer</span> <span class="o">=</span> <span class="n">FlaskS3Viewer</span><span class="p">(</span>
 </span><span class="hll">    <span class="c1"># Flask App</span>
 </span><span class="hll">    <span class="n">app</span><span class="p">,</span>
 </span><span class="hll">    <span class="c1"># Namespace must be unique</span>
-</span><span class="hll">    <span class="n">namespace</span><span class="o">=</span><span class="s1">&#39;flask-s3up&#39;</span><span class="p">,</span>
+</span><span class="hll">    <span class="n">namespace</span><span class="o">=</span><span class="s1">&#39;flask-s3-viewer&#39;</span><span class="p">,</span>
 </span><span class="hll">    <span class="c1"># Hostname, e.g. Cloudfront endpoint</span>
-</span><span class="hll">    <span class="n">object_hostname</span><span class="o">=</span><span class="s1">&#39;http://flask-s3up.com&#39;</span><span class="p">,</span>
+</span><span class="hll">    <span class="n">object_hostname</span><span class="o">=</span><span class="s1">&#39;http://flask-s3-viewer.com&#39;</span><span class="p">,</span>
 </span><span class="hll">    <span class="c1"># Put your AWS&#39;s profile name and Bucket name</span>
 </span><span class="hll">    <span class="n">config</span><span class="o">=</span><span class="p">{</span>
 </span><span class="hll">        <span class="s1">&#39;profile_name&#39;</span><span class="p">:</span> <span class="s1">&#39;PROFILE_NAME&#39;</span><span class="p">,</span>
@@ -243,15 +244,15 @@ First install the dependency packages.</p>
 </span><span class="hll">    <span class="p">}</span>
 </span><span class="hll"><span class="p">)</span>
 </span><span class="hll">
-</span><span class="hll"><span class="c1"># Register Flask S3Up&#39;s router</span>
-</span><span class="hll"><span class="n">s3up</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>
+</span><span class="hll"><span class="c1"># Register Flask S3Viewer&#39;s router</span>
+</span><span class="hll"><span class="n">s3viewer</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>
 </span>
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
     <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">3000</span><span class="p">)</span>
 </pre></div>
 </td></tr></table></div>
-<p>The values in the code above are mandatory. If the setting is finished, run your Flask application and visit <code class="docutils literal notranslate"><span class="pre">http://localhost/{namespace}/files</span></code>, e.g.&nbsp;<a class="reference external" href="http://localhost:3000/flask-s3up/files">http://localhost:3000/flask-s3up/files</a>.</p>
-<p>You can get example codes over <a class="reference external" href="https://github.com/hidekuma/flask-s3up/tree/master/example">here</a>.</p>
+<p>The values in the code above are mandatory. If the setting is finished, run your Flask application and visit <code class="docutils literal notranslate"><span class="pre">http://localhost/{namespace}/files</span></code>, e.g.&nbsp;<a class="reference external" href="http://localhost:3000/flask-s3-viewer/files">http://localhost:3000/flask-s3-viewer/files</a>.</p>
+<p>You can get example codes over <a class="reference external" href="https://github.com/hidekuma/flask-s3-viewer/tree/master/example">here</a>.</p>
 </div>
 </div>
 <hr class="docutils" />
@@ -278,12 +279,12 @@ First install the dependency packages.</p>
 15
 16</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="o">...</span>
 
-<span class="n">s3up</span> <span class="o">=</span> <span class="n">FlaskS3Up</span><span class="p">(</span>
+<span class="n">s3viewer</span> <span class="o">=</span> <span class="n">FlaskS3Viewer</span><span class="p">(</span>
     <span class="o">...</span>
 <span class="p">)</span>
 
 <span class="hll"><span class="c1"># Init another bucket</span>
-</span><span class="hll"><span class="n">s3up</span><span class="o">.</span><span class="n">add_new_one</span><span class="p">(</span>
+</span><span class="hll"><span class="n">s3viewer</span><span class="o">.</span><span class="n">add_new_one</span><span class="p">(</span>
 </span>    <span class="n">namespace</span><span class="o">=</span><span class="s1">&#39;another_namespace&#39;</span><span class="p">,</span>
     <span class="n">object_hostname</span><span class="o">=</span><span class="s1">&#39;http://anotherbucket.com&#39;</span><span class="p">,</span>
     <span class="n">config</span><span class="o">=</span><span class="p">{</span>
@@ -291,7 +292,7 @@ First install the dependency packages.</p>
         <span class="s1">&#39;bucket_name&#39;</span><span class="p">:</span> <span class="s1">&#39;S3_BUCKET_NAME&#39;</span>
     <span class="p">}</span>
 <span class="p">)</span>
-<span class="n">s3up</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>
+<span class="n">s3viewer</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>
 </pre></div>
 </td></tr></table></div>
 </div>
@@ -306,7 +307,7 @@ First install the dependency packages.</p>
 6
 7
 8
-9</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">s3up</span> <span class="o">=</span> <span class="n">FlaskS3Up</span><span class="p">(</span>
+9</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">s3viewer</span> <span class="o">=</span> <span class="n">FlaskS3Viewer</span><span class="p">(</span>
     <span class="o">...</span>
 
 <span class="hll">    <span class="c1"># allowed extension</span>
@@ -320,7 +321,7 @@ First install the dependency packages.</p>
 </div>
 <div class="section" id="choose-the-design-template">
 <h2>Choose the design template<a class="headerlink" href="#choose-the-design-template" title="Permalink to this headline">¶</a></h2>
-<p>Flask S3up supports the templates below.</p>
+<p>Flask S3 Viewer supports the templates below.</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="27%" />
@@ -352,7 +353,7 @@ First install the dependency packages.</p>
 6
 7
 8
-9</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">s3up</span> <span class="o">=</span> <span class="n">FlaskS3Up</span><span class="p">(</span>
+9</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">s3viewer</span> <span class="o">=</span> <span class="n">FlaskS3Viewer</span><span class="p">(</span>
     <span class="o">...</span>
 <span class="hll">    <span class="c1"># Enter template namespace (default: base)</span>
 </span><span class="hll">    <span class="n">template_namespace</span><span class="o">=</span><span class="s1">&#39;mdl&#39;</span><span class="p">,</span>
@@ -360,14 +361,14 @@ First install the dependency packages.</p>
         <span class="o">...</span>
     <span class="p">}</span>
 <span class="p">)</span>
-<span class="n">s3up</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>
+<span class="n">s3viewer</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>
 </pre></div>
 </td></tr></table></div>
 </div>
 <div class="section" id="controll-large-files">
 <h2>Controll large files<a class="headerlink" href="#controll-large-files" title="Permalink to this headline">¶</a></h2>
 <p>If you want to controll large files (maybe larger than 5MB ~ maximum 5TB), I recommand to set like below.
-Flask S3Up is going to use S3’s presigned URL. It’s nice to controll large files.</p>
+Flask S3Viewer is going to use S3’s presigned URL. It’s nice to controll large files.</p>
 <div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
 3
@@ -376,7 +377,7 @@ Flask S3Up is going to use S3’s presigned URL. It’s nice to controll large f
 6
 7
 8
-9</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">s3up</span> <span class="o">=</span> <span class="n">FlaskS3Up</span><span class="p">(</span>
+9</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">s3viewer</span> <span class="o">=</span> <span class="n">FlaskS3Viewer</span><span class="p">(</span>
     <span class="o">...</span>
 <span class="hll">    <span class="c1"># Change upload type to &#39;presign&#39;</span>
 </span><span class="hll">    <span class="n">upload_type</span><span class="o">=</span><span class="s1">&#39;presign&#39;</span><span class="p">,</span>
@@ -384,7 +385,7 @@ Flask S3Up is going to use S3’s presigned URL. It’s nice to controll large f
         <span class="o">...</span>
     <span class="p">}</span>
 <span class="p">)</span>
-<span class="n">s3up</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>
+<span class="n">s3viewer</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>
 </pre></div>
 </td></tr></table></div>
 <p>but you must do S3’s CORS settings before like set above.</p>
@@ -408,7 +409,7 @@ Flask S3Up is going to use S3’s presigned URL. It’s nice to controll large f
 </div>
 <div class="section" id="use-caching">
 <h2>Use Caching<a class="headerlink" href="#use-caching" title="Permalink to this headline">¶</a></h2>
-<p>S3 is charged per call. Therefore, Flask S3Up supports caching (currently only supports file caching, in-memory database will be supported later).</p>
+<p>S3 is charged per call. Therefore, Flask S3Viewer supports caching (currently only supports file caching, in-memory database will be supported later).</p>
 <div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
  2
  3
@@ -421,19 +422,19 @@ Flask S3Up is going to use S3’s presigned URL. It’s nice to controll large f
 10
 11
 12
-13</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">s3up</span> <span class="o">=</span> <span class="n">FlaskS3Up</span><span class="p">(</span>
+13</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">s3viewer</span> <span class="o">=</span> <span class="n">FlaskS3Viewer</span><span class="p">(</span>
     <span class="o">...</span>
     <span class="n">config</span><span class="o">=</span><span class="p">{</span>
         <span class="o">...</span>
-<span class="hll">        <span class="c1"># Flask S3Up will cache the list of s3 objects, if you set True</span>
+<span class="hll">        <span class="c1"># Flask S3Viewer will cache the list of s3 objects, if you set True</span>
 </span><span class="hll">        <span class="s1">&#39;use_cache&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
 </span><span class="hll">        <span class="c1"># Where cached files will be written</span>
-</span><span class="hll">        <span class="s1">&#39;cache_dir&#39;</span><span class="p">:</span> <span class="s1">&#39;/tmp/flask_s3up&#39;</span><span class="p">,</span>
+</span><span class="hll">        <span class="s1">&#39;cache_dir&#39;</span><span class="p">:</span> <span class="s1">&#39;/tmp/flask_s3_viewer&#39;</span><span class="p">,</span>
 </span><span class="hll">        <span class="c1"># Time To Live</span>
 </span><span class="hll">        <span class="s1">&#39;ttl&#39;</span><span class="p">:</span> <span class="mi">86400</span>
 </span>    <span class="p">}</span>
 <span class="p">)</span>
-<span class="n">s3up</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>
+<span class="n">s3viewer</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>
 </pre></div>
 </td></tr></table></div>
 </div>
@@ -473,15 +474,15 @@ Flask S3Up is going to use S3’s presigned URL. It’s nice to controll large f
 32
 33</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="o">...</span>
 
- <span class="n">s3up</span> <span class="o">=</span> <span class="n">FlaskS3Up</span><span class="p">(</span>
+ <span class="n">s3viewer</span> <span class="o">=</span> <span class="n">FlaskS3Viewer</span><span class="p">(</span>
      <span class="c1"># Flask app</span>
      <span class="n">app</span><span class="p">,</span>
      <span class="c1"># Namespace must be unique</span>
-     <span class="n">namespace</span><span class="o">=</span><span class="s1">&#39;flask-s3up&#39;</span><span class="p">,</span>
+     <span class="n">namespace</span><span class="o">=</span><span class="s1">&#39;flask-s3-viewer&#39;</span><span class="p">,</span>
      <span class="c1"># Enter template namespace(default: base)</span>
      <span class="n">template_namespace</span><span class="o">=</span><span class="s1">&#39;mdl&#39;</span><span class="p">,</span>
      <span class="c1"># File&#39;s hostname</span>
-     <span class="n">object_hostname</span><span class="o">=</span><span class="s1">&#39;http://flask-s3up.com&#39;</span><span class="p">,</span>
+     <span class="n">object_hostname</span><span class="o">=</span><span class="s1">&#39;http://flask-s3-viewer.com&#39;</span><span class="p">,</span>
      <span class="c1"># Allowed extension</span>
      <span class="n">allowed_extensions</span><span class="o">=</span><span class="p">{},</span>
      <span class="c1"># Bucket configs and else</span>
@@ -496,10 +497,10 @@ Flask S3Up is going to use S3’s presigned URL. It’s nice to controll large f
          <span class="s1">&#39;secret_key&#39;</span><span class="p">:</span> <span class="s1">&#39;AWS_IAM_SECRET_KEY&#39;</span><span class="p">,</span>
          <span class="c1"># For S3 compatible</span>
          <span class="s1">&#39;endpoint_url&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-         <span class="c1"># Flask S3Up will cache the list of s3 objects, if you set True</span>
+         <span class="c1"># Flask S3Viewer will cache the list of s3 objects, if you set True</span>
          <span class="s1">&#39;use_cache&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
          <span class="c1"># Where cached files will be written</span>
-         <span class="s1">&#39;cache_dir&#39;</span><span class="p">:</span> <span class="s1">&#39;/tmp/flask_s3up&#39;</span><span class="p">,</span>
+         <span class="s1">&#39;cache_dir&#39;</span><span class="p">:</span> <span class="s1">&#39;/tmp/flask_s3_viewer&#39;</span><span class="p">,</span>
          <span class="c1"># Time To Live</span>
          <span class="s1">&#39;ttl&#39;</span><span class="p">:</span> <span class="mi">86400</span><span class="p">,</span>
      <span class="p">}</span>
@@ -526,7 +527,7 @@ Flask S3Up is going to use S3’s presigned URL. It’s nice to controll large f
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="templates.html" class="btn btn-neutral float-right" title="Templates" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="../reference.html" class="btn btn-neutral float-right" title="Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

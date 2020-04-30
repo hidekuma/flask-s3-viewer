@@ -22,7 +22,7 @@ SOFTWARE.
 
 ---
 
-The "boto3" module from Amazon.com and "flask_s3up/blueprints/templates/mdl(==Material-Design-Lite)" module from google is licensed under an Apache-2 license as is stated below:
+The "boto3" module from Amazon.com and "flask_s3_viewer/blueprints/templates/mdl(==Material-Design-Lite)" module from google is licensed under an Apache-2 license as is stated below:
 
                                  Apache License
                            Version 2.0, January 2004

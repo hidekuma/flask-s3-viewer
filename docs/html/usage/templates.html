@@ -5,12 +5,12 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta content="Flask S3up is a powerful extension that makes it easy to browse S3 in any Flask application" name="description" />
-<meta content="Flask, s3, aws, upload, uploader, browsing, python3, python, mount, objectstorage, s3up" name="keywords" />
+  <meta content="Flask S3 Viewer is a powerful extension that makes it easy to browse S3 in any Flask application" name="description" />
+<meta content="Flask, s3, aws, upload, uploader, browsing, python3, python, mount, objectstorage, s3viewer" name="keywords" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Templates &mdash; Flask-S3Up 0.0.14 documentation</title>
+  <title>Templates &mdash; Flask-S3-Viewer 0.1.0 documentation</title>
   
 
   
@@ -38,7 +38,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="License" href="../license.html" />
-    <link rel="prev" title="Configuration" href="configuration.html" /> 
+    <link rel="prev" title="Reference" href="../reference.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -52,7 +52,7 @@
           
 
           
-            <a href="../index.html" class="icon icon-home"> Flask-S3Up
+            <a href="../index.html" class="icon icon-home"> Flask-S3-Viewer
           
 
           
@@ -87,6 +87,7 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html"> Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html#user-guides">User Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference.html"> Reference</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#"> Templates</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#get-template-source">Get template source</a></li>
 </ul>
@@ -107,7 +108,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">Flask-S3Up</a>
+          <a href="../index.html">Flask-S3-Viewer</a>
         
       </nav>
 
@@ -159,20 +160,20 @@
             
   <div class="section" id="templates">
 <h1>Templates<a class="headerlink" href="#templates" title="Permalink to this headline">¶</a></h1>
-<p>Flask S3Up provides CLI to help customize templates.</p>
+<p>Flask S3Viewer provides CLI to help customize templates.</p>
 <div class="section" id="get-template-source">
 <h2>Get template source<a class="headerlink" href="#get-template-source" title="Permalink to this headline">¶</a></h2>
 <p>You can customize the template with CLI tool.</p>
 <p>See help.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># You can see the details</span>
-flask_s3up -h
+flask_s3_viewer -h
 
  ____  __     __   ____  __ _    ____  ____  _  _  ____
 <span class="o">(</span>  __<span class="o">)(</span>  <span class="o">)</span>   / _<span class="se">\ </span>/ ___<span class="o">)(</span>  / <span class="o">)</span>  / ___<span class="o">)(</span> __ <span class="se">\/</span> <span class="o">)(</span> <span class="se">\(</span>  _ <span class="se">\</span>
  <span class="o">)</span> _<span class="o">)</span> / <span class="o">(</span>_/<span class="se">\/</span>    <span class="se">\\</span>___ <span class="se">\ </span><span class="o">)</span>  <span class="o">(</span>   <span class="se">\_</span>__ <span class="se">\ </span><span class="o">(</span>__ <span class="o">()</span> <span class="se">\/</span> <span class="o">(</span> <span class="o">)</span> __/
 <span class="o">(</span>__<span class="o">)</span>  <span class="se">\_</span>___/<span class="se">\_</span>/<span class="se">\_</span>/<span class="o">(</span>____/<span class="o">(</span>__<span class="se">\_</span><span class="o">)</span>  <span class="o">(</span>____/<span class="o">(</span>____/<span class="se">\_</span>___/<span class="o">(</span>__<span class="o">)</span>
 
-<span class="o">=============</span> Flask S3Up Command Line <span class="nv">Tool</span> <span class="o">==============</span>
+<span class="o">=============</span> Flask S3Viewer Command Line <span class="nv">Tool</span> <span class="o">==============</span>
 
 optional arguments:
   -h, --help            show this <span class="nb">help</span> message and <span class="nb">exit</span>
@@ -186,10 +187,10 @@ optional arguments:
 </div>
 <p>Get the template to your repository.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get a Material-design-lite template</span>
-flask_s3up --path templates/mdl --template mdl
+flask_s3_viewer --path templates/mdl --template mdl
 
 <span class="c1"># Get a base template (not designed at all)</span>
-flask_s3up -p templates/base -t base
+flask_s3_viewer -p templates/base -t base
 </pre></div>
 </div>
 <p>When you run the command, you can see the
@@ -197,11 +198,11 @@ flask_s3up -p templates/base -t base
 repository. then rerun the Flask application.</p>
 <p>And you can also change template directory if you want.</p>
 <p>For examples, Get Material-design-lite template to <code class="docutils literal notranslate"><span class="pre">templates/customized</span></code> directory on your root path.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>flask_s3up -p templates/customized -t mdl
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>flask_s3_viewer -p templates/customized -t mdl
 </pre></div>
 </div>
 <p>Then change template_namespace. it will be routed to defined directory (<code class="docutils literal notranslate"><span class="pre">templates/customized</span></code>).</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">s3up</span> <span class="o">=</span> FlaskS3Up<span class="o">(</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">s3viewer</span> <span class="o">=</span> FlaskS3Viewer<span class="o">(</span>
     ...
     <span class="nv">template_namespace</span><span class="o">=</span><span class="s1">&#39;customized&#39;</span>,
     ...
@@ -210,7 +211,7 @@ repository. then rerun the Flask application.</p>
 </div>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
-<p class="last">The template folder of Flask S3Up is fixed as <code class="docutils literal notranslate"><span class="pre">templates</span></code>. so if you change <code class="docutils literal notranslate"><span class="pre">template_namespace</span></code>, It will be routed <strong>{repository}/templates/{defined template_namespace_by_you}</strong>.</p>
+<p class="last">The template folder of Flask S3Viewer is fixed as <code class="docutils literal notranslate"><span class="pre">templates</span></code>. so if you change <code class="docutils literal notranslate"><span class="pre">template_namespace</span></code>, It will be routed <strong>{repository}/templates/{defined template_namespace_by_you}</strong>.</p>
 </div>
 </div>
 </div>
@@ -226,7 +227,7 @@ repository. then rerun the Flask application.</p>
         <a href="../license.html" class="btn btn-neutral float-right" title="License" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="configuration.html" class="btn btn-neutral float-left" title="Configuration" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="../reference.html" class="btn btn-neutral float-left" title="Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

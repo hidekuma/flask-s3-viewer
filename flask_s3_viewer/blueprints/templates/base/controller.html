@@ -1,0 +1,77 @@
+<!-- Controller -->
+<!-- Nav -->
+  {% with %}
+    {% set nav = split(PREFIX_WITH_EMPTY) %}
+    <div>
+      Navigation 
+      <a href="{{ url_for('flask_s3_viewer.files') }}">
+        home
+      </a>
+      {% for n in nav %}
+        {% if n != "" %}
+          <span style="padding: 0 5px;">/</span>
+          <a href="{{ url_for('flask_s3_viewer.files', prefix=n + '/') }}">
+            {{ unquote_plus(n) | replace('/', '')}}
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% endwith %}
+<!--// Nav -->
+
+<!-- Delete all -->
+<button id="del_all" onclick="deleteAll(); this.disabled=true;" disabled>
+  deleteAll
+</button>
+<!--// Delete all -->
+
+<!-- Form -->
+<form id="upload_form" action="{{ url_for('flask_s3_viewer.files') }}" method="post" accept-charset="utf-8" enctype="multipart/form-data">
+  <label for="fs3viewer_files">
+    select files (click to upload)
+    <input style="display: none;" onchange="FLASK_S3_VIEWER_CORE.readyFileHandling(event, callbackReadyFileHandling)" multiple="multiple" type="file" name="files[]" id="fs3viewer_files">
+  </label>
+</form>
+<!--// Form -->
+
+<!-- Else -->
+<span id="floading" style="display: none;">loading</span>
+<span id="file_chip" style="display: none;">
+  <span id="file_count"></span>
+  <button onclick="document.getElementById('floading').style.display='inline'; FLASK_S3_VIEWER_CORE.uploadFiles(event, callbackUploadFiles); document.getElementById('file_chip').style.display='none';">upload</button>
+  <button onclick="FLASK_S3_VIEWER_CORE.preventDefaults(event); document.getElementById('upload_form').reset(); document.getElementById('file_chip').style.display='none';">cancel</button>
+</span>
+<!--// Else -->
+
+<!-- Search -->
+<div>
+  <label for="fs3viewer_search">
+    search
+  </label>
+  <input onkeydown="if(event.key == 'Enter') FLASK_S3_VIEWER_CORE.runSearching(event);" type="text" name="search" id="fs3viewer_search">
+</div>
+{% if SEARCH and SEARCH != '' %}
+<span>
+  <span>
+    {{ SEARCH }}
+  </span>
+  <button onclick="FLASK_S3_VIEWER_CORE.resetSearching(event);" type="button">reset</button>
+</span>
+{% endif %}
+<!--// Search -->
+
+<!-- Refresh -->
+<input type="text" name="some_name" value="" id="badge" readonly>
+<input type="hidden" onchange="console.log(value);document.getElementById('badge').value=value;" name="fs3viewer_refresh" value="0" id="fs3viewer_refresh">
+<button onclick="document.location.reload();">reload</button>
+<!--// Refresh -->
+
+<!-- Loading -->
+<div>
+  <input type="hidden" name="fs3viewer_progress" onchange="if (value == 100) document.getElementById('floading').style.display='none'; document.getElementById('progress_bar').value = value;" value="0" id="fs3viewer_progress">
+  <progress id="progress_bar" max="100", value="0"></progress>
+</div>
+<!--// Loading -->
+<!--// Controller -->
+
+

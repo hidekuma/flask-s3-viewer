@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reference &mdash; Flask-S3Up 0.0.14 documentation</title>
+  <title>Reference &mdash; Flask-S3-Viewer 0.1.0 documentation</title>
   
 
   
@@ -50,7 +50,7 @@
           
 
           
-            <a href="index.html" class="icon icon-home"> Flask-S3Up
+            <a href="index.html" class="icon icon-home"> Flask-S3-Viewer
           
 
           
@@ -107,7 +107,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">Flask-S3Up</a>
+          <a href="index.html">Flask-S3-Viewer</a>
         
       </nav>
 
@@ -162,30 +162,30 @@
 <div class="section" id="cores">
 <h2>Cores<a class="headerlink" href="#cores" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="flask_s3up.FlaskS3Up">
-<em class="property">class </em><code class="descclassname">flask_s3up.</code><code class="descname">FlaskS3Up</code><span class="sig-paren">(</span><em>app</em>, <em>namespace=None</em>, <em>object_hostname=None</em>, <em>allowed_extensions=None</em>, <em>template_namespace='base'</em>, <em>upload_type='default'</em>, <em>config=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3up.FlaskS3Up" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">flask_s3up.aws.s3.AWSS3Client</span></code></p>
+<dt id="flask_s3_viewer.FlaskS3Viewer">
+<em class="property">class </em><code class="descclassname">flask_s3_viewer.</code><code class="descname">FlaskS3Viewer</code><span class="sig-paren">(</span><em>app</em>, <em>namespace=None</em>, <em>object_hostname=None</em>, <em>allowed_extensions=None</em>, <em>template_namespace='base'</em>, <em>upload_type='default'</em>, <em>config=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">flask_s3_viewer.aws.s3.AWSS3Client</span></code></p>
 <dl class="attribute">
-<dt id="flask_s3up.FlaskS3Up.FLASK_S3UP_BUCKET">
-<code class="descname">FLASK_S3UP_BUCKET</code><a class="headerlink" href="#flask_s3up.FlaskS3Up.FLASK_S3UP_BUCKET" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">FlaskS3UpBucketConfig</span></code></p>
+<dt id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET">
+<code class="descname">FLASK_S3_VIEWER_BUCKET</code><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">FlaskS3ViewerBucketConfig</span></code></p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.FlaskS3Up.FLASK_S3UP_BUCKET_CONFIGS">
-<code class="descname">FLASK_S3UP_BUCKET_CONFIGS</code><em class="property"> = {}</em><a class="headerlink" href="#flask_s3up.FlaskS3Up.FLASK_S3UP_BUCKET_CONFIGS" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET_CONFIGS">
+<code class="descname">FLASK_S3_VIEWER_BUCKET_CONFIGS</code><em class="property"> = {}</em><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET_CONFIGS" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="flask_s3up.FlaskS3Up.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>app</em>, <em>namespace=None</em>, <em>object_hostname=None</em>, <em>allowed_extensions=None</em>, <em>template_namespace='base'</em>, <em>upload_type='default'</em>, <em>config=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3up.FlaskS3Up.__init__" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.FlaskS3Viewer.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>app</em>, <em>namespace=None</em>, <em>object_hostname=None</em>, <em>allowed_extensions=None</em>, <em>template_namespace='base'</em>, <em>upload_type='default'</em>, <em>config=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>app</strong> (<em>Flask.app</em>) – Required</li>
-<li><strong>namespace</strong> (<em>str</em>) – Unique namespace of Flask S3Up</li>
+<li><strong>namespace</strong> (<em>str</em>) – Unique namespace of Flask S3Viewer</li>
 <li><strong>object_hostname</strong> (<em>url</em>) – Hostname, e.g. Cloudfront endpoint</li>
 <li><strong>allowed_extensions</strong> (<em>set</em>) – e.g. {‘jpg’, ‘png’}</li>
 <li><strong>template_namespace</strong> (<em>str</em>) – Template name</li>
@@ -199,15 +199,15 @@
 </dd></dl>
 
 <dl class="method">
-<dt id="flask_s3up.FlaskS3Up.add_new_one">
-<code class="descname">add_new_one</code><span class="sig-paren">(</span><em>namespace=None</em>, <em>object_hostname=None</em>, <em>allowed_extensions=None</em>, <em>template_namespace='base'</em>, <em>upload_type='default'</em>, <em>config=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3up.FlaskS3Up.add_new_one" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.FlaskS3Viewer.add_new_one">
+<code class="descname">add_new_one</code><span class="sig-paren">(</span><em>namespace=None</em>, <em>object_hostname=None</em>, <em>allowed_extensions=None</em>, <em>template_namespace='base'</em>, <em>upload_type='default'</em>, <em>config=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.add_new_one" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize another bucket</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>namespace</strong> (<em>str</em>) – Unique namespace of Flask S3Up</li>
+<li><strong>namespace</strong> (<em>str</em>) – Unique namespace of Flask S3Viewer</li>
 <li><strong>object_hostname</strong> (<em>url</em>) – Hostname, e.g. Cloudfront endpoint</li>
 <li><strong>allowed_extensions</strong> (<em>set</em>) – e.g. {‘jpg’, ‘png’}</li>
 <li><strong>template_namespace</strong> (<em>str</em>) – Template name</li>
@@ -220,13 +220,13 @@
 </table>
 <dl class="docutils">
 <dt>Return:</dt>
-<dd><a class="reference internal" href="#flask_s3up.FlaskS3Up" title="flask_s3up.FlaskS3Up"><code class="xref py py-class docutils literal notranslate"><span class="pre">FlaskS3Up</span></code></a></dd>
+<dd><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer" title="flask_s3_viewer.FlaskS3Viewer"><code class="xref py py-class docutils literal notranslate"><span class="pre">FlaskS3Viewer</span></code></a></dd>
 </dl>
 </dd></dl>
 
 <dl class="classmethod">
-<dt id="flask_s3up.FlaskS3Up.get_boto_client">
-<em class="property">classmethod </em><code class="descname">get_boto_client</code><span class="sig-paren">(</span><em>namespace=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3up.FlaskS3Up.get_boto_client" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.FlaskS3Viewer.get_boto_client">
+<em class="property">classmethod </em><code class="descname">get_boto_client</code><span class="sig-paren">(</span><em>namespace=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.get_boto_client" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a Boto3’s S3 client.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -243,8 +243,8 @@
 </dd></dl>
 
 <dl class="classmethod">
-<dt id="flask_s3up.FlaskS3Up.get_boto_session">
-<em class="property">classmethod </em><code class="descname">get_boto_session</code><span class="sig-paren">(</span><em>namespace=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3up.FlaskS3Up.get_boto_session" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.FlaskS3Viewer.get_boto_session">
+<em class="property">classmethod </em><code class="descname">get_boto_session</code><span class="sig-paren">(</span><em>namespace=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.get_boto_session" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a Boto3’s Sesson.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -261,9 +261,9 @@
 </dd></dl>
 
 <dl class="classmethod">
-<dt id="flask_s3up.FlaskS3Up.get_instance">
-<em class="property">classmethod </em><code class="descname">get_instance</code><span class="sig-paren">(</span><em>namespace=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3up.FlaskS3Up.get_instance" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a Flask S3Up instance.</p>
+<dt id="flask_s3_viewer.FlaskS3Viewer.get_instance">
+<em class="property">classmethod </em><code class="descname">get_instance</code><span class="sig-paren">(</span><em>namespace=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.get_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a Flask S3Viewer instance.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -274,24 +274,24 @@
 </table>
 <dl class="docutils">
 <dt>Return:</dt>
-<dd><a class="reference internal" href="#flask_s3up.FlaskS3Up" title="flask_s3up.FlaskS3Up"><code class="xref py py-class docutils literal notranslate"><span class="pre">FlaskS3Up</span></code></a></dd>
+<dd><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer" title="flask_s3_viewer.FlaskS3Viewer"><code class="xref py py-class docutils literal notranslate"><span class="pre">FlaskS3Viewer</span></code></a></dd>
 </dl>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.FlaskS3Up.max_items">
-<code class="descname">max_items</code><a class="headerlink" href="#flask_s3up.FlaskS3Up.max_items" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.FlaskS3Viewer.max_items">
+<code class="descname">max_items</code><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.max_items" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.FlaskS3Up.max_pages">
-<code class="descname">max_pages</code><a class="headerlink" href="#flask_s3up.FlaskS3Up.max_pages" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.FlaskS3Viewer.max_pages">
+<code class="descname">max_pages</code><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.max_pages" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="flask_s3up.FlaskS3Up.register">
-<code class="descname">register</code><span class="sig-paren">(</span><em>template_folder=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3up.FlaskS3Up.register" title="Permalink to this definition">¶</a></dt>
-<dd><p>Register FlaskS3Up to Flask’s blueprint.</p>
+<dt id="flask_s3_viewer.FlaskS3Viewer.register">
+<code class="descname">register</code><span class="sig-paren">(</span><em>template_folder=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.register" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register FlaskS3Viewer to Flask’s blueprint.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -307,8 +307,8 @@
 </dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.FlaskS3Up.template_namespace">
-<code class="descname">template_namespace</code><em class="property"> = 'flask_s3up'</em><a class="headerlink" href="#flask_s3up.FlaskS3Up.template_namespace" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.FlaskS3Viewer.template_namespace">
+<code class="descname">template_namespace</code><em class="property"> = 'flask_s3_viewer'</em><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.template_namespace" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -317,8 +317,8 @@
 <div class="section" id="region">
 <h2>Region<a class="headerlink" href="#region" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="flask_s3up.aws.ref.Region">
-<em class="property">class </em><code class="descclassname">flask_s3up.aws.ref.</code><code class="descname">Region</code><a class="headerlink" href="#flask_s3up.aws.ref.Region" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region">
+<em class="property">class </em><code class="descclassname">flask_s3_viewer.aws.ref.</code><code class="descname">Region</code><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
 <p>AWS Service Regions</p>
 <dl class="docutils">
@@ -328,108 +328,108 @@
 <dd>Region.SEOUL.value</dd>
 </dl>
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.BAHRAIN">
-<code class="descname">BAHRAIN</code><em class="property"> = 'me-south-1'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.BAHRAIN" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.BAHRAIN">
+<code class="descname">BAHRAIN</code><em class="property"> = 'me-south-1'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.BAHRAIN" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.BEIJING">
-<code class="descname">BEIJING</code><em class="property"> = 'cn-north-1'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.BEIJING" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.BEIJING">
+<code class="descname">BEIJING</code><em class="property"> = 'cn-north-1'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.BEIJING" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.CALIFORNIA">
-<code class="descname">CALIFORNIA</code><em class="property"> = 'us-west-1'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.CALIFORNIA" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.CALIFORNIA">
+<code class="descname">CALIFORNIA</code><em class="property"> = 'us-west-1'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.CALIFORNIA" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.CANADA">
-<code class="descname">CANADA</code><em class="property"> = 'ca-central-1'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.CANADA" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.CANADA">
+<code class="descname">CANADA</code><em class="property"> = 'ca-central-1'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.CANADA" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.FRANKFURT">
-<code class="descname">FRANKFURT</code><em class="property"> = 'eu-central-1'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.FRANKFURT" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.FRANKFURT">
+<code class="descname">FRANKFURT</code><em class="property"> = 'eu-central-1'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.FRANKFURT" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.HONGKONG">
-<code class="descname">HONGKONG</code><em class="property"> = 'ap-east-1'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.HONGKONG" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.HONGKONG">
+<code class="descname">HONGKONG</code><em class="property"> = 'ap-east-1'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.HONGKONG" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.IRELAND">
-<code class="descname">IRELAND</code><em class="property"> = 'eu-west-1'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.IRELAND" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.IRELAND">
+<code class="descname">IRELAND</code><em class="property"> = 'eu-west-1'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.IRELAND" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.LONDON">
-<code class="descname">LONDON</code><em class="property"> = 'eu-west-2'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.LONDON" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.LONDON">
+<code class="descname">LONDON</code><em class="property"> = 'eu-west-2'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.LONDON" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.MUMBAI">
-<code class="descname">MUMBAI</code><em class="property"> = 'ap-south-1'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.MUMBAI" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.MUMBAI">
+<code class="descname">MUMBAI</code><em class="property"> = 'ap-south-1'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.MUMBAI" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.NINGXIA">
-<code class="descname">NINGXIA</code><em class="property"> = 'cn-northwest-1'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.NINGXIA" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.NINGXIA">
+<code class="descname">NINGXIA</code><em class="property"> = 'cn-northwest-1'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.NINGXIA" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.OHIO">
-<code class="descname">OHIO</code><em class="property"> = 'us-east-2'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.OHIO" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.OHIO">
+<code class="descname">OHIO</code><em class="property"> = 'us-east-2'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.OHIO" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.OREGON">
-<code class="descname">OREGON</code><em class="property"> = 'us-west-2'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.OREGON" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.OREGON">
+<code class="descname">OREGON</code><em class="property"> = 'us-west-2'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.OREGON" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.OSAKA">
-<code class="descname">OSAKA</code><em class="property"> = 'ap-northeast-3'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.OSAKA" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.OSAKA">
+<code class="descname">OSAKA</code><em class="property"> = 'ap-northeast-3'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.OSAKA" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.PARIS">
-<code class="descname">PARIS</code><em class="property"> = 'eu-west-3'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.PARIS" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.PARIS">
+<code class="descname">PARIS</code><em class="property"> = 'eu-west-3'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.PARIS" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.SAOPAULO">
-<code class="descname">SAOPAULO</code><em class="property"> = 'sa-east-1'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.SAOPAULO" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.SAOPAULO">
+<code class="descname">SAOPAULO</code><em class="property"> = 'sa-east-1'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.SAOPAULO" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.SEOUL">
-<code class="descname">SEOUL</code><em class="property"> = 'ap-northeast-2'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.SEOUL" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.SEOUL">
+<code class="descname">SEOUL</code><em class="property"> = 'ap-northeast-2'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.SEOUL" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.SINGAPORE">
-<code class="descname">SINGAPORE</code><em class="property"> = 'ap-southeast-1'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.SINGAPORE" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.SINGAPORE">
+<code class="descname">SINGAPORE</code><em class="property"> = 'ap-southeast-1'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.SINGAPORE" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.STOCKHOLM">
-<code class="descname">STOCKHOLM</code><em class="property"> = 'eu-north-1'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.STOCKHOLM" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.STOCKHOLM">
+<code class="descname">STOCKHOLM</code><em class="property"> = 'eu-north-1'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.STOCKHOLM" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.SYDNEY">
-<code class="descname">SYDNEY</code><em class="property"> = 'ap-southeast-2'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.SYDNEY" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.SYDNEY">
+<code class="descname">SYDNEY</code><em class="property"> = 'ap-southeast-2'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.SYDNEY" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.TOKYO">
-<code class="descname">TOKYO</code><em class="property"> = 'ap-northeast-1'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.TOKYO" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.TOKYO">
+<code class="descname">TOKYO</code><em class="property"> = 'ap-northeast-1'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.TOKYO" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="flask_s3up.aws.ref.Region.VIRGINIA">
-<code class="descname">VIRGINIA</code><em class="property"> = 'us-east-1'</em><a class="headerlink" href="#flask_s3up.aws.ref.Region.VIRGINIA" title="Permalink to this definition">¶</a></dt>
+<dt id="flask_s3_viewer.aws.ref.Region.VIRGINIA">
+<code class="descname">VIRGINIA</code><em class="property"> = 'us-east-1'</em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.VIRGINIA" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>

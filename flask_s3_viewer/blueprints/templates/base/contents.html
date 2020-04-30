@@ -1,5 +1,5 @@
-{% if FS3UP_CONTENTS %}
-  {% for c in FS3UP_CONTENTS if c.Key %}
+{% if FS3V_CONTENTS %}
+  {% for c in FS3V_CONTENTS if c.Key %}
     <tr>
       <td>{{ checkbox(id=loop.index, type="cnt",  val=c.Key) }}</td>
       <td>
@@ -12,13 +12,13 @@
         {{ c.Size | filesizeformat }}
       </td>
       <td>
-        <button onclick="FLASK_S3UP_CORE.copyToClipboard('{{ object_hostname }}/{{ c.Key|urlencode }}');">
+        <button onclick="FLASK_S3_VIEWER_CORE.copyToClipboard('{{ FS3V_OBJECT_HOSTNAME }}/{{ c.Key|urlencode }}');">
           copyToClipboard
         </button>
-        <button onclick="location.href='{{ url_for('flask_s3up.files_download', key=c.Key|urlencode) }}';">
+        <button onclick="location.href='{{ url_for('flask_s3_viewer.files_download', key=c.Key|urlencode) }}';">
           download
         </button>
-        <button onclick="if (confirm('Are you sure you want to delete?')) FLASK_S3UP_CORE.deleteFile(event, '{{ c.Key }}', callbackDelFile);">
+        <button onclick="if (confirm('Are you sure you want to delete?')) FLASK_S3_VIEWER_CORE.deleteFile(event, '{{ c.Key }}', callbackDelFile);">
           delete
         </button>
       </td>

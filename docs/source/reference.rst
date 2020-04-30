@@ -4,7 +4,7 @@ Reference
 Cores
 ---------
 
-.. autoclass:: flask_s3up.FlaskS3Up
+.. autoclass:: flask_s3_viewer.FlaskS3Viewer
    :members:
    :show-inheritance:
    :private-members:
@@ -15,7 +15,7 @@ Cores
 Region
 ---------
 
-.. autoclass:: flask_s3up.aws.ref.Region
+.. autoclass:: flask_s3_viewer.aws.ref.Region
    :members:
    :show-inheritance:
    :private-members:

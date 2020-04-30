@@ -1,10 +1,10 @@
 .. meta::
-    :description: Flask S3up is a powerful extension that makes it easy to browse S3 in any Flask application
-    :keywords: Flask, s3, aws, upload, uploader, browsing, python3, python, mount, objectstorage, s3up
+    :description: Flask S3 Viewer is a powerful extension that makes it easy to browse S3 in any Flask application
+    :keywords: Flask, s3, aws, upload, uploader, browsing, python3, python, mount, objectstorage, s3viewer
 
 Configuration
 =============
-Before you can begin using Flask S3Up, you should set up authentication credentials. Credentials for your AWS account can be found in the IAM Console. You can create or use an existing user. Go to manage access keys and generate a new set of keys.
+Before you can begin using Flask S3Viewer, you should set up authentication credentials. Credentials for your AWS account can be found in the IAM Console. You can create or use an existing user. Go to manage access keys and generate a new set of keys.
 
 Configure credentials
 ---------------------
@@ -20,18 +20,18 @@ If you have the AWS CLI installed, then you can use it to configure your credent
 
     aws configure
 
-Alternatively, you can create the credential file yourself. By default, its location is at ~/.aws/credentials. and Flask S3Up is going to use the credential file.
+Alternatively, you can create the credential file yourself. By default, its location is at ~/.aws/credentials. and Flask S3Viewer is going to use the credential file.
 
 Minimum settings
 ----------------
-This is a minimal setup for using flask s3up.
+This is a minimal setup for using flask s3viewer.
 First install the dependency packages.
 
 .. code-block:: bash
 
-    pip install flask flask_s3up
+    pip install flask flask_s3_viewer
 
-Import flask and flask_s3up
+Import flask and flask_s3_viewer
 
 .. code-block:: python
     :linenos:
@@ -39,10 +39,10 @@ Import flask and flask_s3up
 
     import flask
 
-    from flask_s3up import FlaskS3Up
-    from flask_s3up.aws.ref import Region
+    from flask_s3_viewer import FlaskS3Viewer
+    from flask_s3_viewer.aws.ref import Region
 
-Initiailize Flask application and FlaskS3Up.
+Initiailize Flask application and FlaskS3Viewer.
 
 .. code-block:: python
     :linenos:
@@ -51,14 +51,14 @@ Initiailize Flask application and FlaskS3Up.
     # Init Flask
     app = Flask(__name__)
 
-    # Init Flask S3Up
-    s3up = FlaskS3Up(
+    # Init Flask S3Viewer
+    s3viewer = FlaskS3Viewer(
         # Flask App
         app,
         # Namespace must be unique
-        namespace='flask-s3up',
+        namespace='flask-s3-viewer',
         # Hostname, e.g. Cloudfront endpoint
-        object_hostname='http://flask-s3up.com',
+        object_hostname='http://flask-s3-viewer.com',
         # Put your AWS's profile name and Bucket name
         config={
             'profile_name': 'PROFILE_NAME',
@@ -66,17 +66,17 @@ Initiailize Flask application and FlaskS3Up.
         }
     )
 
-    # Register Flask S3Up's router
-    s3up.register()
+    # Register Flask S3Viewer's router
+    s3viewer.register()
 
     if __name__ == '__main__':
         app.run(debug=True, port=3000)
 
-The values in the code above are mandatory. If the setting is finished, run your Flask application and visit ``http://localhost/{namespace}/files``, e.g. http://localhost:3000/flask-s3up/files.
+The values in the code above are mandatory. If the setting is finished, run your Flask application and visit ``http://localhost/{namespace}/files``, e.g. http://localhost:3000/flask-s3-viewer/files.
 
 You can get example codes over here_.
 
-.. _here: https://github.com/hidekuma/flask-s3up/tree/master/example
+.. _here: https://github.com/hidekuma/flask-s3-viewer/tree/master/example
 
 ----
 
@@ -95,12 +95,12 @@ You can also initiailize multiple bucket.
 
     ...
 
-    s3up = FlaskS3Up(
+    s3viewer = FlaskS3Viewer(
         ...
     )
 
     # Init another bucket
-    s3up.add_new_one(
+    s3viewer.add_new_one(
         namespace='another_namespace',
         object_hostname='http://anotherbucket.com',
         config={
@@ -108,7 +108,7 @@ You can also initiailize multiple bucket.
             'bucket_name': 'S3_BUCKET_NAME'
         }
     )
-    s3up.register()
+    s3viewer.register()
 
 Limit the file extensions
 --------------------------
@@ -118,7 +118,7 @@ You can limit the file extensions that are uploaded, if you want.
     :linenos:
     :emphasize-lines: 4-5
 
-    s3up = FlaskS3Up(
+    s3viewer = FlaskS3Viewer(
         ...
 
         # allowed extension
@@ -130,7 +130,7 @@ You can limit the file extensions that are uploaded, if you want.
 
 Choose the design template
 ---------------------------
-Flask S3up supports the templates below.
+Flask S3 Viewer supports the templates below.
 
 ================== ==================== ============================
 Template namespace Design type          Description
@@ -143,7 +143,7 @@ mdl                Material Design Lite `link <https://getmdl.io>`__
     :linenos:
     :emphasize-lines: 3-4
 
-    s3up = FlaskS3Up(
+    s3viewer = FlaskS3Viewer(
         ...
         # Enter template namespace (default: base)
         template_namespace='mdl',
@@ -151,18 +151,18 @@ mdl                Material Design Lite `link <https://getmdl.io>`__
             ...
         }
     )
-    s3up.register()
+    s3viewer.register()
 
 Controll large files
 --------------------
 If you want to controll large files (maybe larger than 5MB ~ maximum 5TB), I recommand to set like below.
-Flask S3Up is going to use S3's presigned URL. It's nice to controll large files.
+Flask S3Viewer is going to use S3's presigned URL. It's nice to controll large files.
 
 .. code-block:: python
     :linenos:
     :emphasize-lines: 3-4
 
-    s3up = FlaskS3Up(
+    s3viewer = FlaskS3Viewer(
         ...
         # Change upload type to 'presign'
         upload_type='presign',
@@ -170,7 +170,7 @@ Flask S3Up is going to use S3's presigned URL. It's nice to controll large files
             ...
         }
     )
-    s3up.register()
+    s3viewer.register()
 
 but you must do S3’s CORS settings before like set above.
 
@@ -188,25 +188,25 @@ but you must do S3’s CORS settings before like set above.
 
 Use Caching
 -----------
-S3 is charged per call. Therefore, Flask S3Up supports caching (currently only supports file caching, in-memory database will be supported later).
+S3 is charged per call. Therefore, Flask S3Viewer supports caching (currently only supports file caching, in-memory database will be supported later).
 
 .. code-block:: python
     :linenos:
     :emphasize-lines: 5-10
 
-    s3up = FlaskS3Up(
+    s3viewer = FlaskS3Viewer(
         ...
         config={
             ...
-            # Flask S3Up will cache the list of s3 objects, if you set True
+            # Flask S3Viewer will cache the list of s3 objects, if you set True
             'use_cache': True,
             # Where cached files will be written
-            'cache_dir': '/tmp/flask_s3up',
+            'cache_dir': '/tmp/flask_s3_viewer',
             # Time To Live
             'ttl': 86400
         }
     )
-    s3up.register()
+    s3viewer.register()
 
 Full example
 ------------
@@ -216,15 +216,15 @@ Full example
 
     ...
 
-     s3up = FlaskS3Up(
+     s3viewer = FlaskS3Viewer(
          # Flask app
          app,
          # Namespace must be unique
-         namespace='flask-s3up',
+         namespace='flask-s3-viewer',
          # Enter template namespace(default: base)
          template_namespace='mdl',
          # File's hostname
-         object_hostname='http://flask-s3up.com',
+         object_hostname='http://flask-s3-viewer.com',
          # Allowed extension
          allowed_extensions={},
          # Bucket configs and else
@@ -239,10 +239,10 @@ Full example
              'secret_key': 'AWS_IAM_SECRET_KEY',
              # For S3 compatible
              'endpoint_url': None,
-             # Flask S3Up will cache the list of s3 objects, if you set True
+             # Flask S3Viewer will cache the list of s3 objects, if you set True
              'use_cache': True,
              # Where cached files will be written
-             'cache_dir': '/tmp/flask_s3up',
+             'cache_dir': '/tmp/flask_s3_viewer',
              # Time To Live
              'ttl': 86400,
          }

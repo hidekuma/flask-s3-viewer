@@ -14,13 +14,13 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath('../..'))
-from flask_s3up import __version__ as VERSION
+from flask_s3_viewer import __version__ as VERSION
 
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'Flask-S3Up'
+project = 'Flask-S3-Viewer'
 copyright = '2020, hidekuma'
 author = 'hidekuma'
 

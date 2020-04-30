@@ -1,0 +1,58 @@
+{% if PREFIX and PREFIX != '/' %}
+  <tr>
+    <td></td>
+    <td>
+      <a href="{{ url_for('flask_s3_viewer.files', prefix=BEFORE_PREFIX) }}" target="_self">..</a>
+    </td>
+    <td></td>
+    <td></td>
+    <td>
+      <button disabled>-</button>
+      <button disabled>-</button>
+      <button disabled>-</button>
+    </td>
+  </tr>
+{% endif %}
+
+{% if not SEARCH %}
+  <tr id="tr_maker">
+    <td></td>
+    <td>
+      <!-- create folder -->
+      <div>
+        <label for="suffix">Folder Name</label>
+        <input onkeydown="if(event.key == 'Enter') if (confirm('Are you sure you want to make folder?')){ FLASK_S3_VIEWER_CORE.makeDir(event, callbackMkdir); } else { value = ''; }" type="text" name="suffix" value="" id="fs3viewer_suffix">
+      </div>
+      <!--// create folder -->
+    </td>
+    <td></td>
+    <td></td>
+    <td>
+      <button id="tmkdir" onclick="if (confirm('Are you sure you want to make folder?')){ FLASK_S3_VIEWER_CORE.makeDir(event, callbackMkdir); } else { document.getElementById('fs3viewer_suffix').value = ''; }" type="button">
+        createNewFolder
+      </button>
+      <button disabled>-</button>
+      <button disabled>-</button>
+    </td>
+  </tr>
+{% endif %}
+
+{% if FS3V_PREFIXES and PAGE == 1 %}
+  {% for p in FS3V_PREFIXES if p.Prefix %}
+    <tr>
+      <td>{{ checkbox(id=loop.index, type="pfx", val=p.Prefix) }}</td>
+      <td>
+        <a href="{{ url_for('flask_s3_viewer.files', prefix=p.Prefix|urlencode, before_prefix=PREFIX) }}" target="_self">{{ p.Prefix | replace(unquote_plus(PREFIX_WITH_EMPTY), '', 1) }}</a>
+      </td>
+      <td></td>
+      <td></td>
+      <td>
+        <button disabled>-</button>
+        <button disabled>-</button>
+        <button id="tdeld{{ loop.index }}" onclick="if (confirm('Are you sure you want to delete?')) FLASK_S3_VIEWER_CORE.deleteFile(event, '{{ p.Prefix }}', callbackDelFile);" type="button">
+          delete
+        </button>
+      </td>
+    </tr>
+  {% endfor %}
+{% endif %}

@@ -32,7 +32,7 @@
 })(window.Element.prototype);
 /* ==========// CLOSEST POLYFILL ========== */
 
-var FLASK_S3UP_CORE = (function(){
+var FLASK_S3_VIEWER_CORE = (function(){
   var uploadProgress = [];
   var postSigns = [];
 
@@ -142,7 +142,7 @@ var FLASK_S3UP_CORE = (function(){
 
   function runSearching(e, callback){
     if (e != null) e = e || window.event;
-    var value = document.getElementById('fs3up_search').value;
+    var value = document.getElementById('fs3viewer_search').value;
     var search = __setUrlParam('search', value);
 
     if (typeof callback === 'function') {
@@ -153,7 +153,7 @@ var FLASK_S3UP_CORE = (function(){
   }
 
   function __addRefreshingBadge(count) {
-    var el = document.getElementById('fs3up_refresh');
+    var el = document.getElementById('fs3viewer_refresh');
     el.value = count + parseInt(el.value);
     el.dispatchEvent(__makeDispatchEvent('change'));
 
@@ -161,8 +161,8 @@ var FLASK_S3UP_CORE = (function(){
 
   function readyFileHandling(e, callback){
     if (e != null) e = e || window.event;
-    target = document.getElementById('fs3up_files');
-    if (FLASK_S3UP_UPLOAD_TYPE == 'presign') __postPresigns(e, target.files, callback);
+    target = document.getElementById('fs3viewer_files');
+    if (FLASK_S3_VIEWER_UPLOAD_TYPE == 'presign') __postPresigns(e, target.files, callback);
     else __handleFiles(e, target.files, [], callback);
   }
 
@@ -176,14 +176,14 @@ var FLASK_S3UP_CORE = (function(){
   function __initializeProgress(numFiles) {
     uploadProgress = [];
     for(var i = numFiles; i > 0; i--) uploadProgress.push(0);
-    var el = document.getElementById('fs3up_progress')
+    var el = document.getElementById('fs3viewer_progress')
     el.value = 0;
     el.dispatchEvent(__makeDispatchEvent('change'));
   }
 
   function __postPresigns(e, files, callback){
-    var url = FLASK_S3UP_FILES_ENDPOINT + '/presign';
-    var prefix = document.getElementById('fs3up_prefix');
+    var url = FLASK_S3_VIEWER_FILES_ENDPOINT + '/presign';
+    var prefix = document.getElementById('fs3viewer_prefix');
     var xhr = new XMLHttpRequest();
     var formData = new FormData();
     var fileList = [];
@@ -206,7 +206,7 @@ var FLASK_S3UP_CORE = (function(){
   }
 
   function __uploadWithPresign(e, callback){
-    var files = document.getElementById('fs3up_files');
+    var files = document.getElementById('fs3viewer_files');
     Array.prototype.forEach.call(files.files, uploadFile);
     function uploadFile(file, i, arr) {
       var url = postSigns[i]['url'];
@@ -242,12 +242,12 @@ var FLASK_S3UP_CORE = (function(){
   }
 
   function __upload(e, callback){
-    var files = document.getElementById('fs3up_files');
+    var files = document.getElementById('fs3viewer_files');
     Array.prototype.forEach.call(files.files, uploadFile);
     function uploadFile(file, i, arr) {
-      var prefix = document.getElementById('fs3up_prefix');
+      var prefix = document.getElementById('fs3viewer_prefix');
       //console.log('uploadFile', prefix.value, file,i)
-      var url = FLASK_S3UP_FILES_ENDPOINT;
+      var url = FLASK_S3_VIEWER_FILES_ENDPOINT;
       var xhr = new XMLHttpRequest();
       var formData = new FormData();
       xhr.open('POST', url, true);
@@ -277,9 +277,9 @@ var FLASK_S3UP_CORE = (function(){
       e = e || window.event;
       preventDefaults(e);
     }
-    if (FLASK_S3UP_UPLOAD_TYPE == 'default') {
+    if (FLASK_S3_VIEWER_UPLOAD_TYPE == 'default') {
       __upload(e, callback);
-    } else if (FLASK_S3UP_UPLOAD_TYPE == 'presign') {
+    } else if (FLASK_S3_VIEWER_UPLOAD_TYPE == 'presign') {
       __uploadWithPresign(e, callback);
     }
   }
@@ -290,7 +290,7 @@ var FLASK_S3UP_CORE = (function(){
       return tot + curr;
     }, 0) / uploadProgress.length;
     //console.log('__updateProgress', fileNumber, percent, total);
-    var el = document.getElementById('fs3up_progress');
+    var el = document.getElementById('fs3viewer_progress');
     el.value = total;
     el.dispatchEvent(__makeDispatchEvent('change'));
   }
@@ -301,8 +301,8 @@ var FLASK_S3UP_CORE = (function(){
       preventDefaults(e);
     }
     preventDefaults(e);
-    var prefix = document.getElementById('fs3up_prefix');
-    var suffix = document.getElementById('fs3up_suffix');
+    var prefix = document.getElementById('fs3viewer_prefix');
+    var suffix = document.getElementById('fs3viewer_suffix');
     if (__secure_name(suffix.value, suffix) == false){
       alert('Not secure name');
       return false;
@@ -314,7 +314,7 @@ var FLASK_S3UP_CORE = (function(){
     // prefix: enocoded
     // suffix: decoded
     var realPrefix = prefix.value + encodeURIComponent(suffix.value);
-    var url = FLASK_S3UP_FILES_ENDPOINT;
+    var url = FLASK_S3_VIEWER_FILES_ENDPOINT;
     var xhr = new XMLHttpRequest();
     var formData = new FormData();
     xhr.open('POST', url, true);
@@ -342,7 +342,7 @@ var FLASK_S3UP_CORE = (function(){
       preventDefaults(e);
     }
     var xhr = new XMLHttpRequest();
-    xhr.open('DELETE', FLASK_S3UP_FILES_ENDPOINT + '/' + encodeURIComponent(key), true);
+    xhr.open('DELETE', FLASK_S3_VIEWER_FILES_ENDPOINT + '/' + encodeURIComponent(key), true);
     xhr.addEventListener('readystatechange', function(xe) {
       if (xhr.readyState == 4) {
         if (xhr.status == 204) {

@@ -11,7 +11,7 @@ except ImportError:
     import pickle
 
 class AWSCache:
-    SUFFIX = ".__flask_s3up_cache"
+    SUFFIX = ".__flask_s3_viewer_cache"
     def __init__(self, cache_dir=None, timeout=None):
         if not cache_dir:
             raise ValueError('have to set cache_dir.')

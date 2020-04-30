@@ -4,26 +4,26 @@ from setuptools import setup, find_packages
 
 _version_re = re.compile(r"__version__\s+=\s+(.*)")
 
-with open("flask_s3up/__init__.py", "rb") as f:
+with open("flask_s3_viewer/__init__.py", "rb") as f:
     VERSION = str(
         ast.literal_eval(_version_re.search(f.read().decode("utf-8")).group(1))
     )
 
 
 setup(
-    name                          = 'flask_s3up',
+    name                          = 'flask_s3_viewer',
     version                       = VERSION,
-    url                           = 'https://github.com/hidekuma/flask_s3up',
+    url                           = 'https://github.com/hidekuma/flask_s3_viewer',
     license                       = '',
     author                        = 'Hidekuma',
     author_email                  = 'd.hidekuma@gmail.com',
-    download_url                  = f'https://github.com/hidekuma/flask_s3up/archive/{VERSION}.tar.gz',
-    description                   = 'Flask S3up is a powerful extension that makes it easy to browse S3 in any Flask application.',
+    download_url                  = f'https://github.com/hidekuma/flask_s3_viewer/archive/{VERSION}.tar.gz',
+    description                   = 'Flask S3 Viewer is a powerful extension that makes it easy to browse S3 in any Flask application.',
     packages                      = find_packages(exclude = ['tests*', 'test*', 'example*', 'i/*']),
     long_description              = open('README.md').read(),
     long_description_content_type = 'text/markdown',
     package_data = {
-        'flask_s3up': [
+        'flask_s3_viewer': [
             'blueprints/view.py',
             'blueprints/templates/mdl/contents.html',
             'blueprints/templates/mdl/controller.html',
@@ -52,7 +52,7 @@ setup(
     test_suite                    = 'tests',
     entry_points                  = {
         'console_scripts': [
-            'flask_s3up=flask_s3up.cli:handle',
+            'flask_s3_viewer=flask_s3_viewer.cli:handle',
         ]
     },
 )

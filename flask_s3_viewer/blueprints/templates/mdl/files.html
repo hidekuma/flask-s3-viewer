@@ -1,91 +1,113 @@
-{% extends FS3UP_TEMPLATE_NAMESPACE + "/layout.html" %}
+{% extends FS3V_TEMPLATE_NAMESPACE + "/layout.html" %}
 {% block title %}Files{% endblock %}
 {% block controller %}
-    {% include FS3UP_TEMPLATE_NAMESPACE + '/controller.html' with context %}
+    {% include FS3V_TEMPLATE_NAMESPACE + '/controller.html' with context %}
 {% endblock %}
 {% block head %}
     {{ super() }}
+    <style type="text/css" media="screen">
+      #floading.mdl-spinner {
+        width: 16px;
+        height: 16px;
+        margin: 0 7px 0 7px;
+      }
+      #floading.mdl-spinner .mdl-spinner__circle {
+        border-width: 3px;
+      }
+      .mdl-chip {
+        margin: 0 8px 0 8px;
+      }
+    </style>
 {% endblock %}
 
 <!-- checkbox jinja macro -->
 {% macro checkbox(type="", id="", val="") -%}
-    <label for="chkbox_{{ type }}_{{ id }}">
-        <input class="chkboxs" type="checkbox" id="chkbox_{{ type }}_{{ id }}", value="{{ val }}">
+<label style="padding-left: 0; margin-left: 33px;"class="mdl-checkbox mdl-js-checkbox" for="chkbox_{{ type }}_{{ id }}">
+        <input type="checkbox" id="chkbox_{{ type }}_{{ id }}" class="mdl-checkbox__input", value="{{ val }}">
+        <span class="mdl-checkbox__label"></span>
     </label>
 {%- endmacro %}
 
 <!-- tr jinja macro -->
 {% macro tr(id='', display='', text='') -%}
     <tr style="{% if display != '' %}display: {{ display }};{% endif %}" {% if id != '' %}id="{{ id }}"{% endif %}>
-        <td></td>
-        <td><em>{{ text }}</em></td>
-        <td></td>
-        <td></td>
-        <td></td>
+        <td>
+            <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>
+                <i class="material-icons">error_outline</i>
+            </button>
+        </td>
+        <td class="mdl-data-table__cell--non-numeric"><em>{{ text }}</em></td>
+        <td class="mdl-data-table__cell--non-numeric"></td>
+        <td class="mdl-data-table__cell--non-numeric"></td>
+        <td class="mdl-data-table__cell--non-numeric">
+            <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
+            <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
+            <button class="mdl-button mdl-button--icon mdl-button--primary" disabled>-</button>
+        </td>
     </tr>
 {%- endmacro %}
 
 {% block content %}
-    <table>
+    <table style="width: 100%;" class="mdl-data-table mdl-js-data-table">  <!-- mdl-data-table--selectable -->
         <thead>
             <tr>
                 <th>{{ checkbox(id='all') }}</th>
-                <th>Name</th>
-                <th>Created at</th>
-                <th>Size</th>
-                <th>Functions</th>
+                <th class="mdl-data-table__cell--non-numeric">Name</th>
+                <th class="mdl-data-table__cell--non-numeric">Created at</th>
+                <th class="mdl-data-table__cell--non-numeric">Size</th>
+                <th class="mdl-data-table__cell--non-numeric">Functions</th>
             </tr>
         </thead>
         <tbody id="playground">
             {{ tr('clone', 'none') }}
-            {% include FS3UP_TEMPLATE_NAMESPACE + '/prefixes.html' with context %}
+            {% include FS3V_TEMPLATE_NAMESPACE + '/prefixes.html' with context %}
             <tr id="divider" style="display: none;"></tr>
-            {% include FS3UP_TEMPLATE_NAMESPACE + '/contents.html' with context %}
+            {% include FS3V_TEMPLATE_NAMESPACE + '/contents.html' with context %}
         </tbody>
         <tfoot>
-            <td colspan=5>
+            <td style="text-align: center;" colspan=5>
                 {% if STARTING_TOKEN and PAGE_INDICATOR != 0 %}
                     <a href="{{ url_for(
-                        'flask_s3up.files',
+                        'flask_s3_viewer.files',
                         prefix=PREFIX,
                         search=SEARCH,
                         prev_tokens=PREV_TOKENS,
                     ) }}" target="_self"></a>
                     <a href="{{ url_for(
-                        'flask_s3up.files',
+                        'flask_s3_viewer.files',
                         prefix=PREFIX,
                         search=SEARCH,
                         prev_tokens=PREV_TOKENS,
                         starting_token=split(PREV_TOKENS, ',')[PAGE_INDICATOR - 1],
-                        page=FS3UP_MAX_PAGES,
+                        page=FS3V_MAX_PAGES,
                         page_indicator=PAGE_INDICATOR - 1
                     ) }}" target="_self">prev</a>
                 {% endif %}
-                {% if FS3UP_PAGES %}
-                    {% for page in range(FS3UP_PAGES) %}
+                {% if FS3V_PAGES %}
+                    {% for page in range(FS3V_PAGES) %}
                         <a style="{% if (loop.index | int == PAGE) or (PAGE is none and loop.index | int == 1) %} font-weight: bold; font-size: larger;{% endif %}" href="{{ url_for(
-                            'flask_s3up.files',
+                            'flask_s3_viewer.files',
                             prefix=PREFIX,
                             search=SEARCH,
                             prev_tokens=PREV_TOKENS,
                             starting_token=STARTING_TOKEN,
                             page=loop.index,
                             page_indicator=PAGE_INDICATOR
-                        ) }}" target="_self">{{ loop.index + PAGE_INDICATOR * FS3UP_MAX_PAGES | int}}</a>
+                        ) }}" target="_self">{{ loop.index + PAGE_INDICATOR * FS3V_MAX_PAGES | int}}</a>
                     {% endfor %}
                 {% endif %}
-                {% if FS3UP_NEXT_TOKEN %}
+                {% if FS3V_NEXT_TOKEN %}
                     <a href="{{ url_for(
-                        'flask_s3up.files',
+                        'flask_s3_viewer.files',
                         prefix=PREFIX,
                         prev_tokens=list_append(split(PREV_TOKENS, ','), STARTING_TOKEN_WITH_NONE) | join(','),
                         search=SEARCH,
-                        starting_token=FS3UP_NEXT_TOKEN,
+                        starting_token=FS3V_NEXT_TOKEN,
                         page=1,
                         page_indicator=PAGE_INDICATOR + 1
                     ) }}" target="_self">next</a>
                 {% endif %}
-                <span>
+                <span style="margin-left: 20px; font-style: italic;">
                     ( viewing {{ PAGE_INDICATOR + 1 }} )
                 </span>
             </td>
@@ -94,36 +116,36 @@
 {% endblock %}
 
 {% block tail %}
-    <script src="{{ url_for('flask_s3up.static', filename="/js/flask.s3up.core.js") }}" charset="utf-8"></script>
-    <!-- customzing javascript with flask.s3up.core.js's callback function -->
+    <script src="{{ url_for('flask_s3_viewer.static', filename="/js/flask.s3viewer.core.js") }}" charset="utf-8"></script>
+    <!-- customzing javascript with flask.s3viewer.core.js's callback function -->
     <script charset="utf-8">
         document.getElementById('chkbox__all').addEventListener('click', checkAll, false);
         function checkAll(e){
-            var chkboxs = document.getElementsByClassName('chkboxs');
+            var chkboxs = document.getElementsByClassName('mdl-checkbox__input');
             if(e.target.checked){
                 Array.prototype.forEach.call(
                     chkboxs,
                     function(v, k){
-                        v.checked = true;
+                        v.parentNode.MaterialCheckbox.check();
                     }
                 );
             } else {
                 Array.prototype.forEach.call(
                     chkboxs,
                     function(v, k){
-                        v.checked = false;
+                        v.parentNode.MaterialCheckbox.uncheck();
                     }
                 );
             }
         }
 
-        var chkboxs = document.getElementsByClassName('chkboxs');
+        var chkboxs = document.getElementsByClassName('mdl-checkbox__input');
         for (var i = 0; i < chkboxs.length; i++) {
             chkboxs[i].addEventListener('change', isChecked, false);
         }
 
         function isChecked(e){
-            var chkboxs = document.getElementsByClassName('chkboxs');
+            var chkboxs = document.getElementsByClassName('mdl-checkbox__input');
             var isCheck = false;
             Array.prototype.some.call(
                 chkboxs,
@@ -144,13 +166,13 @@
         }
 
         function deleteAll(){
-            var chkboxs = document.getElementsByClassName('chkboxs');
+            var chkboxs = document.getElementsByClassName('mdl-checkbox__input');
             Array.prototype.forEach.call(
                 chkboxs,
                 function(el, i){
                     if (el.checked && el.value != ''){
-                        FLASK_S3UP_CORE.deleteFile(null, el.value, callbackDelFile, el);
-                        el.checked = false;
+                        FLASK_S3_VIEWER_CORE.deleteFile(null, el.value, callbackDelFile, el);
+                        el.parentNode.MaterialCheckbox.uncheck();
                     }
                 }
             );
@@ -162,7 +184,7 @@
                 //console.log('callback:', e, xhr, key);
                 if(xhr.status == 204){
                     var clone = document.getElementById('clone').cloneNode(true);
-                    clone.children[0].innerHTML = '-';
+                    clone.children[0].children[0].children[0].innerHTML = 'cloud_off';
                     clone.children[1].innerHTML = '<em><span style="text-decoration: line-through;">' + key + '</span> (Deleted)</em>';
                     clone.removeAttribute('id');
                     clone.removeAttribute('style');
@@ -178,12 +200,12 @@
             if (xhr.readyState == 4) {
                 //console.log('callback:', e, xhr, pfx);
                 var clone = document.getElementById('clone').cloneNode(true);
-                var suffix = document.getElementById('fs3up_suffix');
+                var suffix = document.getElementById('fs3viewer_suffix');
                 clone.removeAttribute('id');
                 clone.removeAttribute('style');
                 if(xhr.status == 201){
                     clone.style.opacity = 0.6;
-                    clone.children[0].innerHTML = '+';
+                    clone.children[0].children[0].children[0].innerHTML = 'cloud_done';
                     clone.children[1].innerHTML = '<em>' + suffix.value + ' (Created)</em>';
                 } else {
                     clone.style.opacity = 0.3;
@@ -199,10 +221,8 @@
         }
 
         function callbackReadyFileHandling(e, files, presigns){
-            //console.log('callback', e, files, presigns);
             document.getElementById('file_count').innerHTML=files.length == 1? files.length + ' file' : files.length + ' files';
             document.getElementById('file_chip').removeAttribute('style');
-
             for (var i = 0; i < presigns.length; i++) {
                 var tbody = document.getElementById('playground');
                 var clone = document.getElementById('clone').cloneNode(true);
@@ -234,7 +254,7 @@
                 clone.removeAttribute('style');
                 if(xhr.status == 201 || xhr.status == 204){
                     clone.style.opacity = 0.6;
-                    clone.children[0].innerHTML = '+';
+                    clone.children[0].children[0].children[0].innerHTML = 'attachment';
                     clone.children[1].innerHTML = '<em>' + file.name + ' (Uploaded)</em>';
                 } else {
                     clone.style.opacity = 0.3;

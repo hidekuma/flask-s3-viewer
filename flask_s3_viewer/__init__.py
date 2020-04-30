@@ -16,7 +16,7 @@ from .config import (
 
 APP_TEMPLATE_FOLDER = FIXED_TEMPLATE_FOLDER
 
-__version__ = "0.0.16"
+__version__ = "0.1.0"
 
 
 class Singleton(type):
@@ -33,10 +33,10 @@ class Singleton(type):
             logging.info(f"*** {i} Initialized ! ***")
             return cls._instances[key]
 
-class FlaskS3Up(AWSS3Client, metaclass=Singleton):
-    FLASK_S3UP_BUCKET_CONFIGS = {}
-    FLASK_S3UP_BUCKET = namedtuple(
-        'FlaskS3UpBucketConfig',
+class FlaskS3Viewer(AWSS3Client, metaclass=Singleton):
+    FLASK_S3_VIEWER_BUCKET_CONFIGS = {}
+    FLASK_S3_VIEWER_BUCKET = namedtuple(
+        'FlaskS3ViewerBucketConfig',
         '''
         profile_name
         region_name
@@ -63,7 +63,7 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
     ):
         """
         :param Flask.app app: Required
-        :param str namespace: Unique namespace of Flask S3Up
+        :param str namespace: Unique namespace of Flask S3Viewer
         :param url object_hostname: Hostname, e.g. Cloudfront endpoint
         :param set allowed_extensions: e.g. {'jpg', 'png'}
         :param str template_namespace: Template name
@@ -96,7 +96,7 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
             config.setdefault('use_cache', None)
             super().__init__(**config)
 
-        self.FLASK_S3UP_BUCKET_CONFIGS[namespace] = self.FLASK_S3UP_BUCKET(
+        self.FLASK_S3_VIEWER_BUCKET_CONFIGS[namespace] = self.FLASK_S3_VIEWER_BUCKET(
             **config
         )
 
@@ -111,12 +111,12 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
     @classmethod
     def get_instance(cls, namespace=None):
         """
-        Return a Flask S3Up instance.
+        Return a Flask S3Viewer instance.
 
         :param str namespace: namespace
 
         Return:
-            :class:`FlaskS3Up`
+            :class:`FlaskS3Viewer`
         """
         # print(cls._instances.data, namespace)
         return cls._instances[namespace]
@@ -157,7 +157,7 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         """
         Initialize another bucket
 
-        :param str namespace: Unique namespace of Flask S3Up
+        :param str namespace: Unique namespace of Flask S3Viewer
         :param url object_hostname: Hostname, e.g. Cloudfront endpoint
         :param set allowed_extensions: e.g. {'jpg', 'png'}
         :param str template_namespace: Template name
@@ -165,9 +165,9 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
         :param dict config: Bucket configs
 
         Return:
-            :class:`FlaskS3Up`
+            :class:`FlaskS3Viewer`
         """
-        return FlaskS3Up(
+        return FlaskS3Viewer(
             self.app,
             namespace=namespace,
             object_hostname=object_hostname,
@@ -179,7 +179,7 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
 
     def register(self, template_folder=None):
         """
-        Register FlaskS3Up to Flask's blueprint.
+        Register FlaskS3Viewer to Flask's blueprint.
 
         :param path template_folder: FIXME
 
@@ -193,7 +193,7 @@ class FlaskS3Up(AWSS3Client, metaclass=Singleton):
             global APP_TEMPLATE_FOLDER
             APP_TEMPLATE_FOLDER = template_folder
         # Dynamic import (have to)
-        from .routers import FlaskS3UpViewRouter
-        self.app.register_blueprint(FlaskS3UpViewRouter)
-        logging.info(f"*** registerd FlaskS3Up blueprint! ***")
+        from .routers import FlaskS3ViewerViewRouter
+        self.app.register_blueprint(FlaskS3ViewerViewRouter)
+        logging.info(f"*** registerd FlaskS3Viewer blueprint! ***")
         logging.info(self.app.url_map)

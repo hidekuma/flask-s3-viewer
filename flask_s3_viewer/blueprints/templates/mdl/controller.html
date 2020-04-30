@@ -3,7 +3,7 @@
 <div style="margin-left: 28px;" class="mdl-navigation">
   {% with %}
     {% set nav = split(PREFIX_WITH_EMPTY) %}
-    <a id="thome" href="{{ url_for('flask_s3up.files') }}" class="mdl-button mdl-button--icon">
+    <a id="thome" href="{{ url_for('flask_s3_viewer.files') }}" class="mdl-button mdl-button--icon">
       <i style="font-size: 16px;" class="material-icons">home</i>
     </a>
     <div class="mdl-tooltip" data-mdl-for="thome">
@@ -12,7 +12,7 @@
     {% for n in nav %}
       {% if n != "" %}
         <span style="padding: 0 5px;">/</span>
-        <a style="padding: 0 10px;" class="mdl-navigation__link" href="{{ url_for('flask_s3up.files', prefix=n + '/') }}">
+        <a style="padding: 0 10px;" class="mdl-navigation__link" href="{{ url_for('flask_s3_viewer.files', prefix=n + '/') }}">
           {{ unquote_plus(n) | replace('/', '')}}
         </a>
       {% endif %}
@@ -31,10 +31,10 @@
 </div>
 <!--// Delete all -->
 <!-- Form -->
-<form id="upload_form" action="{{ url_for('flask_s3up.files') }}" method="post" accept-charset="utf-8" enctype="multipart/form-data">
-  <label id='tattach' class="mdl-button mdl-js-button mdl-button--icon" for="fs3up_files">
+<form id="upload_form" action="{{ url_for('flask_s3_viewer.files') }}" method="post" accept-charset="utf-8" enctype="multipart/form-data">
+  <label id='tattach' class="mdl-button mdl-js-button mdl-button--icon" for="fs3viewer_files">
     <i class="material-icons">attachment</i>
-    <input style="display: none;" onchange="FLASK_S3UP_CORE.readyFileHandling(event, callbackReadyFileHandling)" multiple="multiple" type="file" name="files[]" id="fs3up_files">
+    <input style="display: none;" onchange="FLASK_S3_VIEWER_CORE.readyFileHandling(event, callbackReadyFileHandling)" multiple="multiple" type="file" name="files[]" id="fs3viewer_files">
   </label>
   <div class="mdl-tooltip" data-mdl-for="tattach">
     Attach files
@@ -46,21 +46,21 @@
 <span id="floading" class="mdl-spinner mdl-js-spinner is-active" style="display: none;"></span>
 <span id="file_chip" class="mdl-chip mdl-chip--deletable" style="display: none;">
   <span id="file_count" class="mdl-chip__text" style="margin-right: 8px;"></span>
-  <button onclick="document.getElementById('floading').style.display='inline-block'; FLASK_S3UP_CORE.uploadFiles(event, callbackUploadFiles); document.getElementById('file_chip').style.display='none';" class="mdl-chip__action"><i class="material-icons">cloud_upload</i></button>
-  <button onclick="FLASK_S3UP_CORE.preventDefaults(event); document.getElementById('upload_form').reset(); document.getElementById('file_chip').style.display='none';" class="mdl-chip__action"><i class="material-icons">cancel</i></button>
+  <button onclick="document.getElementById('floading').style.display='inline-block'; FLASK_S3_VIEWER_CORE.uploadFiles(event, callbackUploadFiles); document.getElementById('file_chip').style.display='none';" class="mdl-chip__action"><i class="material-icons">cloud_upload</i></button>
+  <button onclick="FLASK_S3_VIEWER_CORE.preventDefaults(event); document.getElementById('upload_form').reset(); document.getElementById('file_chip').style.display='none';" class="mdl-chip__action"><i class="material-icons">cancel</i></button>
 </span>
 <!--// Else -->
 
 <!-- Search -->
 <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable">
-  <label id="tsrch" class="mdl-button mdl-js-button mdl-button--icon" for="flask_s3up_search">
+  <label id="tsrch" class="mdl-button mdl-js-button mdl-button--icon" for="flask_s3_viewer_search">
     <i class="material-icons">search</i>
   </label>
   <div class="mdl-tooltip" data-mdl-for="tsrch">
     Search files
   </div>
   <div class="mdl-textfield__expandable-holder">
-    <input onkeydown="if(event.key == 'Enter') FLASK_S3UP_CORE.runSearching(event);" class="mdl-textfield__input" type="text" name="search" id="flask_s3up_search">
+    <input onkeydown="if(event.key == 'Enter') FLASK_S3_VIEWER_CORE.runSearching(event);" class="mdl-textfield__input" type="text" name="search" id="flask_s3_viewer_search">
   </div>
 </div>
 {% if SEARCH and SEARCH != '' %}
@@ -68,13 +68,13 @@
   <span class="mdl-chip__text">
     {{ SEARCH }}
   </span>
-  <button onclick="FLASK_S3UP_CORE.resetSearching(event);" type="button" class="mdl-chip__action"><i class="material-icons">cancel</i></button>
+  <button onclick="FLASK_S3_VIEWER_CORE.resetSearching(event);" type="button" class="mdl-chip__action"><i class="material-icons">cancel</i></button>
 </span>
 {% endif %}
 <!--// Search -->
 
 <!-- Refresh -->
-<input type="hidden" onchange="document.getElementById('badge').setAttribute('data-badge', value);" name="fs3up_refresh" value="0" id="fs3up_refresh">
+<input type="hidden" onchange="document.getElementById('badge').setAttribute('data-badge', value);" name="fs3viewer_refresh" value="0" id="fs3viewer_refresh">
 <div style="cursor: pointer;" onclick="document.location.reload();" id="badge" class="material-icons mdl-badge mdl-badge--overlap">cached</div>
 <div class="mdl-tooltip" data-mdl-for="badge">
   Refresh page
@@ -83,7 +83,7 @@
 
 <!-- Loading -->
 <div>
-  <input type="hidden" name="fs3up_progress" onchange="if (value == 100) setTimeout(function(){document.getElementById('floading').style.display='none';}, 500); document.getElementById('progress_bar').MaterialProgress.setProgress(value);" value="0" id="fs3up_progress">
+  <input type="hidden" name="fs3viewer_progress" onchange="if (value == 100) setTimeout(function(){document.getElementById('floading').style.display='none';}, 500); document.getElementById('progress_bar').MaterialProgress.setProgress(value);" value="0" id="fs3viewer_progress">
   <div style="position: fixed; z-index: 4; bottom: 0; left: 0; width: 100%;" id="progress_bar" class="mdl-progress mdl-js-progress"></div>
 </div>
 <!--// Loading -->
