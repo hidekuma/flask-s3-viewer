@@ -17,7 +17,7 @@ setup(
     license                       = '',
     author                        = 'Hidekuma',
     author_email                  = 'd.hidekuma@gmail.com',
-    download_url                  = f'https://github.com/hidekuma/flask-s3-viewer/archive/{VERSION}.tar.gz',
+    download_url                  = 'https://github.com/hidekuma/flask-s3-viewer/releases',
     description                   = 'Flask S3 Viewer is a powerful extension that makes it easy to browse S3 in any Flask application.',
     packages                      = find_packages(exclude = ['tests*', 'test*', 'example*', 'i/*']),
     long_description              = open('README.md').read(),
