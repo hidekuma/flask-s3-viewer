@@ -13,11 +13,11 @@ with open("flask_s3_viewer/__init__.py", "rb") as f:
 setup(
     name                          = 'flask_s3_viewer',
     version                       = VERSION,
-    url                           = 'https://github.com/hidekuma/flask_s3_viewer',
+    url                           = 'https://github.com/hidekuma/flask-s3-viewer',
     license                       = '',
     author                        = 'Hidekuma',
     author_email                  = 'd.hidekuma@gmail.com',
-    download_url                  = f'https://github.com/hidekuma/flask_s3_viewer/archive/{VERSION}.tar.gz',
+    download_url                  = f'https://github.com/hidekuma/flask-s3-viewer/archive/{VERSION}.tar.gz',
     description                   = 'Flask S3 Viewer is a powerful extension that makes it easy to browse S3 in any Flask application.',
     packages                      = find_packages(exclude = ['tests*', 'test*', 'example*', 'i/*']),
     long_description              = open('README.md').read(),

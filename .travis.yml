@@ -7,4 +7,4 @@ install:
 script:
   - flask_s3_viewer -h
 notifications:
-  email: false
+  email: d.hidekuma@gmail.com
