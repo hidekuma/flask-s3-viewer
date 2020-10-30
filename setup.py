@@ -39,6 +39,7 @@ setup(
             'blueprints/templates/base/files.html',
             'blueprints/templates/base/layout.html',
             'blueprints/templates/base/prefixes.html',
+            'blueprints/static/js/flask.s3viewer.core.js'
         ]
     },
     include_package_data=True,

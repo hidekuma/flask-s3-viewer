@@ -53,14 +53,14 @@
 
 <!-- Search -->
 <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable">
-  <label id="tsrch" class="mdl-button mdl-js-button mdl-button--icon" for="flask_s3_viewer_search">
+  <label id="tsrch" class="mdl-button mdl-js-button mdl-button--icon" for="fs3viewer_search">
     <i class="material-icons">search</i>
   </label>
   <div class="mdl-tooltip" data-mdl-for="tsrch">
     Search files
   </div>
   <div class="mdl-textfield__expandable-holder">
-    <input onkeydown="if(event.key == 'Enter') FLASK_S3_VIEWER_CORE.runSearching(event);" class="mdl-textfield__input" type="text" name="search" id="flask_s3_viewer_search">
+    <input onkeydown="if(event.key == 'Enter') FLASK_S3_VIEWER_CORE.runSearching(event);" class="mdl-textfield__input" type="text" name="search" id="fs3viewer_search">
   </div>
 </div>
 {% if SEARCH and SEARCH != '' %}
