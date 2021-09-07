@@ -170,12 +170,9 @@ class AWSS3Client(AWSSession):
     def add_one(self, f, object_name, bucket_name=None, tagging=None):
         logging.debug('UP_OBJECT:', object_name)
         try:
-            # config = TransferConfig()
+            GB = 1024 ** 3
             config = TransferConfig(
-                multipart_threshold=1024 * 25,
-                max_concurrency=10,
-                multipart_chunksize=1024 * 25,
-                use_threads=True
+                multipart_threshold=5 * GB
             )
 
             self._s3.upload_fileobj(
