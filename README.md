@@ -3,7 +3,6 @@
 ## Flask S3Viewer - browsing S3 with Flask
 [![PyPI version](https://badge.fury.io/py/flask-s3-viewer.svg)](https://badge.fury.io/py/flask-s3-viewer)
 [![Build Status](https://travis-ci.org/hidekuma/flask-s3-viewer.svg?branch=master)](https://travis-ci.org/hidekuma/flask-s3-viewer)
-[![Documentation Status](https://readthedocs.org/projects/flask-s3-viewer/badge/?version=latest)](https://flask-s3-viewer.readthedocs.io/en/latest/?badge=latest)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/hidekuma/flask-s3-viewer/graphs/commit-activity)
 [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
 
@@ -23,7 +22,7 @@ You can [download FlaskS3Viewer executable](https://github.com/hidekuma/flask-s3
 pip install flask_s3_viewer
 ```
 ## Documentation
-The latest documentation for Flask-S3-Viewer can be found [here](https://flask-s3-viewer.readthedocs.io).
+The latest documentation for Flask-S3-Viewer can be found [here](https://hidekuma.github.io/flask-s3-viewer/html/index.html).
 
 [License](LICENSE)
 ------------------
