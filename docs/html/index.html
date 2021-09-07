@@ -1,40 +1,46 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <meta content="Flask S3 Viewer is a powerful extension that makes it easy to browse S3 in any Flask application" name="description" />
 <meta content="Flask, s3, aws, upload, uploader, browsing, python3, python, mount, objectstorage, s3viewer" name="keywords" />
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Welcome to Flask-S3-Viewer’s documentation! &mdash; Flask-S3-Viewer 0.1.1 documentation</title>
+  <title>Welcome to Flask-S3-Viewer’s documentation! &mdash; Flask-S3-Viewer 0.2.2 documentation</title>
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-
-    
 
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Installation" href="usage/installation.html" /> 
@@ -74,6 +80,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -81,7 +88,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Contents:</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="usage/installation.html"> Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage/configuration.html">Configuration</a></li>
@@ -95,6 +102,7 @@
             
           
         </div>
+        
       </div>
     </nav>
 
@@ -129,18 +137,20 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="#">Docs</a> &raquo;</li>
+      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
         
       <li>Welcome to Flask-S3-Viewer’s documentation!</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
-            
+          
             <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
           
         
@@ -160,7 +170,7 @@
 <img alt="Flask-S3-Viewer-logo" src="https://raw.githubusercontent.com/hidekuma/flask-s3-viewer/master/i/logo.png" style="width: 200px;" />
 <p><a class="reference external" href="https://badge.fury.io/py/flask-s3-viewer"><img alt="PyPI version" src="https://badge.fury.io/py/flask-s3-viewer.svg" /></a> <a class="reference external" href="https://travis-ci.org/hidekuma/flask-s3-viewer"><img alt="Build Status" src="https://travis-ci.org/hidekuma/flask-s3-viewer.svg?branch=master" /></a> <a class="reference external" href="https://flask-s3-viewer.readthedocs.io/en/latest/?badge=latest"><img alt="Documentation Status" src="https://readthedocs.org/projects/flask-s3-viewer/badge/?version=latest" /></a> <a class="reference external" href="https://github.com/hidekuma/flask-s3-viewer/graphs/commit-activity"><img alt="Maintenance" src="https://img.shields.io/badge/Maintained%3F-yes-green.svg" /></a> <a class="reference external" href="https://www.python.org/"><img alt="made-with-python" src="https://img.shields.io/badge/Made%20with-Python-1f425f.svg" /></a></p>
 <div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">Contents:</span></p>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="usage/installation.html"> Installation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="usage/installation.html#support-versions">Support versions</a></li>
@@ -193,16 +203,22 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="license.html"> License</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html"> Changelog</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id2">0.0.16</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id5">0.0.15</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id7">0.0.14</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id9">0.0.13</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id11">0.0.12</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id15">0.0.11</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id17">0.0.10</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id19">0.0.9</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id21">0.0.8</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id22">0.0.7</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id2">0.2.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id7">0.2.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id10">0.2.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id13">0.1.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id15">0.1.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id17">0.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id19">0.0.16</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id22">0.0.15</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id24">0.0.14</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id26">0.0.13</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id28">0.0.12</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id32">0.0.11</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id34">0.0.10</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id36">0.0.9</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id38">0.0.8</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id39">0.0.7</a></li>
 </ul>
 </li>
 </ul>
@@ -210,19 +226,19 @@
 <div class="section" id="indices-and-tables">
 <h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
 </ul>
 </div>
 <div class="section" id="useful-links">
 <h2>Useful links<a class="headerlink" href="#useful-links" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
-<li><a class="reference external" href="https://github.com/hidekuma/flask-s3-viewer">Flask S3Viewer &#64; Github</a></li>
-<li><a class="reference external" href="https://pypi.org/project/flask-s3-viewer">Flask S3Viewer &#64; PyPi</a></li>
+<li><p><a class="reference external" href="https://github.com/hidekuma/flask-s3-viewer">Flask S3Viewer &#64; Github</a></p></li>
+<li><p><a class="reference external" href="https://pypi.org/project/flask-s3-viewer">Flask S3Viewer &#64; PyPi</a></p></li>
 </ul>
 </div></blockquote>
 <p>Show video on youtube:</p>
-<p><a class="reference external" href="https://youtu.be/yk6h6ym6Diw?t=0s"><img alt="flask-s3-viewer-video" src="http://img.youtube.com/vi/yk6h6ym6Diw/0.jpg" /></a></p>
+<p><a class="reference external" href="https://youtu.be/MPFo1scGlws?t=0s"><img alt="flask-s3-viewer-video" src="http://img.youtube.com/vi/MPFo1scGlws/0.jpg" /></a></p>
 </div>
 </div>
 
@@ -231,27 +247,28 @@
            
           </div>
           <footer>
-  
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="usage/installation.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
+        <a href="usage/installation.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2020, hidekuma
+        &#169; Copyright 2020, hidekuma.
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 
@@ -259,7 +276,6 @@
 
   </div>
   
-
 
   <script type="text/javascript">
       jQuery(function () {

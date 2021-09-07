@@ -37,7 +37,7 @@ Import flask and flask_s3_viewer
     :linenos:
     :emphasize-lines: 3-4
 
-    import flask
+    from flask import Flask
 
     from flask_s3_viewer import FlaskS3Viewer
     from flask_s3_viewer.aws.ref import Region

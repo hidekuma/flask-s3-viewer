@@ -56,7 +56,7 @@ Show video on youtube:
    :target: https://github.com/hidekuma/flask-s3-viewer/graphs/commit-activity
 .. |made-with-python| image:: https://img.shields.io/badge/Made%20with-Python-1f425f.svg
    :target: https://www.python.org/
-.. |flask-s3-viewer-video| image:: http://img.youtube.com/vi/yk6h6ym6Diw/0.jpg
-   :target: https://youtu.be/yk6h6ym6Diw?t=0s
+.. |flask-s3-viewer-video| image:: http://img.youtube.com/vi/MPFo1scGlws/0.jpg
+   :target: https://youtu.be/MPFo1scGlws?t=0s
 .. _Flask S3Viewer @ Github: https://github.com/hidekuma/flask-s3-viewer
 .. _Flask S3Viewer @ PyPi: https://pypi.org/project/flask-s3-viewer
