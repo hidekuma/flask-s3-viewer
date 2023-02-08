@@ -44,6 +44,7 @@ class FlaskS3Viewer(AWSS3Client, metaclass=Singleton):
         bucket_name
         secret_key
         access_key
+        session_token
         cache_dir
         ttl
         use_cache
@@ -88,6 +89,7 @@ class FlaskS3Viewer(AWSS3Client, metaclass=Singleton):
             config.setdefault('endpoint_url', None)
             config.setdefault('secret_key', None)
             config.setdefault('access_key', None)
+            config.setdefault('session_token', None)
             if config.get('use_cache'):
                 if not config.get('cache_dir'):
                     raise NotConfiguredCacheDir
