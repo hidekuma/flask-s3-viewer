@@ -11,7 +11,8 @@ class AWSSession:
         profile_name=None,
         region_name=None,
         secret_key=None,
-        access_key=None
+        access_key=None,
+        session_token=None,
     ):
         self.runnable = False
         self.profile_name = profile_name
@@ -26,6 +27,7 @@ class AWSSession:
                 self._session = boto3.Session(
                     aws_access_key_id=access_key,
                     aws_secret_access_key=secret_key,
+                    aws_session_token=session_token,
                     region_name=region_name
                 )
         except ClientError as e:

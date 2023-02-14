@@ -27,6 +27,7 @@ class AWSS3Client(AWSSession):
         bucket_name=None,
         secret_key=None,
         access_key=None,
+        session_token=None,
         cache_dir=None,
         ttl=None,
         use_cache=False
@@ -35,7 +36,8 @@ class AWSS3Client(AWSSession):
             profile_name=profile_name,
             region_name=region_name,
             secret_key=secret_key,
-            access_key=access_key
+            access_key=access_key,
+            session_token=session_token
         )
 
         if not self.runnable:
