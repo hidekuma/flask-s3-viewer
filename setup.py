@@ -46,10 +46,10 @@ setup(
     zip_safe                      = False,
     keywords                      = ['aws', 's3', 'file', 'upload', 'flask', 'python', 'python3', 'browsing', 'uploader'],
     install_requires              = [
-        'boto3>=1.12.2',
-        'click>=7.1.1'
+        'boto3>=1.28.22',
+        'flask>=2.0.0'
     ],
-    python_requires               = '>= 3.7',
+    python_requires               = '>= 3.10',
     test_suite                    = 'tests',
     entry_points                  = {
         'console_scripts': [
