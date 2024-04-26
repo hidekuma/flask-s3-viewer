@@ -30,7 +30,8 @@ class AWSS3Client(AWSSession):
         session_token=None,
         cache_dir=None,
         ttl=None,
-        use_cache=False
+        use_cache=False,
+        verify=False
     ):
         super().__init__(
             profile_name=profile_name,
@@ -50,7 +51,8 @@ class AWSS3Client(AWSSession):
             's3',
             region_name=self.region_name,
             endpoint_url=endpoint_url,
-            config=Config(signature_version='s3v4')
+            config=Config(signature_version='s3v4'),
+            verify=verify
         )
         if use_cache:
             self._cache = AWSCache(
