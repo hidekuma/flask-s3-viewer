@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.2.5](https://github.com/hidekuma/flask-s3-viewer/compare/0.2.4...0.2.5)
+
+> 19 July 2024
+
+- fix: update docs [e71aee8](https://github.com/hidekuma/flask-s3-viewer/commit/e71aee8a87e4bf6aeac7b97652cdf613b6e8a067)
+- fix: update quote_url [5d54448](https://github.com/hidekuma/flask-s3-viewer/commit/5d544485a0c5937d4653bb81a62754f0726941b7)
+- fix: update docs [82d57b8](https://github.com/hidekuma/flask-s3-viewer/commit/82d57b8e49a2e9171314a8ab3b7d7135482b41c0)
+
 #### [0.2.4](https://github.com/hidekuma/flask-s3-viewer/compare/0.2.2...0.2.4)
 
 > 22 May 2024

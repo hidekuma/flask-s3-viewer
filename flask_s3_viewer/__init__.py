@@ -16,7 +16,7 @@ from .config import (
 
 APP_TEMPLATE_FOLDER = FIXED_TEMPLATE_FOLDER
 
-__version__ = "0.2.4"
+__version__ = "0.2.6"
 
 
 class Singleton(type):
