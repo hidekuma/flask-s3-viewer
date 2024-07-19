@@ -3,7 +3,7 @@ import unicodedata
 import os
 
 from werkzeug.wsgi import FileWrapper
-from werkzeug.urls import url_quote
+from urllib.parse import quote as url_quote
 from flask import Response, request, render_template, Blueprint, g, abort, jsonify
 from .. import FlaskS3Viewer, APP_TEMPLATE_FOLDER
 from ..config import NAMESPACE
@@ -17,10 +17,12 @@ blueprint = Blueprint(
     url_prefix='/<path:BUCKET_NAMESPACE>'
 )
 
+
 def is_allowed(fs3viewer, filename):
     if fs3viewer.allowed_extensions:
         return '.' in filename and filename.rsplit('.', 1)[1].lower() in fs3viewer.allowed_extensions
     return True
+
 
 @blueprint.url_defaults
 def add_division(endpoint, values):
@@ -29,9 +31,11 @@ def add_division(endpoint, values):
         g.BUCKET_NAMESPACE
     )
 
+
 @blueprint.url_value_preprocessor
 def pull_division(endpoint, values):
     g.BUCKET_NAMESPACE = values.pop('BUCKET_NAMESPACE')
+
 
 @blueprint.route("/files/<path:key>", methods=['GET'])
 def files_download(key):
@@ -74,6 +78,7 @@ def files_download(key):
                 FS3V_CODE=404
             ), 404
 
+
 @blueprint.route("/files/<path:key>", methods=['DELETE'])
 def files_delete(key):
     if request.method == 'DELETE':
@@ -86,6 +91,7 @@ def files_delete(key):
             return '', 204
         except Exception:
             abort(500)
+
 
 @blueprint.route("/files/presign", methods=['POST'])
 def files_presign():
@@ -110,6 +116,7 @@ def files_presign():
     fs3viewer.purge(prefix)
 
     return jsonify(rtns), 200
+
 
 @blueprint.route("/files", methods=['GET', 'POST'])
 def files():
