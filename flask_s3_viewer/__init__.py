@@ -16,7 +16,7 @@ from .config import (
 
 APP_TEMPLATE_FOLDER = FIXED_TEMPLATE_FOLDER
 
-__version__ = "0.2.3"
+__version__ = "0.2.4"
 
 
 class Singleton(type):
@@ -32,6 +32,7 @@ class Singleton(type):
             cls._instances[key] = i
             logging.info(f"*** {i} Initialized ! ***")
             return cls._instances[key]
+
 
 class FlaskS3Viewer(AWSS3Client, metaclass=Singleton):
     FLASK_S3_VIEWER_BUCKET_CONFIGS = {}
@@ -76,7 +77,7 @@ class FlaskS3Viewer(AWSS3Client, metaclass=Singleton):
         if object_hostname and object_hostname.endswith('/'):
             object_hostname = object_hostname[:-1]
         self.object_hostname = object_hostname
-        self.allowed_extensions =  allowed_extensions
+        self.allowed_extensions = allowed_extensions
         self.template_namespace = template_namespace
         if upload_type not in UPLOAD_TYPES:
             raise NotSupportUploadType
