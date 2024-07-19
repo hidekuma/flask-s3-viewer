@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.2.6](https://github.com/hidekuma/flask-s3-viewer/compare/0.2.5...0.2.6)
+
+> 19 July 2024
+
+- feat: init 0.2.6 [2b835a2](https://github.com/hidekuma/flask-s3-viewer/commit/2b835a2489d08161d5b80e068628c9e2c3af0267)
+
 #### [0.2.5](https://github.com/hidekuma/flask-s3-viewer/compare/0.2.4...0.2.5)
 
 > 19 July 2024
