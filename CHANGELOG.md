@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [0.2.4](https://github.com/hidekuma/flask-s3-viewer/compare/0.2.2...0.2.4)
+
+> 22 May 2024
+
+- Adding support to supply custom cert for endpoint urls with HTTPS [#11](https://github.com/hidekuma/flask-s3-viewer/pull/11)
+- pass session token through to boto [#9](https://github.com/hidekuma/flask-s3-viewer/pull/9)
+- doc: update docs [27acf4e](https://github.com/hidekuma/flask-s3-viewer/commit/27acf4e6fed61d8492218eee7ab794571aa517a7)
+- doc [648bc3e](https://github.com/hidekuma/flask-s3-viewer/commit/648bc3e3f525979dbd2a6c8efb3ac0dfd70ec7d0)
+- doc: updated changelog [7990375](https://github.com/hidekuma/flask-s3-viewer/commit/79903757c11b323a977fc1a82dedf7f3f634b1ce)
+
 #### [0.2.2](https://github.com/hidekuma/flask-s3-viewer/compare/0.2.1...0.2.2)
 
 > 7 September 2021
