@@ -1,1 +1,4 @@
 twine
+sphinx
+sphinx-rtd-theme
+m2r2

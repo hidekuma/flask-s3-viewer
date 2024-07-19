@@ -1,100 +1,99 @@
-
-
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>Reference &mdash; Flask-S3-Viewer 0.2.2 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-
-  
-  
-
-  
-  
-
-  
+  <title>Reference &mdash; Flask-S3-Viewer 0.2.6 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
 
   
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-
-    
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=fc7d8818"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Templates" href="usage/templates.html" />
     <link rel="prev" title="Configuration" href="usage/configuration.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="index.html" class="icon icon-home"> Flask-S3-Viewer
           
-
-          
+          <a href="index.html" class="icon icon-home">
+            Flask-S3-Viewer
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="usage/installation.html"> Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage/configuration.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage/configuration.html#user-guides">User Guides</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#"> Reference</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#cores">Cores</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#region">Region</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cores">Cores</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET_CONFIGS"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET_CONFIGS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.__init__"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.add_new_one"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.add_new_one()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.get_boto_client"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.get_boto_client()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.get_boto_session"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.get_boto_session()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.get_instance"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.get_instance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.max_items"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.max_items</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.max_pages"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.max_pages</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.register"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.register()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.template_namespace"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.template_namespace</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#region">Region</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region"><code class="docutils literal notranslate"><span class="pre">Region</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.BAHRAIN"><code class="docutils literal notranslate"><span class="pre">Region.BAHRAIN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.BEIJING"><code class="docutils literal notranslate"><span class="pre">Region.BEIJING</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.CALIFORNIA"><code class="docutils literal notranslate"><span class="pre">Region.CALIFORNIA</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.CANADA"><code class="docutils literal notranslate"><span class="pre">Region.CANADA</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.FRANKFURT"><code class="docutils literal notranslate"><span class="pre">Region.FRANKFURT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.HONGKONG"><code class="docutils literal notranslate"><span class="pre">Region.HONGKONG</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.IRELAND"><code class="docutils literal notranslate"><span class="pre">Region.IRELAND</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.LONDON"><code class="docutils literal notranslate"><span class="pre">Region.LONDON</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.MUMBAI"><code class="docutils literal notranslate"><span class="pre">Region.MUMBAI</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.NINGXIA"><code class="docutils literal notranslate"><span class="pre">Region.NINGXIA</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.OHIO"><code class="docutils literal notranslate"><span class="pre">Region.OHIO</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.OREGON"><code class="docutils literal notranslate"><span class="pre">Region.OREGON</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.OSAKA"><code class="docutils literal notranslate"><span class="pre">Region.OSAKA</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.PARIS"><code class="docutils literal notranslate"><span class="pre">Region.PARIS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.SAOPAULO"><code class="docutils literal notranslate"><span class="pre">Region.SAOPAULO</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.SEOUL"><code class="docutils literal notranslate"><span class="pre">Region.SEOUL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.SINGAPORE"><code class="docutils literal notranslate"><span class="pre">Region.SINGAPORE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.STOCKHOLM"><code class="docutils literal notranslate"><span class="pre">Region.STOCKHOLM</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.SYDNEY"><code class="docutils literal notranslate"><span class="pre">Region.SYDNEY</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.TOKYO"><code class="docutils literal notranslate"><span class="pre">Region.TOKYO</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.aws.ref.Region.VIRGINIA"><code class="docutils literal notranslate"><span class="pre">Region.VIRGINIA</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="usage/templates.html"> Templates</a></li>
@@ -102,95 +101,54 @@
 <li class="toctree-l1"><a class="reference internal" href="changelog.html"> Changelog</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">Flask-S3-Viewer</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>Reference</li>
-    
-    
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Reference</li>
       <li class="wy-breadcrumbs-aside">
-        
-          
             <a href="_sources/reference.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="reference">
-<h1>Reference<a class="headerlink" href="#reference" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="cores">
-<h2>Cores<a class="headerlink" href="#cores" title="Permalink to this headline">¶</a></h2>
+             
+  <section id="reference">
+<h1>Reference<a class="headerlink" href="#reference" title="Link to this heading"></a></h1>
+<section id="cores">
+<h2>Cores<a class="headerlink" href="#cores" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">flask_s3_viewer.</span></span><span class="sig-name descname"><span class="pre">FlaskS3Viewer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">flask_s3_viewer.aws.s3.AWSS3Client</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flask_s3_viewer.</span></span><span class="sig-name descname"><span class="pre">FlaskS3Viewer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">AWSS3Client</span></code></p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET">
-<span class="sig-name descname"><span class="pre">FLASK_S3_VIEWER_BUCKET</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">flask_s3_viewer.FlaskS3ViewerBucketConfig</span></code></p>
+<span class="sig-name descname"><span class="pre">FLASK_S3_VIEWER_BUCKET</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET" title="Link to this definition"></a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">FlaskS3ViewerBucketConfig</span></code></p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET_CONFIGS">
-<span class="sig-name descname"><span class="pre">FLASK_S3_VIEWER_BUCKET_CONFIGS</span></span><em class="property"> <span class="pre">=</span> <span class="pre">{}</span></em><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET_CONFIGS" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">FLASK_S3_VIEWER_BUCKET_CONFIGS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET_CONFIGS" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_hostname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_extensions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'base'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upload_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.__init__" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_hostname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_extensions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'base'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upload_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.__init__" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>app</strong> (<em>Flask.app</em>) – Required</p></li>
 <li><p><strong>namespace</strong> (<em>str</em>) – Unique namespace of Flask S3Viewer</p></li>
@@ -206,10 +164,10 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.add_new_one">
-<span class="sig-name descname"><span class="pre">add_new_one</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_hostname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_extensions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'base'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upload_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.add_new_one" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">add_new_one</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_hostname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_extensions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'base'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upload_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.add_new_one" title="Link to this definition"></a></dt>
 <dd><p>Initialize another bucket</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>namespace</strong> (<em>str</em>) – Unique namespace of Flask S3Viewer</p></li>
 <li><p><strong>object_hostname</strong> (<em>url</em>) – Hostname, e.g. Cloudfront endpoint</p></li>
@@ -228,10 +186,10 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.get_boto_client">
-<em class="property"><span class="pre">classmethod</span> </em><span class="sig-name descname"><span class="pre">get_boto_client</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.get_boto_client" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_boto_client</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.get_boto_client" title="Link to this definition"></a></dt>
 <dd><p>Return a Boto3’s S3 client.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>namespace</strong> (<em>str</em>) – namespace</p>
 </dd>
 </dl>
@@ -243,10 +201,10 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.get_boto_session">
-<em class="property"><span class="pre">classmethod</span> </em><span class="sig-name descname"><span class="pre">get_boto_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.get_boto_session" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_boto_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.get_boto_session" title="Link to this definition"></a></dt>
 <dd><p>Return a Boto3’s Sesson.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>namespace</strong> (<em>str</em>) – namespace</p>
 </dd>
 </dl>
@@ -258,10 +216,10 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.get_instance">
-<em class="property"><span class="pre">classmethod</span> </em><span class="sig-name descname"><span class="pre">get_instance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.get_instance" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_instance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.get_instance" title="Link to this definition"></a></dt>
 <dd><p>Return a Flask S3Viewer instance.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>namespace</strong> (<em>str</em>) – namespace</p>
 </dd>
 </dl>
@@ -273,20 +231,20 @@
 
 <dl class="py property">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.max_items">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">max_items</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.max_items" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">max_items</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.max_items" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.max_pages">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">max_pages</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.max_pages" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">max_pages</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.max_pages" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.register">
-<span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template_folder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.register" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template_folder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.register" title="Link to this definition"></a></dt>
 <dd><p>Register FlaskS3Viewer to Flask’s blueprint.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>template_folder</strong> (<em>path</em>) – FIXME</p>
 </dd>
 </dl>
@@ -298,18 +256,18 @@
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.template_namespace">
-<span class="sig-name descname"><span class="pre">template_namespace</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'flask_s3_viewer'</span></em><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.template_namespace" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">template_namespace</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'flask_s3_viewer'</span></em><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.template_namespace" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
-</div>
-<div class="section" id="region">
-<h2>Region<a class="headerlink" href="#region" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="region">
+<h2>Region<a class="headerlink" href="#region" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">flask_s3_viewer.aws.ref.</span></span><span class="sig-name descname"><span class="pre">Region</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flask_s3_viewer.aws.ref.</span></span><span class="sig-name descname"><span class="pre">Region</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
 <p>AWS Service Regions</p>
 <dl class="simple">
 <dt>Reference:</dt><dd><p><a class="reference external" href="https://docs.aws.amazon.com/general/latest/gr/rande.html">https://docs.aws.amazon.com/general/latest/gr/rande.html</a></p>
@@ -319,160 +277,143 @@
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.BAHRAIN">
-<span class="sig-name descname"><span class="pre">BAHRAIN</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'me-south-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.BAHRAIN" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">BAHRAIN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'me-south-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.BAHRAIN" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.BEIJING">
-<span class="sig-name descname"><span class="pre">BEIJING</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'cn-north-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.BEIJING" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">BEIJING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'cn-north-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.BEIJING" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.CALIFORNIA">
-<span class="sig-name descname"><span class="pre">CALIFORNIA</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'us-west-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.CALIFORNIA" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">CALIFORNIA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'us-west-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.CALIFORNIA" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.CANADA">
-<span class="sig-name descname"><span class="pre">CANADA</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'ca-central-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.CANADA" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">CANADA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ca-central-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.CANADA" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.FRANKFURT">
-<span class="sig-name descname"><span class="pre">FRANKFURT</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'eu-central-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.FRANKFURT" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">FRANKFURT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'eu-central-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.FRANKFURT" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.HONGKONG">
-<span class="sig-name descname"><span class="pre">HONGKONG</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'ap-east-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.HONGKONG" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">HONGKONG</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ap-east-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.HONGKONG" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.IRELAND">
-<span class="sig-name descname"><span class="pre">IRELAND</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'eu-west-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.IRELAND" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">IRELAND</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'eu-west-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.IRELAND" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.LONDON">
-<span class="sig-name descname"><span class="pre">LONDON</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'eu-west-2'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.LONDON" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">LONDON</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'eu-west-2'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.LONDON" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.MUMBAI">
-<span class="sig-name descname"><span class="pre">MUMBAI</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'ap-south-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.MUMBAI" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">MUMBAI</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ap-south-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.MUMBAI" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.NINGXIA">
-<span class="sig-name descname"><span class="pre">NINGXIA</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'cn-northwest-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.NINGXIA" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">NINGXIA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'cn-northwest-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.NINGXIA" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.OHIO">
-<span class="sig-name descname"><span class="pre">OHIO</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'us-east-2'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.OHIO" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">OHIO</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'us-east-2'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.OHIO" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.OREGON">
-<span class="sig-name descname"><span class="pre">OREGON</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'us-west-2'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.OREGON" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">OREGON</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'us-west-2'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.OREGON" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.OSAKA">
-<span class="sig-name descname"><span class="pre">OSAKA</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'ap-northeast-3'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.OSAKA" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">OSAKA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ap-northeast-3'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.OSAKA" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.PARIS">
-<span class="sig-name descname"><span class="pre">PARIS</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'eu-west-3'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.PARIS" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">PARIS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'eu-west-3'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.PARIS" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.SAOPAULO">
-<span class="sig-name descname"><span class="pre">SAOPAULO</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'sa-east-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.SAOPAULO" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">SAOPAULO</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'sa-east-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.SAOPAULO" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.SEOUL">
-<span class="sig-name descname"><span class="pre">SEOUL</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'ap-northeast-2'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.SEOUL" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">SEOUL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ap-northeast-2'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.SEOUL" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.SINGAPORE">
-<span class="sig-name descname"><span class="pre">SINGAPORE</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'ap-southeast-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.SINGAPORE" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">SINGAPORE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ap-southeast-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.SINGAPORE" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.STOCKHOLM">
-<span class="sig-name descname"><span class="pre">STOCKHOLM</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'eu-north-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.STOCKHOLM" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">STOCKHOLM</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'eu-north-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.STOCKHOLM" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.SYDNEY">
-<span class="sig-name descname"><span class="pre">SYDNEY</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'ap-southeast-2'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.SYDNEY" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">SYDNEY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ap-southeast-2'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.SYDNEY" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.TOKYO">
-<span class="sig-name descname"><span class="pre">TOKYO</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'ap-northeast-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.TOKYO" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">TOKYO</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ap-northeast-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.TOKYO" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region.VIRGINIA">
-<span class="sig-name descname"><span class="pre">VIRGINIA</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'us-east-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.VIRGINIA" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">VIRGINIA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'us-east-1'</span></em><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region.VIRGINIA" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="usage/templates.html" class="btn btn-neutral float-right" title="Templates" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="usage/configuration.html" class="btn btn-neutral float-left" title="Configuration" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="usage/templates.html" class="btn btn-neutral float-right" title="Templates" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2020, hidekuma.
-
-    </p>
+    <p>&#169; Copyright 2020, hidekuma.</p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>
