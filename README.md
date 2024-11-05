@@ -13,6 +13,9 @@ Flask S3 Viewer is a powerful extension that makes it easy to browse S3 in any F
 
 - Stable version : **0.2.6**
 
+### Dependencies
+- python 3.9 ~
+
 #### Show video
 
 [![flask-s3-viewer-video](http://img.youtube.com/vi/MPFo1scGlws/0.jpg)](https://youtu.be/MPFo1scGlws?t=0s "Click to play on Youtube")
