@@ -1,7 +1,11 @@
+from collections.abc import Iterable
+from typing import Any
 import urllib
+import urllib.parse
 import unicodedata
 import os
 
+from werkzeug.datastructures import FileStorage
 from werkzeug.wsgi import FileWrapper
 from urllib.parse import quote as url_quote
 from flask import Response, request, render_template, Blueprint, g, abort, jsonify
@@ -38,13 +42,14 @@ def pull_division(endpoint, values):
 
 
 @blueprint.route("/files/<path:key>", methods=['GET'])
-def files_download(key):
+def files_download(key) -> Any:
     if request.method == "GET":
         """
         key: encoded
         """
         key = urllib.parse.unquote_plus(key)
-        fs3viewer = FlaskS3Viewer.get_instance(g.BUCKET_NAMESPACE)
+        fs3viewer: FlaskS3Viewer = FlaskS3Viewer.get_instance(
+            g.BUCKET_NAMESPACE)
         obj = fs3viewer.find_one(key)
         if obj:
             try:
@@ -59,9 +64,9 @@ def files_download(key):
                     'filename*': "UTF-8''{}".format(url_quote(key)),
                 }
             else:
-                filenames = {'filename': key}
+                filenames = {'filename': key.decode('utf-8')}
             rv = Response(
-                FileWrapper(obj.get('Body')),
+                FileWrapper(obj.get('Body', '')),
                 direct_passthrough=True,
                 mimetype=obj['ContentType']
             )
@@ -80,7 +85,7 @@ def files_download(key):
 
 
 @blueprint.route("/files/<path:key>", methods=['DELETE'])
-def files_delete(key):
+def files_delete(key) -> Any:
     if request.method == 'DELETE':
         """
         key: decoded
@@ -99,27 +104,29 @@ def files_presign():
     prefix = urllib.parse.unquote_plus(prefix)
     fs3viewer = FlaskS3Viewer.get_instance(g.BUCKET_NAMESPACE)
     prefix = fs3viewer.prefixer(prefix)
-    file_list = request.form.get("file_list").split(',')
+    file_list = request.form.get("file_list")
     rtns = []
-    for f in file_list:
-        try:
-            filename = os.path.join(prefix, f)
-            if fs3viewer.is_exists(filename):
-                rtns.append({'status_code': 409})
-            elif not is_allowed(fs3viewer, filename):
-                rtns.append({'status_code': 403})
-            else:
-                r = fs3viewer.post_presign(filename)
-                rtns.append(r)
-        except Exception:
-            rtns.append({'status_code': 500})
+    if file_list:
+        for f in file_list.split(','):
+            try:
+                filename = os.path.join(prefix, f)
+                if fs3viewer.is_exists(filename):
+                    rtns.append({'status_code': 409})
+                elif not is_allowed(fs3viewer, filename):
+                    rtns.append({'status_code': 403})
+                else:
+                    r = fs3viewer.post_presign(filename)
+                    rtns.append(r)
+            except Exception:
+                rtns.append({'status_code': 500})
+
     fs3viewer.purge(prefix)
 
     return jsonify(rtns), 200
 
 
 @blueprint.route("/files", methods=['GET', 'POST'])
-def files():
+def files() -> Any:
     if request.method == "POST":
         """
         prefix: encoded
@@ -129,19 +136,20 @@ def files():
         # form
         prefix = request.form.get('prefix', '')
         prefix = urllib.parse.unquote_plus(prefix)
-        files = request.files.getlist("files[]")
+        files: Iterable[FileStorage] = request.files.getlist("files[]")
         fs3viewer = FlaskS3Viewer.get_instance(g.BUCKET_NAMESPACE)
         prefix = fs3viewer.prefixer(prefix)
         if not files and prefix:
             if fs3viewer.is_exists(prefix):
                 abort(409, 'Already exists.')
-            if fs3viewer.put_one(prefix, mkdir=True):
+            if fs3viewer.mkdir(prefix):
                 return {}, 201
             else:
                 abort(500)
         else:
             for f in files:
-                f.filename = os.path.join(prefix, f.filename)
+                f.filename = os.path.join(
+                    prefix, f.filename if f.filename else "")
                 if fs3viewer.is_exists(f.filename):
                     abort(409, 'Already exists.')
                 if not is_allowed(fs3viewer, f.filename):

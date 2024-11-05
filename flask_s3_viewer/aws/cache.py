@@ -6,12 +6,14 @@ import time
 import logging
 
 try:
-    import cPickle as pickle
+    import cPickle as pickle  # pyright: ignore[reportMissingImports]
 except ImportError:
     import pickle
 
+
 class AWSCache:
     SUFFIX = ".__flask_s3_viewer_cache"
+
     def __init__(self, cache_dir=None, timeout=None):
         if not cache_dir:
             raise ValueError('have to set cache_dir.')
@@ -35,7 +37,7 @@ class AWSCache:
         if isinstance(key, str):
             splited_keys = key.split('/')
             # for i, k in enumerate(splited_keys):
-                # splited_keys[i] = self.make_hash(k)
+            # splited_keys[i] = self.make_hash(k)
             hash = '/'.join(splited_keys)
             if division:
                 destination = os.path.join(self._cache_dir, division, hash)
@@ -48,7 +50,7 @@ class AWSCache:
     def set(self, key, value, timeout=None, salt=None, division=None):
         logging.info(f'CACHE SET: "{key}"')
         file_handler, temp_path = tempfile.mkstemp(
-            suffix = self.SUFFIX,
+            suffix=self.SUFFIX,
         )
         if timeout:
             expires_at = time.time() + timeout

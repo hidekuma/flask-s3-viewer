@@ -1,30 +1,33 @@
+from typing import Optional
 import boto3
 import logging
 
+from boto3.session import Session
 from botocore.errorfactory import ClientError
+
 
 class AWSSession:
 
     def __init__(
         self,
         *,
-        profile_name=None,
-        region_name=None,
-        secret_key=None,
-        access_key=None,
-        session_token=None,
+        profile_name: Optional[str] = None,
+        region_name: Optional[str] = None,
+        secret_key: Optional[str] = None,
+        access_key: Optional[str] = None,
+        session_token: Optional[str] = None,
     ):
         self.runnable = False
         self.profile_name = profile_name
         self.region_name = region_name
         try:
             if not access_key or not secret_key:
-                self._session = boto3.Session(
+                self._session: Session = boto3.Session(
                     profile_name=profile_name,
                     region_name=region_name
                 )
             else:
-                self._session = boto3.Session(
+                self._session: Session = boto3.Session(
                     aws_access_key_id=access_key,
                     aws_secret_access_key=secret_key,
                     aws_session_token=session_token,

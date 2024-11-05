@@ -3,7 +3,7 @@ import logging
 # from weakref import WeakValueDictionary
 from collections import namedtuple
 
-from .aws.s3 import AWSS3Client
+from .aws.s3 import AWSS3Client, List, Optional
 from .errors import (
     NotConfiguredCacheDir,
     NotSupportUploadType
@@ -57,12 +57,12 @@ class FlaskS3Viewer(AWSS3Client, metaclass=Singleton):
     def __init__(
         self,
         app,
-        namespace=None,
-        object_hostname=None,
-        allowed_extensions=None,
-        template_namespace='base',
-        upload_type='default',
-        config=None
+        namespace: Optional[str] = None,
+        object_hostname: Optional[str] = None,
+        allowed_extensions: Optional[List[str]] = None,
+        template_namespace: str = 'base',
+        upload_type: str = 'default',
+        config: Optional[dict] = None
     ):
         """
         :param Flask.app app: Required
@@ -85,21 +85,23 @@ class FlaskS3Viewer(AWSS3Client, metaclass=Singleton):
         self.__max_pages = 10
         self.__max_items = 100
 
-        if config:
-            # bucket_name, profile_name is required
-            config.setdefault('region_name', None)
-            config.setdefault('endpoint_url', None)
-            config.setdefault('secret_key', None)
-            config.setdefault('access_key', None)
-            config.setdefault('session_token', None)
-            if config.get('use_cache'):
-                if not config.get('cache_dir'):
-                    raise NotConfiguredCacheDir
-            config.setdefault('cache_dir', None)
-            config.setdefault('ttl', 300)
-            config.setdefault('use_cache', None)
-            config.setdefault('verify', None)
-            super().__init__(**config)
+        if not config:
+            config = dict()
+
+        # bucket_name, profile_name is required
+        config.setdefault('region_name', None)
+        config.setdefault('endpoint_url', None)
+        config.setdefault('secret_key', None)
+        config.setdefault('access_key', None)
+        config.setdefault('session_token', None)
+        if config.get('use_cache'):
+            if not config.get('cache_dir'):
+                raise NotConfiguredCacheDir
+        config.setdefault('cache_dir', None)
+        config.setdefault('ttl', 300)
+        config.setdefault('use_cache', None)
+        config.setdefault('verify', None)
+        super().__init__(**config)
 
         self.FLASK_S3_VIEWER_BUCKET_CONFIGS[namespace] = self.FLASK_S3_VIEWER_BUCKET(
             **config
@@ -114,7 +116,7 @@ class FlaskS3Viewer(AWSS3Client, metaclass=Singleton):
         return self.__max_items
 
     @classmethod
-    def get_instance(cls, namespace=None):
+    def get_instance(cls, namespace=None) -> "FlaskS3Viewer":
         """
         Return a Flask S3Viewer instance.
 
@@ -195,8 +197,8 @@ class FlaskS3Viewer(AWSS3Client, metaclass=Singleton):
         if template_folder:
             # FIXME: 하나에만 적용불가..
             raise ValueError('not ready')
-            global APP_TEMPLATE_FOLDER
-            APP_TEMPLATE_FOLDER = template_folder
+            # global APP_TEMPLATE_FOLDER
+            # APP_TEMPLATE_FOLDER = template_folder
         # Dynamic import (have to)
         from .routers import FlaskS3ViewerViewRouter
         self.app.register_blueprint(FlaskS3ViewerViewRouter)
