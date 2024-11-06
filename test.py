@@ -23,12 +23,12 @@ s3viewer = FlaskS3Viewer(
     template_namespace='mdl',
     object_hostname='http://flask-s3-viewer.com',  # file's hostname
     config={  # Bucket configs and else
-        'profile_name': 'r6rp',
+        'profile_name': 'default',
         'access_key': None,
         'secret_key': None,
         'region_name': Region.SEOUL.value,
         'endpoint_url': None,
-        'bucket_name': 'sagemaker-ap-northeast-1-891377074008',
+        'bucket_name': 'bucket-name',
         'cache_dir': '/tmp/flask_s3_viewer',
         'use_cache': True,
         'ttl': 86400,
