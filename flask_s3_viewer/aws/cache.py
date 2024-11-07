@@ -48,7 +48,7 @@ class AWSCache:
             raise ValueError('key must be str.')
 
     def set(self, key, value, timeout=None, salt=None, division=None):
-        logging.info(f'CACHE SET: "{key}"')
+        logging.debug(f'CACHE SET: "{key}"')
         file_handler, temp_path = tempfile.mkstemp(
             suffix=self.SUFFIX,
         )
@@ -69,7 +69,7 @@ class AWSCache:
     def get(self, key, salt=None, division=None):
         try:
             _, dpath = self.__make_key(key, salt=salt, division=division)
-            logging.info(f'CACHE GET: "{key}"')
+            logging.debug(f'CACHE GET: "{key}"')
             with open(dpath, "rb") as f:
                 expires_at = pickle.load(f)
                 if expires_at == 0 or expires_at >= time.time():
@@ -82,7 +82,7 @@ class AWSCache:
 
     def remove(self, key, division=None):
         try:
-            logging.info(f'CACHE REMOVED: "{key}"')
+            logging.debug(f'CACHE REMOVED: "{key}"')
             ddir, _ = self.__make_key(key, division=division)
             if os.path.isdir(ddir):
                 shutil.rmtree(ddir)

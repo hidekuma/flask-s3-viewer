@@ -50,6 +50,7 @@ class FlaskS3Viewer(AWSS3Client, metaclass=Singleton):
         ttl
         use_cache
         verify
+        base_path
         '''
     )
     template_namespace = NAMESPACE
@@ -101,6 +102,7 @@ class FlaskS3Viewer(AWSS3Client, metaclass=Singleton):
         config.setdefault('ttl', 300)
         config.setdefault('use_cache', None)
         config.setdefault('verify', None)
+        config.setdefault('base_path', '')
         super().__init__(**config)
 
         self.FLASK_S3_VIEWER_BUCKET_CONFIGS[namespace] = self.FLASK_S3_VIEWER_BUCKET(

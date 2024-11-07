@@ -31,7 +31,8 @@ class AWSS3Client(AWSSession):
         cache_dir: Optional[str] = None,
         ttl: Optional[str] = None,
         use_cache: bool = False,
-        verify=False
+        verify=False,
+        base_path: str = ''
     ):
         super().__init__(
             profile_name=profile_name,
@@ -48,6 +49,7 @@ class AWSS3Client(AWSSession):
         self.region_name = region_name
         self.use_cache = use_cache
         self._bucket_name = bucket_name
+        self._base_path = base_path
         self._s3 = self._session.client(
             's3',
             region_name=self.region_name,
@@ -67,9 +69,14 @@ class AWSS3Client(AWSSession):
                 prefix = prefix[1:]
             if not prefix.endswith('/') and prefix != '':
                 prefix += '/'
-        return prefix
+        result = os.path.join(self._base_path, prefix)
+        return result
+
+    def get_object_name(self, object_name: str) -> str:
+        return os.path.join(self.prefixer(""), object_name)
 
     def find_one(self, object_name: str) -> Optional[dict]:
+        object_name = self.get_object_name(object_name)
         try:
             return self._s3.get_object(
                 Bucket=self._bucket_name,
@@ -161,6 +168,7 @@ class AWSS3Client(AWSSession):
             raise
 
     def remove_one(self, object_name: str) -> None:
+        object_name = self.get_object_name(object_name)
         try:
             self._s3.delete_object(
                 Bucket=self._bucket_name,
@@ -182,10 +190,11 @@ class AWSS3Client(AWSSession):
                 prefixes = set()
                 objects = []
                 for obj in object_names:
+                    object_name = self.get_object_name(obj)
                     if obj:
-                        objects.append({'Key': obj})
+                        objects.append({'Key': object_name})
                         if self.use_cache:
-                            prefixes.add(os.path.dirname(obj))
+                            prefixes.add(os.path.dirname(object_name))
                 if objects:
                     self._s3.delete_objects(
                         Bucket=self._bucket_name,
@@ -265,6 +274,16 @@ class AWSS3Client(AWSSession):
         else:
             data = run()
 
+        if self._base_path:
+            for idx, d in enumerate(data[0]):
+                if d:
+                    data[0][idx]['Prefix'] = d['Prefix'].replace(
+                        self._base_path+'/', '', 1)
+
+            for idx, d in enumerate(data[1]):
+                if d:
+                    data[1][idx]['Key'] = d['Key'].replace(
+                        self._base_path+'/', '', 1)
         return data
 
     def remove(self, object_names: Union[List[str], str]):
@@ -313,12 +332,13 @@ class AWSS3Client(AWSSession):
             if not next_token:
                 break
 
-    def download_one(self, file_name, object_name):
+    def download_one(self, file_name: str, object_name: str):
         try:
+            object_name = self.get_object_name(object_name)
             with open(file_name, 'wb') as f:
                 self._s3.download_fileobj(self._bucket_name, object_name, f)
         except ClientError as e:
-            logging.info(e)
+            logging.error(e)
             raise
 
     def is_exists(self, object_name=None):

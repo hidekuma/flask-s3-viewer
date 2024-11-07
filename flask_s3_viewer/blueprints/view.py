@@ -171,7 +171,8 @@ def files() -> Any:
         if not starting_token or starting_token == 'None':
             starting_token = None
 
-        fs3viewer = FlaskS3Viewer.get_instance(g.BUCKET_NAMESPACE)
+        fs3viewer: FlaskS3Viewer = FlaskS3Viewer.get_instance(
+            g.BUCKET_NAMESPACE)
         max_items = fs3viewer.max_items
         max_pages = fs3viewer.max_pages
         if prefix:
