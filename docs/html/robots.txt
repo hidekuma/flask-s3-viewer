@@ -1,0 +1,3 @@
+User-agent: *
+
+Sitemap: https://hidekuma.github.io/flask-s3-viewer/html/sitemap.xml

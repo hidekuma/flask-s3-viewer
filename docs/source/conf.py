@@ -33,10 +33,14 @@ release = VERSION
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx_sitemap',
     'sphinx_rtd_theme',
     'sphinx.ext.autodoc',
     'm2r2',
 ]
+
+html_baseurl = 'https://hidekuma.github.io/flask-s3-viewer/html/'
+sitemap_url_scheme = "{link}"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -44,6 +48,7 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
+html_extra_path = ['robots.txt', 'googleabf1b74ca4533146.html']
 exclude_patterns = []
 
 master_doc = 'index'
