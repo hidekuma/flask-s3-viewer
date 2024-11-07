@@ -56,6 +56,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="#user-guides">User Guides</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#multiple-bucket-settings">Multiple bucket settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mount-a-specific-path-in-a-bucket-for-browsing">Mount a specific path in a bucket for browsing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#limit-the-file-extensions">Limit the file extensions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#choose-the-design-template">Choose the design template</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#controll-large-files">Controll large files</a></li>
@@ -182,6 +183,30 @@ First install the dependency packages.</p>
 </pre></div>
 </div>
 </section>
+<section id="mount-a-specific-path-in-a-bucket-for-browsing">
+<h2>Mount a specific path in a bucket for browsing<a class="headerlink" href="#mount-a-specific-path-in-a-bucket-for-browsing" title="Link to this heading"></a></h2>
+<p>You can mount a specific path in the bucket to the browser.
+( Be careful not to end the path with / )</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="o">...</span>
+<span class="linenos"> 2</span>
+<span class="linenos"> 3</span><span class="n">s3viewer</span> <span class="o">=</span> <span class="n">FlaskS3Viewer</span><span class="p">(</span>
+<span class="linenos"> 4</span>    <span class="o">...</span>
+<span class="linenos"> 5</span><span class="p">)</span>
+<span class="linenos"> 6</span>
+<span class="linenos"> 7</span><span class="c1"># Init another bucket</span>
+<span class="linenos"> 8</span><span class="n">s3viewer</span><span class="o">.</span><span class="n">add_new_one</span><span class="p">(</span>
+<span class="linenos"> 9</span>    <span class="n">namespace</span><span class="o">=</span><span class="s1">&#39;another_namespace&#39;</span><span class="p">,</span>
+<span class="linenos">10</span>    <span class="n">object_hostname</span><span class="o">=</span><span class="s1">&#39;http://anotherbucket.com&#39;</span><span class="p">,</span>
+<span class="linenos">11</span>    <span class="n">config</span><span class="o">=</span><span class="p">{</span>
+<span class="linenos">12</span>        <span class="s1">&#39;profile_name&#39;</span><span class="p">:</span> <span class="s1">&#39;PROFILE_NAME&#39;</span><span class="p">,</span>
+<span class="linenos">13</span>        <span class="s1">&#39;bucket_name&#39;</span><span class="p">:</span> <span class="s1">&#39;S3_BUCKET_NAME&#39;</span>
+<span class="hll"><span class="linenos">14</span>        <span class="s1">&#39;base_path&#39;</span><span class="p">:</span> <span class="s1">&#39;path/to/your/folder&#39;</span>
+</span><span class="linenos">15</span>    <span class="p">}</span>
+<span class="linenos">16</span><span class="p">)</span>
+<span class="linenos">17</span><span class="n">s3viewer</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
 <section id="limit-the-file-extensions">
 <h2>Limit the file extensions<a class="headerlink" href="#limit-the-file-extensions" title="Link to this heading"></a></h2>
 <p>You can limit the file extensions that are uploaded, if you want.</p>
@@ -246,14 +271,23 @@ Flask S3Viewer is going to use S3’s presigned URL. It’s nice to controll lar
 </pre></div>
 </div>
 <p>but you must do S3’s CORS settings before like set above.</p>
-<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w"> </span><span class="nt">&lt;CORSConfiguration&gt;</span>
-<span class="linenos">2</span><span class="w">     </span><span class="nt">&lt;CORSRule&gt;</span>
-<span class="linenos">3</span><span class="w">         </span><span class="nt">&lt;AllowedOrigin&gt;</span>http://www.yourdomain.com<span class="nt">&lt;/AllowedOrigin&gt;</span>
-<span class="linenos">4</span><span class="w">         </span><span class="nt">&lt;AllowedMethod&gt;</span>GET<span class="nt">&lt;/AllowedMethod&gt;</span>
-<span class="linenos">5</span><span class="w">         </span><span class="nt">&lt;AllowedMethod&gt;</span>POST<span class="nt">&lt;/AllowedMethod&gt;</span>
-<span class="linenos">6</span><span class="w">         </span><span class="nt">&lt;AllowedHeader&gt;</span>*<span class="nt">&lt;/AllowedHeader&gt;</span>
-<span class="linenos">7</span><span class="w">     </span><span class="nt">&lt;/CORSRule&gt;</span>
-<span class="linenos">8</span><span class="w"> </span><span class="nt">&lt;/CORSConfiguration&gt;</span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="p">[</span>
+<span class="linenos"> 2</span><span class="w">    </span><span class="p">{</span>
+<span class="linenos"> 3</span><span class="w">        </span><span class="nt">&quot;AllowedHeaders&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="linenos"> 4</span><span class="w">            </span><span class="s2">&quot;*&quot;</span>
+<span class="linenos"> 5</span><span class="w">        </span><span class="p">],</span>
+<span class="linenos"> 6</span><span class="w">        </span><span class="nt">&quot;AllowedMethods&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="linenos"> 7</span><span class="w">            </span><span class="s2">&quot;POST&quot;</span><span class="p">,</span>
+<span class="linenos"> 8</span><span class="w">            </span><span class="s2">&quot;PUT&quot;</span><span class="p">,</span>
+<span class="linenos"> 9</span><span class="w">            </span><span class="s2">&quot;GET&quot;</span><span class="p">,</span>
+<span class="linenos">10</span><span class="w">            </span><span class="s2">&quot;HEAD&quot;</span><span class="p">,</span>
+<span class="linenos">11</span><span class="w">            </span><span class="s2">&quot;DELETE&quot;</span>
+<span class="linenos">12</span><span class="w">        </span><span class="p">],</span>
+<span class="linenos">13</span><span class="w">        </span><span class="nt">&quot;AllowedOrigins&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="linenos">14</span><span class="w">            </span><span class="s2">&quot;http://localhost:3000&quot;</span>
+<span class="linenos">15</span><span class="w">        </span><span class="p">],</span>
+<span class="linenos">16</span><span class="w">    </span><span class="p">}</span>
+<span class="linenos">17</span><span class="p">]</span>
 </pre></div>
 </div>
 </section>

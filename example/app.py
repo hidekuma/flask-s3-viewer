@@ -12,12 +12,12 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 # FlaskS3Viewer Init
 s3viewer = FlaskS3Viewer(
-    app, # Flask app
-    namespace='flask-s3-viewer', # namespace be unique
-    template_namespace='mdl', # set template
-    object_hostname='http://flask-s3-viewer.com', # file's hostname
-    allowed_extensions={}, # allowed extension
-    config={ # Bucket configs and else
+    app,  # Flask app
+    namespace='flask-s3-viewer',  # namespace be unique
+    template_namespace='mdl',  # set template
+    object_hostname='http://flask-s3-viewer.com',  # file's hostname
+    allowed_extensions=[],  # allowed extension
+    config={  # Bucket configs and else
         'profile_name': 'PROFILE_NAME',
         'access_key': None,
         'secret_key': None,
@@ -51,9 +51,11 @@ s3viewer.add_new_one(
 # Apply FlaskS3Viewer blueprint
 s3viewer.register()
 
+
 @app.route('/index')
-def index ():
+def index():
     return 'Your app index page'
+
 
 # Usage: python example.py test (run debug mode)
 if __name__ == '__main__':
@@ -62,4 +64,3 @@ if __name__ == '__main__':
         if sys.argv[1] == 'test':
             debug = True
     app.run(debug=debug, port=3000)
-

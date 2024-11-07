@@ -110,6 +110,35 @@ You can also initiailize multiple bucket.
     )
     s3viewer.register()
 
+Mount a specific path in a bucket for browsing
+----------------------------------------------
+You can mount a specific path in the bucket to the browser.
+( Be careful not to end the path with / )
+
+.. code-block:: python
+    :linenos:
+    :emphasize-lines: 14
+
+    ...
+
+    s3viewer = FlaskS3Viewer(
+        ...
+    )
+
+    # Init another bucket
+    s3viewer.add_new_one(
+        namespace='another_namespace',
+        object_hostname='http://anotherbucket.com',
+        config={
+            'profile_name': 'PROFILE_NAME',
+            'bucket_name': 'S3_BUCKET_NAME'
+            'base_path': 'path/to/your/folder'
+        }
+    )
+    s3viewer.register()
+
+
+
 Limit the file extensions
 --------------------------
 You can limit the file extensions that are uploaded, if you want.
@@ -174,17 +203,26 @@ Flask S3Viewer is going to use S3's presigned URL. It's nice to controll large f
 
 but you must do S3’s CORS settings before like set above.
 
-.. code-block:: xml
+.. code-block:: json
     :linenos:
 
-     <CORSConfiguration>
-         <CORSRule>
-             <AllowedOrigin>http://www.yourdomain.com</AllowedOrigin>
-             <AllowedMethod>GET</AllowedMethod>
-             <AllowedMethod>POST</AllowedMethod>
-             <AllowedHeader>*</AllowedHeader>
-         </CORSRule>
-     </CORSConfiguration>
+    [
+        {
+            "AllowedHeaders": [
+                "*"
+            ],
+            "AllowedMethods": [
+                "POST",
+                "PUT",
+                "GET",
+                "HEAD",
+                "DELETE"
+            ],
+            "AllowedOrigins": [
+                "http://localhost:3000"
+            ],
+        }
+    ]
 
 Use Caching
 -----------
