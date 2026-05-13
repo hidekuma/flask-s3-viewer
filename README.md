@@ -80,6 +80,29 @@ FlaskS3Viewer(
 
 `logo_path` reads the file once at construction time and embeds it as a `data:` URI so you don't need a separate static route. `logo_url` accepts any browser-resolvable URL (CDN, `url_for("static", filename=...)`, etc.). `logo_path` takes precedence.
 
+### Customizing templates (`template_folder`)
+
+Scaffold a writable copy of the bundled templates with the CLI, edit, then point the viewer at that folder:
+
+```bash
+# Templates only (default — covers most theming needs)
+flask_s3_viewer -p ./fsv-templates
+
+# Or, fork the entire UI bundle (templates + static/css/app.css + htmx + core.js)
+flask_s3_viewer -p ./fsv-templates --with-static
+```
+
+```python
+FlaskS3Viewer(
+    app,
+    namespace="my-bucket",
+    template_folder="./fsv-templates",   # files here win over bundled defaults
+    config={...},
+)
+```
+
+Behind the scenes the extension prepends a `FileSystemLoader(template_folder)` to the app's Jinja loader via `ChoiceLoader`, so any not-overridden template (e.g. `error.html` when you only edited `files.html`) still resolves against the bundle. Other blueprints' template resolution is untouched.
+
 ### Multiple buckets
 
 ```python
@@ -145,6 +168,7 @@ Constructor options:
 | `title`              | Heading + browser tab title text. Default `"Flask S3 Viewer"`.   |
 | `logo_url`           | URL of a custom logo image (absolute, `url_for(...)`, or `/static/...`). |
 | `logo_path`          | Local filesystem path to a logo image — auto-inlined as a `data:` URI. Takes precedence over `logo_url`. |
+| `template_folder`    | Directory whose Jinja files override the bundled templates (Flask `ChoiceLoader` pattern). Seed it via the CLI scaffold. |
 
 ## Security
 

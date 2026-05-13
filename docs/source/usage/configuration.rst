@@ -194,14 +194,38 @@ over ``logo_url`` when both are provided.
 Template overrides
 ------------------
 
-To customize the design further, override the templates in
-``flask_s3_viewer/blueprints/templates/`` (``layout.html``, ``files.html``,
-``_file_list.html``, ``_pagination.html``, ``_upload_form.html``,
-``error.html``) using Flask's standard template override mechanism.
+The recommended path is the CLI scaffold plus the ``template_folder=``
+constructor argument:
 
-``layout.html`` exposes a ``{% block extra_head %}`` hook so downstream apps
-can inject custom ``<link>`` / ``<script>`` / ``<meta>`` tags without
-replacing the whole layout:
+.. code-block:: bash
+
+    # Copy just the Jinja templates (most common)
+    flask_s3_viewer -p ./fsv-templates
+
+    # Fork the whole UI bundle (templates + static/css/app.css + htmx + core.js)
+    flask_s3_viewer -p ./fsv-templates --with-static
+
+Edit any of ``layout.html`` / ``files.html`` / ``_file_list.html`` /
+``_pagination.html`` / ``_upload_form.html`` / ``error.html`` in the
+scaffolded directory, then point the viewer at it:
+
+.. code-block:: python
+    :linenos:
+
+    FlaskS3Viewer(
+        app,
+        namespace='my-bucket',
+        template_folder='./fsv-templates',
+        config={...},
+    )
+
+Behind the scenes the extension prepends a ``FileSystemLoader`` to the
+Flask app's Jinja loader via ``ChoiceLoader``, so any not-overridden
+template still resolves against the bundle and other blueprints'
+templates are unaffected.
+
+``layout.html`` also exposes a ``{% block extra_head %}`` hook for the
+common case where you only need to inject CSS / JS / ``<meta>`` tags:
 
 .. code-block:: jinja
 

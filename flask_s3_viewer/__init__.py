@@ -82,6 +82,7 @@ class FlaskS3Viewer(AWSS3Client):
         title: str | None = None,
         logo_url: str | None = None,
         logo_path: str | None = None,
+        template_folder: str | None = None,
         config: dict | None = None,
     ) -> None:
         """
@@ -102,6 +103,12 @@ class FlaskS3Viewer(AWSS3Client):
             read once and inlined as a ``data:`` URI — convenient when you
             don't want to expose the file via a separate static route.
             ``logo_path`` takes precedence over ``logo_url``.
+        :param str template_folder: Optional path to a directory containing
+            overrides for any of the bundled templates (``layout.html``,
+            ``files.html``, ``_file_list.html``, ``_pagination.html``,
+            ``_upload_form.html``, ``error.html``). Files in this folder are
+            preferred by Jinja over the bundled originals. Scaffold a
+            ready-to-edit starting point with ``flask_s3_viewer -p ./out``.
         :param dict config: Bucket configs
         """
         if template_namespace is not None:
@@ -118,6 +125,7 @@ class FlaskS3Viewer(AWSS3Client):
         self.allowed_extensions: set[str] | None = allowed_extensions
         self.title: str = title or 'Flask S3 Viewer'
         self.logo_url: str | None = _resolve_logo(logo_url, logo_path)
+        self.template_folder: str | None = template_folder
         if upload_type not in UPLOAD_TYPES:
             raise NotSupportUploadType
         self.upload_type: str = upload_type
@@ -192,9 +200,36 @@ class FlaskS3Viewer(AWSS3Client):
             logging.info("*** registered FlaskS3Viewer blueprint! ***")
             logging.info(app.url_map)
 
+        # When the deployer points at a custom templates directory, prepend a
+        # FileSystemLoader so their files override the bundled originals via
+        # Flask's standard Jinja ChoiceLoader pattern. Per-namespace folders
+        # are merged into a single search path so add_new_one() can stack
+        # overrides without clobbering each other.
+        if self.template_folder:
+            self._install_template_override(app, self.template_folder)
+
         logging.info(
             f"*** FlaskS3Viewer initialized for namespace='{self.namespace}' ***"
         )
+
+    @staticmethod
+    def _install_template_override(app: Flask, folder: str) -> None:
+        """Prepend ``folder`` to the app's Jinja loader so its templates win.
+
+        Uses Flask's ``ChoiceLoader`` + ``FileSystemLoader`` pattern so other
+        blueprints' template resolution is untouched.
+        """
+        from jinja2 import ChoiceLoader, FileSystemLoader
+        custom = FileSystemLoader(folder)
+        existing = app.jinja_loader
+        if isinstance(existing, ChoiceLoader):
+            # Merge while keeping previously-installed overrides at the front.
+            loaders = [custom] + list(existing.loaders)
+            app.jinja_loader = ChoiceLoader(loaders)
+        elif existing is not None:
+            app.jinja_loader = ChoiceLoader([custom, existing])
+        else:
+            app.jinja_loader = custom
 
     @staticmethod
     def get_instance(app: Flask, namespace: str) -> "FlaskS3Viewer":

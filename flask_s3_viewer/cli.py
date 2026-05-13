@@ -36,6 +36,16 @@ class FlaskS3ViewerCli:
             required=True,
             help="Enter the directory path where the template will be located",
         )
+        self.parser.add_argument(
+            "--with-static",
+            action="store_true",
+            help=(
+                "Also copy the bundled static assets (css/app.css, "
+                "vendor/htmx.min.js, js/flask.s3viewer.core.js) into "
+                "<path>/static/. Useful when you intend to fork the entire "
+                "UI bundle, not just the Jinja templates."
+            ),
+        )
 
     def handle(self) -> None:
         args: argparse.Namespace = self.parser.parse_args()
@@ -44,14 +54,14 @@ class FlaskS3ViewerCli:
         # directory verbatim. The legacy ``--template base|mdl`` switch is
         # gone (deprecation note in changelog / migration guide).
         file_path = os.path.dirname(os.path.abspath(__file__))
-        template_path: str = args.path
+        target_root: str = args.path
         origin_template_path = os.path.join(
             file_path,
             'blueprints',
             FIXED_TEMPLATE_FOLDER,
         )
 
-        if os.path.exists(template_path):
+        if os.path.exists(target_root):
             click.echo(
                 '\n {} : Already exists template directory ({}).'.format(
                     click.style(
@@ -59,19 +69,31 @@ class FlaskS3ViewerCli:
                         fg="red",
                         bold=True,
                     ),
-                    os.path.abspath(template_path),
+                    os.path.abspath(target_root),
                 )
             )
-        else:
-            shutil.copytree(origin_template_path, template_path)
+            return
+
+        shutil.copytree(origin_template_path, target_root)
+        click.echo(
+            '\n {} : Template successfully created. ({})'.format(
+                click.style(
+                    "Success",
+                    fg="green",
+                    bold=True,
+                ),
+                os.path.abspath(target_root),
+            )
+        )
+
+        if args.with_static:
+            origin_static = os.path.join(file_path, 'blueprints', 'static')
+            target_static = os.path.join(target_root, 'static')
+            shutil.copytree(origin_static, target_static)
             click.echo(
-                '\n {} : Template successfully created. ({})'.format(
-                    click.style(
-                        "Success",
-                        fg="green",
-                        bold=True,
-                    ),
-                    os.path.abspath(template_path),
+                ' {} : Static assets copied. ({})'.format(
+                    click.style("Success", fg="green", bold=True),
+                    os.path.abspath(target_static),
                 )
             )
 
