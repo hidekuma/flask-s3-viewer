@@ -20,7 +20,7 @@ from .errors import (
 
 APP_TEMPLATE_FOLDER: str = FIXED_TEMPLATE_FOLDER
 
-__version__: str = "1.0.0a1"
+__version__: str = "1.0.0a2"
 
 _EXTENSION_KEY: str = 'flask_s3_viewer'
 
