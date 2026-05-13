@@ -3,7 +3,7 @@ import logging
 import mimetypes
 import warnings
 from collections import namedtuple
-from typing import Any, Optional, Set
+from typing import Any
 
 from flask import Flask
 
@@ -25,7 +25,7 @@ __version__: str = "1.0.0a1"
 _EXTENSION_KEY: str = 'flask_s3_viewer'
 
 
-def _resolve_logo(logo_url: Optional[str], logo_path: Optional[str]) -> Optional[str]:
+def _resolve_logo(logo_url: str | None, logo_path: str | None) -> str | None:
     """Return a browser-usable URL for the logo.
 
     If ``logo_path`` is provided, read the file once and inline it as a
@@ -73,16 +73,16 @@ class FlaskS3Viewer(AWSS3Client):
     )
     def __init__(
         self,
-        app: Optional[Flask] = None,
-        namespace: Optional[str] = None,
-        object_hostname: Optional[str] = None,
-        allowed_extensions: Optional[Set[str]] = None,
-        template_namespace: Optional[str] = None,
+        app: Flask | None = None,
+        namespace: str | None = None,
+        object_hostname: str | None = None,
+        allowed_extensions: set[str] | None = None,
+        template_namespace: str | None = None,
         upload_type: str = 'default',
-        title: Optional[str] = None,
-        logo_url: Optional[str] = None,
-        logo_path: Optional[str] = None,
-        config: Optional[dict] = None,
+        title: str | None = None,
+        logo_url: str | None = None,
+        logo_path: str | None = None,
+        config: dict | None = None,
     ) -> None:
         """
         :param Flask.app app: Flask application (Optional, v1.0+). If provided,
@@ -110,14 +110,14 @@ class FlaskS3Viewer(AWSS3Client):
                 DeprecationWarning,
                 stacklevel=2,
             )
-        self.app: Optional[Flask] = app
-        self.namespace: Optional[str] = namespace
+        self.app: Flask | None = app
+        self.namespace: str | None = namespace
         if object_hostname and object_hostname.endswith('/'):
             object_hostname = object_hostname[:-1]
-        self.object_hostname: Optional[str] = object_hostname
-        self.allowed_extensions: Optional[Set[str]] = allowed_extensions
+        self.object_hostname: str | None = object_hostname
+        self.allowed_extensions: set[str] | None = allowed_extensions
         self.title: str = title or 'Flask S3 Viewer'
-        self.logo_url: Optional[str] = _resolve_logo(logo_url, logo_path)
+        self.logo_url: str | None = _resolve_logo(logo_url, logo_path)
         if upload_type not in UPLOAD_TYPES:
             raise NotSupportUploadType
         self.upload_type: str = upload_type
@@ -206,7 +206,7 @@ class FlaskS3Viewer(AWSS3Client):
         (or use ``current_app.extensions['flask_s3_viewer'][namespace]`` from
         within a request).
         """
-        instance: "FlaskS3Viewer" = app.extensions[_EXTENSION_KEY][namespace]
+        instance: FlaskS3Viewer = app.extensions[_EXTENSION_KEY][namespace]
         return instance
 
     @staticmethod
@@ -225,12 +225,12 @@ class FlaskS3Viewer(AWSS3Client):
 
     def add_new_one(
         self,
-        namespace: Optional[str] = None,
-        object_hostname: Optional[str] = None,
-        allowed_extensions: Optional[Set[str]] = None,
-        template_namespace: Optional[str] = None,
+        namespace: str | None = None,
+        object_hostname: str | None = None,
+        allowed_extensions: set[str] | None = None,
+        template_namespace: str | None = None,
         upload_type: str = 'default',
-        config: Optional[dict] = None,
+        config: dict | None = None,
     ) -> "FlaskS3Viewer":
         """
         Initialize another bucket bound to the same Flask app.

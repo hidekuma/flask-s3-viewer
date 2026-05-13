@@ -5,7 +5,7 @@ import pickle
 import shutil
 import tempfile
 import time
-from typing import Any, Optional, Tuple
+from typing import Any
 
 from ..errors import InvalidPrefix
 
@@ -15,8 +15,8 @@ class AWSCache:
 
     def __init__(
         self,
-        cache_dir: Optional[str] = None,
-        timeout: Optional[int] = None,
+        cache_dir: str | None = None,
+        timeout: int | None = None,
     ) -> None:
         if not cache_dir:
             raise ValueError('have to set cache_dir.')
@@ -35,9 +35,9 @@ class AWSCache:
     def __make_key(
         self,
         key: str,
-        salt: Optional[str] = None,
-        division: Optional[str] = None,
-    ) -> Tuple[str, str]:
+        salt: str | None = None,
+        division: str | None = None,
+    ) -> tuple[str, str]:
         if not isinstance(key, str):
             raise ValueError('key must be str.')
         # 일관성: trailing '/'는 rstrip으로 정리(planner step 5).
@@ -75,9 +75,9 @@ class AWSCache:
         self,
         key: str,
         value: Any,
-        timeout: Optional[int] = None,
-        salt: Optional[str] = None,
-        division: Optional[str] = None,
+        timeout: int | None = None,
+        salt: str | None = None,
+        division: str | None = None,
     ) -> None:
         logging.debug(f'CACHE SET: "{key}"')
         file_handler, temp_path = tempfile.mkstemp(
@@ -100,9 +100,9 @@ class AWSCache:
     def get(
         self,
         key: str,
-        salt: Optional[str] = None,
-        division: Optional[str] = None,
-    ) -> Optional[Any]:
+        salt: str | None = None,
+        division: str | None = None,
+    ) -> Any | None:
         try:
             _, dpath = self.__make_key(key, salt=salt, division=division)
             logging.debug(f'CACHE GET: "{key}"')
@@ -116,7 +116,7 @@ class AWSCache:
         except FileNotFoundError:
             return None
 
-    def remove(self, key: str, division: Optional[str] = None) -> bool:
+    def remove(self, key: str, division: str | None = None) -> bool:
         try:
             logging.debug(f'CACHE REMOVED: "{key}"')
             ddir, _ = self.__make_key(key, division=division)

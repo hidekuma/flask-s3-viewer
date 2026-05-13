@@ -3,7 +3,7 @@ import unicodedata
 import urllib
 import urllib.parse
 from collections.abc import Iterable
-from typing import Any, Tuple, Union
+from typing import Any
 from urllib.parse import quote as url_quote
 
 from flask import (
@@ -87,7 +87,7 @@ def files_download(key: str) -> Any:
                 ).encode('latin-1', 'ignore')
                 filenames: dict = {
                     'filename': encoded_key,
-                    'filename*': "UTF-8''{}".format(url_quote(key)),
+                    'filename*': f"UTF-8''{url_quote(key)}",
                 }
             else:
                 filenames = {'filename': key_bytes.decode('utf-8')}
@@ -112,7 +112,7 @@ def files_download(key: str) -> Any:
 
 
 @blueprint.route("/files/<path:key>", methods=['DELETE'])
-def files_delete(key: str) -> Tuple[str, int]:
+def files_delete(key: str) -> tuple[str, int]:
     if request.method == 'DELETE':
         """
         key: decoded
@@ -231,7 +231,7 @@ def files() -> Any:
         # args
         prefix = request.args.get('prefix', '')
         prefix = urllib.parse.unquote_plus(prefix)
-        starting_token: Union[str, None] = request.args.get('starting_token')
+        starting_token: str | None = request.args.get('starting_token')
         search = request.args.get('search')
         page = int(request.args.get('page', 1)) - 1
         if not starting_token or starting_token == 'None':

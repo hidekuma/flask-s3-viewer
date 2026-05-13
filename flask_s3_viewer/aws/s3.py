@@ -2,7 +2,7 @@ import logging
 import mimetypes
 import os
 from collections.abc import Iterable, Iterator
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any
 
 from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
@@ -18,24 +18,24 @@ class AWSS3Client(AWSSession):
     Inheritance of AWSSession
     """
 
-    _bucket_name: Optional[str]
+    _bucket_name: str | None
     _base_path: str
     _cache: AWSCache
 
     def __init__(
         self,
         *,
-        profile_name: Optional[str] = None,
-        region_name: Optional[str] = None,
-        endpoint_url: Optional[str] = None,
-        bucket_name: Optional[str] = None,
-        secret_key: Optional[str] = None,
-        access_key: Optional[str] = None,
-        session_token: Optional[str] = None,
-        cache_dir: Optional[str] = None,
+        profile_name: str | None = None,
+        region_name: str | None = None,
+        endpoint_url: str | None = None,
+        bucket_name: str | None = None,
+        secret_key: str | None = None,
+        access_key: str | None = None,
+        session_token: str | None = None,
+        cache_dir: str | None = None,
         ttl: int = 300,
         use_cache: bool = False,
-        verify: Union[bool, str, None] = False,
+        verify: bool | str | None = False,
         base_path: str = '',
     ) -> None:
         super().__init__(
@@ -98,7 +98,7 @@ class AWSS3Client(AWSSession):
     def get_object_name(self, object_name: str) -> str:
         return os.path.join(self.prefixer(""), object_name)
 
-    def find_one(self, object_name: str) -> Optional[dict]:
+    def find_one(self, object_name: str) -> dict | None:
         object_name = self.get_object_name(object_name)
         try:
             return self._s3.get_object(
@@ -234,13 +234,13 @@ class AWSS3Client(AWSSession):
         delimiter: str = '/',
         max_items: int = 1000,
         page_size: int = 1000,
-        starting_token: Optional[str] = None,
-        search: Optional[str] = None,
+        starting_token: str | None = None,
+        search: str | None = None,
         apply_cache: bool = True,
-    ) -> Tuple[list, list, Optional[str]]:
+    ) -> tuple[list, list, str | None]:
         prefix = self.prefixer(prefix)
 
-        def run() -> Tuple[list, list, Optional[str]]:
+        def run() -> tuple[list, list, str | None]:
             nonlocal prefix, delimiter, max_items, page_size, starting_token, search
             paginator = self._s3.get_paginator("list_objects_v2")
             page_iterator = paginator.paginate(
@@ -271,7 +271,7 @@ class AWSS3Client(AWSSession):
                 prefixes = page_iterator.search('CommonPrefixes')
             return list(prefixes), list(contents), next_token
 
-        data: Tuple[list, list, Optional[str]]
+        data: tuple[list, list, str | None]
         if self.use_cache and apply_cache:
             salt = self._cache.make_hash(
                 f"""{delimiter}|{starting_token}|{
@@ -308,7 +308,7 @@ class AWSS3Client(AWSSession):
                         self._base_path + '/', '', 1)
         return data
 
-    def remove(self, object_names: Union[List[str], str]) -> None:
+    def remove(self, object_names: list[str] | str) -> None:
         if isinstance(object_names, str):
             if object_names.endswith('/'):
                 if object_names != '/':
@@ -348,7 +348,7 @@ class AWSS3Client(AWSSession):
             )
 
     def find_all(self, prefix: str) -> Iterator[str]:
-        next_token: Optional[str] = None
+        next_token: str | None = None
         while True:
             prefixes, contents, next_token = self.find(
                 prefix=prefix,
@@ -375,7 +375,7 @@ class AWSS3Client(AWSSession):
             logging.error(e)
             raise
 
-    def is_exists(self, object_name: Optional[str] = None) -> bool:
+    def is_exists(self, object_name: str | None = None) -> bool:
         try:
             if object_name:
                 self._s3.head_object(

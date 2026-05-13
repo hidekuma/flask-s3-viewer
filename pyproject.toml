@@ -88,9 +88,10 @@ target-version = "py310"
 extend-exclude = ["docs", "example", "build", "dist", "i"]
 
 [tool.ruff.lint]
-# UP 계열(typing → built-in 권장)은 기존 코드 스타일(Optional, List, Set) 유지를
-# 우선하므로 비활성화. v1.1+ 청소 단계에서 재고려.
-select = ["E", "F", "W", "I", "B"]
+# UP enabled in v1.0+: PEP 585/604 modern typing syntax. Python floor is
+# 3.10 (already enforced via target-version), so `list[str]` / `X | None`
+# is safe project-wide.
+select = ["E", "F", "W", "I", "B", "UP"]
 ignore = [
     # boto3 dict 응답을 다루는 코드가 많아 line length를 완화
     "E501",
