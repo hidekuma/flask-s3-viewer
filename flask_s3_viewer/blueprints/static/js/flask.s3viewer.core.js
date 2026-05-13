@@ -1,372 +1,159 @@
-/* ========== CLOSEST POLYFILL ========== */
-(function (ElementProto) {
-  if (typeof ElementProto.matches !== 'function') {
-    ElementProto.matches = ElementProto.msMatchesSelector || ElementProto.mozMatchesSelector || ElementProto.webkitMatchesSelector || function matches(selector) {
-      var element = this;
-      var elements = (element.document || element.ownerDocument).querySelectorAll(selector);
-      var index = 0;
+/*!
+ * flask.s3viewer.core.js — slim presign-only client (v1.0+).
+ *
+ * HTMX handles default uploads, navigation, search, pagination, and delete
+ * in the new UI. This module is loaded ONLY when ``upload_type='presign'``
+ * and owns the multi-file presigned-POST → S3 fan-out plus its progress UI.
+ *
+ * Public surface (``window.FLASK_S3_VIEWER_CORE``):
+ *   - readyFileHandling(event, cb)   file input ``onchange`` entry point
+ *   - uploadFiles(event, cb)         chip "Upload" click entry point
+ *   - preventDefaults(event)         form reset / cancel helper
+ *
+ * Required DOM ids (kept in sync with the presign branch of
+ * ``_upload_form.html`` — and pinned by ``tests/test_presign.py``):
+ *   - ``upload_form``        the multipart <form>
+ *   - ``fs3viewer_files``    the <input type=file>
+ *   - ``fs3viewer_prefix``   hidden input carrying the upload prefix
+ *   - ``fs3viewer_progress`` hidden 0..100 int; its ``onchange`` drives the bar
+ *   - ``file_chip``          chip with file_count + Upload + Cancel
+ *   - ``file_count``         selected file count text
+ *   - ``floading``           spinner shown while uploading
+ *
+ * Public globals consumed (defined in layout.html):
+ *   - ``FLASK_S3_VIEWER_FILES_ENDPOINT``
+ *   - ``FLASK_S3_VIEWER_UPLOAD_TYPE`` (``'presign'`` here)
+ */
+var FLASK_S3_VIEWER_CORE = (function () {
+  'use strict';
 
-      while (elements[index] && elements[index] !== element) {
-        ++index;
-      }
+  var presigns = [];
+  var pending = 0;
+  var done = 0;
+  var totalBytes = 0;
+  var loadedBytes = 0;
 
-      return Boolean(elements[index]);
-    };
+  function preventDefaults(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (e && e.stopPropagation) e.stopPropagation();
   }
 
-  if (typeof ElementProto.closest !== 'function') {
-    ElementProto.closest = function closest(selector) {
-      var element = this;
-
-      while (element && element.nodeType === 1) {
-        if (element.matches(selector)) {
-          return element;
-        }
-
-        element = element.parentNode;
-      }
-
-      return null;
-    };
-  }
-})(window.Element.prototype);
-/* ==========// CLOSEST POLYFILL ========== */
-
-var FLASK_S3_VIEWER_CORE = (function(){
-  var uploadProgress = [];
-  var postSigns = [];
-
-  /* ========== URI PARSER ========== */
-  function __getUrlParam(name){
-    var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
-    if (results == null){
-      return null;
-    }
-    else {
-      return decodeURI(results[1]) || 0;
-    }
+  function setProgress(pct) {
+    var el = document.getElementById('fs3viewer_progress');
+    if (!el) return;
+    var v = String(Math.round(pct));
+    if (v === el.value) return;
+    el.value = v;
+    el.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
-  function __setUrlParam(key, value) {
-    key = encodeURIComponent(key);
-    value = encodeURIComponent(value);
-    var kvp = [];
-    kvp = document.location.search.substr(1).split('&');
-    var i=kvp.length; var x; 
-    while(i--){
-      x = kvp[i].split('=');
-      if (x[0]==key){
-        if(value == ''){
-          delete kvp[i];
-        } else{
-          x[1] = value;
-          kvp[i] = x.join('=');
-        }
-        break;
-      }
-    }
-    if(i<0) {
-      if(value != ''){
-        kvp[kvp.length] = [key,value].join('=');
-      }
-    }
-    kvp = kvp.filter(function(x){
-      return x != "";
-    });
-
-    return kvp.join('&');
-  }
-  /* ==========// URI PARSER ========== */
-
-
-  /* ========== UTILS  ========== */
-  function __checkBrowser() {
-    var userAgent = navigator.userAgent;
-    if (userAgent.indexOf("Opera") !== -1) return 'Opera';
-    if (userAgent.indexOf("compatible") !== -1 && userAgent.indexOf('MSIE') && !(userAgent.indexOf("Opera") !== -1)) return 'IE';
-    if (userAgent.indexOf("Edge") !== -1) return 'Edge';
-    if (userAgent.indexOf('Firefox') !== -1) return 'Firefox';
-    if (userAgent.indexOf('Safari') !== -1 && userAgent.indexOf('Chrome') === -1) return 'Safari';
-    if (!(userAgent.indexOf("Edge") !== -1) && userAgent.indexOf('Chrome') !== -1 && userAgent.indexOf('Safari') !== -1) return 'Chrome';
-    if (userAgent.indexOf('Trident') !== -1 && userAgent.indexOf('rv:11.0') !== -1) return 'IE11';
-  };
-
-  function __secure_name(text, el) {
-    var regex = /([\\\\\\/:*?\"<>|.])/g;
-    var result = text.match(regex);
-    if (result !== null && result.length > 0) {
-      el.value = text.replace(regex, "");
-      return false;
-    }
-    return true;
-  }
-
-  function __makeDispatchEvent(eventName){
-    var event;
-    if(typeof(Event) === 'function') {
-      event = new Event(eventName);
-    } else {
-      event = document.createEvent('HTMLEvents');
-      event.initEvent('change', true, true);
-    }
-    return event;
-  }
-  /* ==========// UTILS  ========== */
-
-  /* ========== EVENT CONTROLL ========== */
-  function preventDefaults (e) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
-  function copyToClipboard(txt){
-    var tempElem = document.createElement('textarea');
-    tempElem.value = txt;
-    document.body.appendChild(tempElem);
-
-    tempElem.select();
-    tempElem.setSelectionRange(0, 9999);
-    document.execCommand("copy");
-    document.body.removeChild(tempElem);
-  }
-
-  function resetSearching(e, callback) {
-    if (e != null) e = e || window.event;
-    var search = __setUrlParam('search', '');
-    if (typeof callback === 'function') {
-      callback(e, search);
-    } else {
-      document.location.search = search;
-    }
-  }
-
-  function runSearching(e, callback){
-    if (e != null) e = e || window.event;
-    var value = document.getElementById('fs3viewer_search').value;
-    var search = __setUrlParam('search', value);
-
-    if (typeof callback === 'function') {
-      callback(e, redirection);
-    } else {
-      document.location.search = search;
-    }
-  }
-
-  function __addRefreshingBadge(count) {
-    var el = document.getElementById('fs3viewer_refresh');
-    el.value = count + parseInt(el.value);
-    el.dispatchEvent(__makeDispatchEvent('change'));
-
-  }
-
-  function readyFileHandling(e, callback){
-    if (e != null) e = e || window.event;
-    target = document.getElementById('fs3viewer_files');
-    if (FLASK_S3_VIEWER_UPLOAD_TYPE == 'presign') __postPresigns(e, target.files, callback);
-    else __handleFiles(e, target.files, [], callback);
-  }
-
-  function __handleFiles(e, files, presigns, callback) {
-    __initializeProgress(files.length);
-    if (typeof callback === 'function') {
-      callback(e, files, presigns);
-    }
-  }
-
-  function __initializeProgress(numFiles) {
-    uploadProgress = [];
-    for(var i = numFiles; i > 0; i--) uploadProgress.push(0);
-    var el = document.getElementById('fs3viewer_progress')
-    el.value = 0;
-    el.dispatchEvent(__makeDispatchEvent('change'));
-  }
-
-  function __postPresigns(e, files, callback){
+  function fetchPresigns(files, cb) {
     var url = FLASK_S3_VIEWER_FILES_ENDPOINT + '/presign';
     var prefix = document.getElementById('fs3viewer_prefix');
+    var fd = new FormData();
+    fd.append('prefix', prefix ? prefix.value : '');
+    fd.append('file_list', files.map(function (f) { return f.name; }).join(','));
     var xhr = new XMLHttpRequest();
-    var formData = new FormData();
-    var fileList = [];
-    for (var i = 0; i < files.length; i++) {
-      fileList.push(files[i]['name']);
-    }
-    xhr.open('POST', url, true);
-    xhr.addEventListener('readystatechange', function(xe) {
-      if (xhr.readyState == 4) {
-        if (xhr.status == 200) {
-          postSigns = JSON.parse(xhr.responseText);
-        }
-        __handleFiles(e, files, postSigns, callback);
-      }
-    });
-
-    formData.append('file_list',fileList.join(','));
-    formData.append('prefix', prefix.value);
-    xhr.send(formData);
+    xhr.open('POST', url);
+    xhr.setRequestHeader('HX-Request', 'true');
+    xhr.onload = function () {
+      var slots = [];
+      try { slots = JSON.parse(xhr.responseText) || []; } catch (e) { /* keep [] */ }
+      cb(slots);
+    };
+    xhr.onerror = function () { cb([]); };
+    xhr.send(fd);
   }
 
-  function __uploadWithPresign(e, callback){
-    var files = document.getElementById('fs3viewer_files');
-    Array.prototype.forEach.call(files.files, uploadFile);
-    function uploadFile(file, i, arr) {
-      var url = postSigns[i]['url'];
-      if(url !== undefined) {
-        var xhr = new XMLHttpRequest();
-        var formData = new FormData();
-        xhr.open('POST', url, true);
-        //xhr.setRequestHeader('Content-Type', 'multipart/form-data');
-        xhr.upload.addEventListener("progress", function(xe) {
-          __updateProgress(i, (xe.loaded * 100.0 / xe.total) || 100);
-        });
+  function readyFileHandling(event, cb) {
+    var input = event && event.target;
+    if (!input || !input.files || !input.files.length) return;
+    var files = Array.prototype.slice.call(input.files);
+    if (typeof FLASK_S3_VIEWER_UPLOAD_TYPE !== 'undefined' &&
+        FLASK_S3_VIEWER_UPLOAD_TYPE === 'presign') {
+      fetchPresigns(files, function (slots) {
+        presigns = slots;
+        if (typeof cb === 'function') cb(event, files, slots);
+      });
+    } else if (typeof cb === 'function') {
+      cb(event, files, null);
+    }
+  }
 
-        xhr.addEventListener('readystatechange', function(xe) {
-          if (xhr.readyState == 4) {
-            if (xhr.status >= 200 && xhr.status < 300) __addRefreshingBadge(1);
-            __updateProgress(i, 100);
-          }
-          if (typeof callback === 'function') {
-            callback(e, xhr, file);
-          }
-        });
+  function putOne(file, slot, done_cb) {
+    var fd = new FormData();
+    var fields = slot.fields || {};
+    Object.keys(fields).forEach(function (k) { fd.append(k, fields[k]); });
+    fd.append('file', file);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', slot.url);
+    if (xhr.upload) {
+      var prev = 0;
+      xhr.upload.addEventListener('progress', function (e) {
+        if (!e.lengthComputable) return;
+        loadedBytes += (e.loaded - prev);
+        prev = e.loaded;
+        setProgress(totalBytes ? (loadedBytes / totalBytes) * 100 : 0);
+      });
+    }
+    xhr.onload = function () {
+      done_cb(xhr.status >= 200 && xhr.status < 300 ? null : xhr.status);
+    };
+    xhr.onerror = function () { done_cb(0); };
+    xhr.send(fd);
+  }
 
-        Object.keys(postSigns[i]['fields']).forEach(function(key){
-          //console.log(key, postSigns[i]['fields'][key]);
-          formData.append(key, postSigns[i]['fields'][key]);
-        });
-        formData.append('file', file);
-        xhr.send(formData);
+  function putAll(files, slots, cb) {
+    pending = 0; done = 0; totalBytes = 0; loadedBytes = 0;
+    var failures = [];
+    files.forEach(function (file, i) {
+      var slot = slots[i] || {};
+      if (slot.status_code) {
+        failures.push({ name: file.name, status: slot.status_code });
       } else {
-          __updateProgress(i, 100);
-      }
-    }
-  }
-
-  function __upload(e, callback){
-    var files = document.getElementById('fs3viewer_files');
-    Array.prototype.forEach.call(files.files, uploadFile);
-    function uploadFile(file, i, arr) {
-      var prefix = document.getElementById('fs3viewer_prefix');
-      //console.log('uploadFile', prefix.value, file,i)
-      var url = FLASK_S3_VIEWER_FILES_ENDPOINT;
-      var xhr = new XMLHttpRequest();
-      var formData = new FormData();
-      xhr.open('POST', url, true);
-      //xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-      xhr.upload.addEventListener("progress", function(xe) {
-        __updateProgress(i, (xe.loaded * 100.0 / xe.total) || 100);
-      });
-
-      xhr.addEventListener('readystatechange', function(xe) {
-        if (xhr.readyState == 4) {
-          if (xhr.status == 201) __addRefreshingBadge(1);
-          __updateProgress(i, 100);
-        }
-        if (typeof callback === 'function') {
-          callback(e, xhr, file);
-        }
-      });
-
-      formData.append('files[]', file);
-      formData.append('prefix', prefix.value);
-      xhr.send(formData);
-    }
-  }
-
-  function uploadFiles(e, callback){
-    if (e != null) {
-      e = e || window.event;
-      preventDefaults(e);
-    }
-    if (FLASK_S3_VIEWER_UPLOAD_TYPE == 'default') {
-      __upload(e, callback);
-    } else if (FLASK_S3_VIEWER_UPLOAD_TYPE == 'presign') {
-      __uploadWithPresign(e, callback);
-    }
-  }
-
-  function __updateProgress(fileNumber, percent) {
-    uploadProgress[fileNumber] = percent;
-    var total = uploadProgress.reduce(function(tot, curr) {
-      return tot + curr;
-    }, 0) / uploadProgress.length;
-    //console.log('__updateProgress', fileNumber, percent, total);
-    var el = document.getElementById('fs3viewer_progress');
-    el.value = total;
-    el.dispatchEvent(__makeDispatchEvent('change'));
-  }
-
-  function makeDir(e, callback) {
-    if (e != null){
-      e = e || window.event;
-      preventDefaults(e);
-    }
-    preventDefaults(e);
-    var prefix = document.getElementById('fs3viewer_prefix');
-    var suffix = document.getElementById('fs3viewer_suffix');
-    if (__secure_name(suffix.value, suffix) == false){
-      alert('Not secure name');
-      return false;
-    }
-    if (suffix.value == ''){
-      alert('Folder name is empty.')
-      return false;
-    }
-    // prefix: enocoded
-    // suffix: decoded
-    var realPrefix = prefix.value + encodeURIComponent(suffix.value);
-    var url = FLASK_S3_VIEWER_FILES_ENDPOINT;
-    var xhr = new XMLHttpRequest();
-    var formData = new FormData();
-    xhr.open('POST', url, true);
-    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-    xhr.addEventListener('readystatechange', function(xe) {
-      if (xhr.readyState == 4) {
-        if (xhr.status == 201) {
-          __addRefreshingBadge(1);
-        } else {
-
-        }
-        if (typeof callback === 'function') {
-          callback(e, xhr, realPrefix);
-        }
+        pending += 1;
+        totalBytes += file.size;
       }
     });
-    formData.append('prefix', realPrefix);
-    xhr.send(formData);
-  }
-
-  function deleteFile(e, key, callback, el) {
-    //key: decoded
-    if (e != null){
-      e = e || window.event;
-      preventDefaults(e);
+    if (pending === 0) {
+      setProgress(100);
+      if (typeof cb === 'function') cb(null, { failures: failures, ok: 0 });
+      return;
     }
-    var xhr = new XMLHttpRequest();
-    xhr.open('DELETE', FLASK_S3_VIEWER_FILES_ENDPOINT + '/' + encodeURIComponent(key), true);
-    xhr.addEventListener('readystatechange', function(xe) {
-      if (xhr.readyState == 4) {
-        if (xhr.status == 204) {
-          __addRefreshingBadge(1);
-        } else {
-
+    files.forEach(function (file, i) {
+      var slot = slots[i] || {};
+      if (slot.status_code) return;
+      putOne(file, slot, function (status) {
+        done += 1;
+        if (status !== null) failures.push({ name: file.name, status: status });
+        if (done === pending) {
+          setProgress(100);
+          if (typeof cb === 'function') {
+            cb(null, { failures: failures, ok: pending - failures.length });
+          }
         }
-        if (typeof callback === 'function') {
-          callback(e, xhr, key, el);
-        }
-      }
+      });
     });
-    xhr.send();
   }
-  /* ==========// EVENT CONTROLL ========== */
+
+  function uploadFiles(event, cb) {
+    preventDefaults(event);
+    var input = document.getElementById('fs3viewer_files');
+    if (!input || !input.files || !input.files.length) return;
+    var files = Array.prototype.slice.call(input.files);
+    if (!presigns.length || presigns.length !== files.length) {
+      fetchPresigns(files, function (slots) {
+        presigns = slots;
+        putAll(files, slots, cb);
+      });
+    } else {
+      putAll(files, presigns, cb);
+    }
+  }
 
   return {
-    makeDir: makeDir,
-    deleteFile: deleteFile,
-    copyToClipboard: copyToClipboard,
+    readyFileHandling: readyFileHandling,
     uploadFiles: uploadFiles,
     preventDefaults: preventDefaults,
-    resetSearching: resetSearching,
-    readyFileHandling: readyFileHandling,
-    runSearching: runSearching
-  }
-}());
+  };
+})();
