@@ -21,7 +21,7 @@ Browse, upload, and manage Amazon S3 buckets from any Flask application.
 - **Multi-bucket** — Independent namespaces, optional per-bucket CloudFront / external `object_hostname`.
 - **Presigned uploads** — Multi-file presigned POST flow for large files; default form upload also supported.
 - **Caching** — File-system pickle cache with TTL; automatically invalidated on writes.
-- **Tested** — 74 pytest cases, 83% coverage, moto-based S3 mock.
+- **Tested** — 130 pytest cases, 91% coverage, moto-based S3 mock.
 
 ## Installation
 
