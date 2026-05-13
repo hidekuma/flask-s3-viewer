@@ -8,7 +8,8 @@ dynamic = ["version"]
 description = "Flask S3 Viewer is a powerful extension that makes it easy to browse S3 in any Flask application."
 readme = "README.md"
 requires-python = ">=3.10"
-license = {file = "LICENSE"}
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{name = "Hidekuma", email = "d.hidekuma@gmail.com"}]
 keywords = ["aws", "s3", "file", "upload", "flask", "python", "python3", "browsing", "uploader"]
 classifiers = [

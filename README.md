@@ -11,6 +11,8 @@ Browse, upload, and manage Amazon S3 buckets from any Flask application.
 
 > **v1.0 is a major rewrite.** Modern UI (Tailwind + HTMX, dark mode), Flask 3 support, hardened path-traversal defenses, Flask extension pattern, type hints, pytest + moto test suite, GitHub Actions CI. See [migration guide](MIGRATION.md) if upgrading from `0.x`.
 
+![screenshot](https://raw.githubusercontent.com/hidekuma/flask-s3-viewer/master/i/screenshot-v1.png)
+
 ## Highlights
 
 - **Modern UI** — Tailwind CSS, HTMX-driven partial updates, light/dark mode, inline heroicons. No build pipeline required for end users (CSS ships pre-built).
