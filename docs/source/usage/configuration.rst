@@ -230,6 +230,30 @@ Flask S3Viewer is going to use S3's presigned URL. It's nice to controll large f
 
 but you must do S3’s CORS settings before like set above.
 
+Range requests / partial downloads
+----------------------------------
+
+Since v1.0, ``GET /<namespace>/files/<key>`` honors the HTTP ``Range``
+header (RFC 7233). A well-formed range returns ``206 Partial Content``
+with ``Content-Range`` and ``Content-Length`` populated; every download
+response advertises ``Accept-Ranges: bytes``. Malformed or unsatisfiable
+ranges return ``416 Range Not Satisfiable``.
+
+This is what lets ``curl -C -``, video/audio ``<video>``/``<audio>``
+players, and chunked mobile downloaders resume or seek without
+re-fetching the whole object.
+
+.. code-block:: bash
+    :linenos:
+
+    # Resume a partially downloaded file
+    curl -C - -O http://localhost:3000/flask-s3-viewer/files/big.bin
+
+    # Or request a specific byte range explicitly
+    curl -H "Range: bytes=0-1023" -O \
+        http://localhost:3000/flask-s3-viewer/files/big.bin
+
+
 .. code-block:: json
     :linenos:
 

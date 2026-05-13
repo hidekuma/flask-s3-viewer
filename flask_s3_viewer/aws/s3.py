@@ -8,7 +8,7 @@ from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
 from botocore.errorfactory import ClientError
 
-from ..errors import InvalidPrefix
+from ..errors import InvalidPrefix, InvalidRangeError
 from .cache import AWSCache
 from .session import AWSSession
 
@@ -98,14 +98,25 @@ class AWSS3Client(AWSSession):
     def get_object_name(self, object_name: str) -> str:
         return os.path.join(self.prefixer(""), object_name)
 
-    def find_one(self, object_name: str) -> dict | None:
+    def find_one(self, object_name: str, range: str | None = None) -> dict | None:
+        """Fetch one object (optionally a byte range).
+
+        ``range`` forwards an HTTP ``Range: bytes=...`` header to S3 so the
+        caller can serve RFC 7233 ``206 Partial Content`` responses. A
+        malformed/unsatisfiable range raises :class:`InvalidRangeError`
+        (mapped to HTTP 416 by the view layer); any other ``ClientError``
+        is logged and ``None`` is returned (object missing / access denied).
+        """
         object_name = self.get_object_name(object_name)
+        kwargs: dict = {'Bucket': self._bucket_name, 'Key': object_name}
+        if range:
+            kwargs['Range'] = range
         try:
-            return self._s3.get_object(
-                Bucket=self._bucket_name,
-                Key=object_name,
-            )
+            return self._s3.get_object(**kwargs)
         except ClientError as e:
+            code = e.response.get('Error', {}).get('Code', '')
+            if range and code in ('InvalidRange', 'InvalidArgument'):
+                raise InvalidRangeError(range) from e
             logging.error(e)
             return None
 

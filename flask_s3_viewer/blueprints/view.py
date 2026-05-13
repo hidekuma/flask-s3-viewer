@@ -20,7 +20,7 @@ from werkzeug.datastructures import FileStorage
 
 from .. import APP_TEMPLATE_FOLDER, FlaskS3Viewer
 from ..config import NAMESPACE
-from ..errors import InvalidPrefix
+from ..errors import InvalidPrefix, InvalidRangeError
 
 blueprint = Blueprint(
     NAMESPACE,
@@ -76,7 +76,12 @@ def files_download(key: str) -> Any:
         """
         key = urllib.parse.unquote_plus(key)
         fs3viewer = _get_viewer(g.BUCKET_NAMESPACE)
-        obj = fs3viewer.find_one(key)
+        range_header = request.headers.get('Range')
+        try:
+            obj = fs3viewer.find_one(key, range=range_header)
+        except InvalidRangeError:
+            # RFC 7233 §4.4 — malformed / unsatisfiable Range.
+            abort(416, 'Range Not Satisfiable')
         if obj:
             try:
                 key_bytes: bytes = os.path.basename(key).encode('latin-1')
@@ -93,11 +98,19 @@ def files_download(key: str) -> Any:
                 filenames = {'filename': key_bytes.decode('utf-8')}
             # boto3 응답의 'Body' (StreamingBody)는 file-like / iterable 이므로
             # Werkzeug WSGI 헬퍼 없이도 Response가 직접 chunk 스트리밍을 처리한다.
+            # Range가 있으면 boto3가 ``ContentRange`` 응답 헤더를 채워준다 —
+            # RFC 7233 ``206 Partial Content`` 응답으로 변환한다.
+            status = 206 if range_header and obj.get('ContentRange') else 200
             rv = Response(
                 obj.get('Body', b''),
+                status=status,
                 direct_passthrough=True,
                 mimetype=obj['ContentType'],
             )
+            rv.headers['Accept-Ranges'] = 'bytes'
+            if status == 206:
+                rv.headers['Content-Range'] = obj['ContentRange']
+                rv.headers['Content-Length'] = str(obj.get('ContentLength', ''))
             rv.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
             rv.headers['Pragma'] = 'no-cache'
             rv.headers['Expires'] = '0'
