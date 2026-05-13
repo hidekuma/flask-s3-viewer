@@ -349,6 +349,71 @@ re-fetching the whole object.
         }
     ]
 
+Authentication & permissions
+----------------------------
+
+Two opt-in layers, both off by default — the package keeps the legacy
+anonymous experience verbatim until you wire something up.
+
+**Hook framework** — bring your own login. Two callables:
+
+.. code-block:: python
+    :linenos:
+
+    from flask_s3_viewer.auth import ACTION_DELETE
+
+    def auth_callback(request):
+        # Return the user's email/id, or None for anonymous.
+        return request.headers.get("X-Forwarded-Email")
+
+    def permission_callback(email, action, namespace, key):
+        # ``action`` is one of ACTION_LIST / ACTION_DOWNLOAD /
+        # ACTION_UPLOAD / ACTION_DELETE / ACTION_PRESIGN.
+        if action == ACTION_DELETE:
+            return email.endswith("@admin.example.com")
+        return True
+
+    FlaskS3Viewer(
+        app, namespace="bucket",
+        auth_callback=auth_callback,
+        permission_callback=permission_callback,
+        config={...},
+    )
+
+Returning ``None`` from ``auth_callback`` triggers a ``401`` (or a Google
+login redirect — see below). ``permission_callback`` returning ``False``
+triggers a ``403``.
+
+**Built-in Google OAuth** — requires the optional ``[auth]`` extra::
+
+    pip install "flask_s3_viewer[auth]"
+
+.. code-block:: python
+    :linenos:
+
+    app.secret_key = "..."  # required — signs the session cookie
+
+    FlaskS3Viewer(
+        app, namespace="bucket",
+        google_client_id="...apps.googleusercontent.com",
+        google_client_secret="...",
+        allowed_emails=["alice@example.com"],
+        allowed_domains=["example.com"],
+        config={...},
+    )
+
+Routes ``/auth/login``, ``/auth/callback``, ``/auth/logout`` are
+registered on the blueprint. Configure the redirect URI as
+``https://<host>/<namespace>/auth/callback`` in Google Cloud Console.
+Anonymous browser GETs are redirected through Google sign-in; non-browser
+clients still get a bare ``401``.
+
+``allowed_emails`` / ``allowed_domains`` are a shortcut for the common
+allow-list case — internally they wire up the
+``email_allowlist(emails=..., domains=...)`` builder as the
+``permission_callback``. Pass your own ``permission_callback`` for
+fine-grained per-action policy.
+
 Use Caching
 -----------
 S3 is charged per call. Therefore, Flask S3Viewer supports caching (currently only supports file caching, in-memory database will be supported later).

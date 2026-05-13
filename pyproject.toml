@@ -35,6 +35,12 @@ dev = [
     "ruff>=0.5",
     "build>=1.0",
 ]
+# Google OAuth (and any future OIDC providers) ride on Authlib. Optional
+# so the no-auth install stays dependency-light.
+# Usage: `pip install -e ".[auth]"`
+auth = [
+    "authlib>=1.3",
+]
 
 [project.scripts]
 flask_s3_viewer = "flask_s3_viewer.cli:handle"
@@ -76,7 +82,7 @@ warn_unused_configs = true
 exclude = ["docs/", "example/", "build/", "dist/", "tests/", "i/"]
 
 [[tool.mypy.overrides]]
-module = ["boto3.*", "botocore.*", "click.*"]
+module = ["boto3.*", "botocore.*", "click.*", "authlib.*"]
 ignore_missing_imports = true
 
 # ---------------------------------------------------------------------------

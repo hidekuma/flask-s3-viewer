@@ -90,6 +90,12 @@ class FlaskS3Viewer(AWSS3Client):
         logo_url: str | None = None,
         logo_path: str | None = None,
         template_folder: str | None = None,
+        auth_callback: Any = None,
+        permission_callback: Any = None,
+        google_client_id: str | None = None,
+        google_client_secret: str | None = None,
+        allowed_emails: list[str] | set[str] | None = None,
+        allowed_domains: list[str] | set[str] | None = None,
         config: dict | None = None,
     ) -> None:
         """
@@ -133,6 +139,39 @@ class FlaskS3Viewer(AWSS3Client):
         self.title: str = title or 'Flask S3 Viewer'
         self.logo_url: str | None = _resolve_logo(logo_url, logo_path)
         self.template_folder: str | None = template_folder
+        # ---- auth wiring ----
+        from .auth import (
+            allow_all_auth,
+            allow_all_permissions,
+            email_allowlist,
+        )
+        # Google OAuth opt-in: deploying with credentials wires the
+        # session-based default auth_callback unless the caller
+        # supplies their own.
+        self.google_client_id: str | None = google_client_id
+        self.google_client_secret: str | None = google_client_secret
+        if auth_callback is None and google_client_id:
+            from .auth.google import session_auth_callback
+            auth_callback = session_auth_callback
+        self.auth_callback = auth_callback or allow_all_auth
+        # Permission wiring precedence: explicit callback > allow_lists > allow-all.
+        if permission_callback is None and (allowed_emails or allowed_domains):
+            permission_callback = email_allowlist(
+                emails=list(allowed_emails or []),
+                domains=list(allowed_domains or []),
+            )
+        self.permission_callback = permission_callback or allow_all_permissions
+        # Bookkeeping: enable enforcement only when the caller passed at
+        # least one auth-related option. `auth_callback` may have been
+        # rewritten above (None → session_auth_callback when Google is
+        # configured) — so check against the post-defaults state.
+        self.auth_enabled: bool = bool(
+            auth_callback is not None
+            or permission_callback is not None
+            or google_client_id
+            or allowed_emails
+            or allowed_domains
+        )
         if upload_type not in UPLOAD_TYPES:
             raise NotSupportUploadType
         self.upload_type: str = upload_type
@@ -223,6 +262,13 @@ class FlaskS3Viewer(AWSS3Client):
         # overrides without clobbering each other.
         if self.template_folder:
             self._install_template_override(app, self.template_folder)
+
+        # Google OAuth: register the Authlib client lazily (only when
+        # the deployer supplied credentials) so the optional [auth]
+        # extra remains optional for the no-auth flow.
+        if self.google_client_id and self.google_client_secret:
+            from .auth.google import configure_google_oauth
+            configure_google_oauth(app, self.google_client_id, self.google_client_secret)
 
         logging.info(
             f"*** FlaskS3Viewer initialized for namespace='{self.namespace}' ***"

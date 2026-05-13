@@ -3,6 +3,7 @@ import unicodedata
 import urllib
 import urllib.parse
 from collections.abc import Iterable
+from functools import wraps
 from typing import Any
 from urllib.parse import quote as url_quote
 
@@ -13,12 +14,21 @@ from flask import (
     current_app,
     g,
     jsonify,
+    redirect,
     render_template,
     request,
+    url_for,
 )
 from werkzeug.datastructures import FileStorage
 
 from .. import APP_TEMPLATE_FOLDER, FlaskS3Viewer
+from ..auth import (
+    ACTION_DELETE,
+    ACTION_DOWNLOAD,
+    ACTION_LIST,
+    ACTION_PRESIGN,
+    ACTION_UPLOAD,
+)
 from ..config import NAMESPACE
 from ..errors import InvalidPrefix, InvalidRangeError
 
@@ -46,6 +56,54 @@ def _get_viewer(namespace: str) -> FlaskS3Viewer:
         abort(404, 'Unknown FlaskS3Viewer namespace')
 
 
+def _enforce_auth(fs3viewer: FlaskS3Viewer, action: str, key: str | None = None) -> Any:
+    """Run the viewer's auth + permission callbacks for the current request.
+
+    Returns the authenticated email (may be ``None`` when the viewer is
+    in the legacy "no auth" mode and the deployer hasn't wired anything
+    up — in that case the route is treated as fully public).
+
+    Raises ``abort(401)`` if the deployer enabled auth but the request
+    cannot be tied to an identity, and ``abort(403)`` when the identity
+    lacks the requested action permission.
+    """
+    if not fs3viewer.auth_enabled:
+        return None
+    email = fs3viewer.auth_callback(request)
+    if not email:
+        # When Google OAuth is configured, send the user through the
+        # login flow instead of a bare 401 — that's what a browser
+        # client (the dominant case) needs.
+        if request.method == 'GET' and fs3viewer.google_client_id:
+            return redirect(url_for(
+                'flask_s3_viewer.auth_login',
+                next=request.url,
+            ))
+        abort(401, 'Authentication required.')
+    if not fs3viewer.permission_callback(email, action, g.BUCKET_NAMESPACE, key):
+        abort(403, 'Forbidden.')
+    return email
+
+
+def require(action: str) -> Any:
+    """Decorator: enforce ``_enforce_auth`` before running the route.
+
+    The decorated handler receives the regular Flask URL kwargs unchanged.
+    ``action`` is one of the ACTION_* constants from ``flask_s3_viewer.auth``.
+    """
+    def deco(fn: Any) -> Any:
+        @wraps(fn)
+        def wrapped(*args: Any, **kwargs: Any) -> Any:
+            viewer = _get_viewer(g.BUCKET_NAMESPACE)
+            maybe_redirect = _enforce_auth(viewer, action, kwargs.get('key'))
+            # `_enforce_auth` may have returned a redirect response (Google login).
+            if maybe_redirect is not None and not isinstance(maybe_redirect, str):
+                return maybe_redirect
+            return fn(*args, **kwargs)
+        return wrapped
+    return deco
+
+
 def is_allowed(fs3viewer: FlaskS3Viewer, filename: str) -> bool:
     if fs3viewer.allowed_extensions:
         return (
@@ -69,6 +127,7 @@ def pull_division(endpoint: Any, values: Any) -> None:
 
 
 @blueprint.route("/files/<path:key>", methods=['GET'])
+@require(ACTION_DOWNLOAD)
 def files_download(key: str) -> Any:
     if request.method == "GET":
         """
@@ -125,6 +184,7 @@ def files_download(key: str) -> Any:
 
 
 @blueprint.route("/files/<path:key>", methods=['DELETE'])
+@require(ACTION_DELETE)
 def files_delete(key: str) -> tuple[str, int]:
     if request.method == 'DELETE':
         """
@@ -146,6 +206,7 @@ def files_delete(key: str) -> tuple[str, int]:
 
 
 @blueprint.route("/files/presign", methods=['POST'])
+@require(ACTION_PRESIGN)
 def files_presign() -> Any:
     prefix = request.form.get('prefix', '')
     prefix = urllib.parse.unquote_plus(prefix)
@@ -177,6 +238,13 @@ def files_presign() -> Any:
 
 @blueprint.route("/files", methods=['GET', 'POST'])
 def files() -> Any:
+    # files() carries two distinct actions (LIST vs UPLOAD) so it can't
+    # use the @require decorator wholesale — enforce per branch.
+    fs3viewer_for_auth = _get_viewer(g.BUCKET_NAMESPACE)
+    _auth_action = ACTION_UPLOAD if request.method == 'POST' else ACTION_LIST
+    _redirect = _enforce_auth(fs3viewer_for_auth, _auth_action)
+    if _redirect is not None and not isinstance(_redirect, str):
+        return _redirect
     if request.method == "POST":
         """
         prefix: encoded
@@ -293,6 +361,39 @@ def files() -> Any:
             FS3V_OBJECT_HOSTNAME=fs3viewer.object_hostname,
             current_prefix=prefix,
         )
+
+
+@blueprint.route("/auth/login")
+def auth_login() -> Any:
+    """Kick off the Google OAuth dance. Only available when the viewer
+    was configured with ``google_client_id``; otherwise a 404 is the
+    correct signal (the route exists, but the flow isn't enabled).
+    """
+    viewer = _get_viewer(g.BUCKET_NAMESPACE)
+    if not viewer.google_client_id:
+        abort(404)
+    from ..auth.google import login as _login
+    return _login()
+
+
+@blueprint.route("/auth/callback")
+def auth_callback() -> Any:
+    """Google OAuth redirect target."""
+    viewer = _get_viewer(g.BUCKET_NAMESPACE)
+    if not viewer.google_client_id:
+        abort(404)
+    from ..auth.google import auth_callback as _cb
+    return _cb()
+
+
+@blueprint.route("/auth/logout")
+def auth_logout() -> Any:
+    """Drop the session marker. Always available when auth is enabled."""
+    viewer = _get_viewer(g.BUCKET_NAMESPACE)
+    if not viewer.auth_enabled:
+        abort(404)
+    from ..auth.google import logout as _logout
+    return _logout()
 
 
 @blueprint.context_processor

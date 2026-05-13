@@ -220,6 +220,60 @@ FlaskS3Viewer(
 )
 ```
 
+## Authentication & permissions
+
+`flask-s3-viewer` ships with two opt-in layers. **The package works exactly as before with no auth wiring** — both default to "allow everyone".
+
+### Layer 1: hook framework (no extra dependency)
+
+Plug in your existing login system with two callables:
+
+```python
+from flask_s3_viewer.auth import ACTION_LIST, ACTION_UPLOAD, ACTION_DELETE
+
+def who_is_asking(request):
+    """Return the user's email (or any opaque id) — None means anonymous."""
+    return request.headers.get("X-Forwarded-Email")
+
+def can_they(email, action, namespace, key):
+    """Authorize a single action. action is one of the ACTION_* constants."""
+    if action == ACTION_DELETE:
+        return email.endswith("@admin.example.com")
+    return True
+
+FlaskS3Viewer(
+    app, namespace="bucket",
+    auth_callback=who_is_asking,
+    permission_callback=can_they,
+    config={...},
+)
+```
+
+The five action constants are `ACTION_LIST`, `ACTION_DOWNLOAD`, `ACTION_UPLOAD`, `ACTION_DELETE`, `ACTION_PRESIGN`.
+
+### Layer 2: built-in Google OAuth (optional `[auth]` extra)
+
+```bash
+pip install "flask_s3_viewer[auth]"
+```
+
+```python
+app.secret_key = "..."  # required — signs the session cookie
+
+FlaskS3Viewer(
+    app, namespace="bucket",
+    google_client_id="...apps.googleusercontent.com",
+    google_client_secret="...",
+    allowed_emails=["alice@example.com"],
+    allowed_domains=["example.com"],
+    config={...},
+)
+```
+
+Installs `/auth/login`, `/auth/callback`, `/auth/logout` on the blueprint. Configure the redirect URI as `https://<host>/<namespace>/auth/callback` in Google Cloud Console. Anonymous browser visits to a protected page are redirected through Google sign-in automatically.
+
+Mix and match: pass your own `auth_callback` / `permission_callback` even when Google is enabled, or use `email_allowlist()` as a permission builder for non-Google deployments.
+
 ## Security
 
 - **Path traversal hardening** — Every user-supplied `prefix` is validated. Tokens `..`, `.`, empty segments, and `\` are rejected with HTTP 400.
