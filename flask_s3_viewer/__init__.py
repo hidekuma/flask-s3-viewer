@@ -69,6 +69,13 @@ class FlaskS3Viewer(AWSS3Client):
         use_cache
         verify
         base_path
+        role_arn
+        role_session_name
+        external_id
+        duration_seconds
+        mfa_serial
+        token_code
+        token_code_callback
         ''',
     )
     def __init__(
@@ -152,6 +159,15 @@ class FlaskS3Viewer(AWSS3Client):
         config.setdefault('use_cache', None)
         config.setdefault('verify', None)
         config.setdefault('base_path', '')
+        # STS AssumeRole + MFA — all None by default so boto3's standard
+        # credential chain handles 99% of deployments untouched.
+        config.setdefault('role_arn', None)
+        config.setdefault('role_session_name', None)
+        config.setdefault('external_id', None)
+        config.setdefault('duration_seconds', None)
+        config.setdefault('mfa_serial', None)
+        config.setdefault('token_code', None)
+        config.setdefault('token_code_callback', None)
         super().__init__(**config)
 
         self.FLASK_S3_VIEWER_BUCKET_CONFIGS[namespace] = self.FLASK_S3_VIEWER_BUCKET(

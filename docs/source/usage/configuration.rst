@@ -254,6 +254,56 @@ Flask S3Viewer is going to use S3's presigned URL. It's nice to controll large f
 
 but you must do S3’s CORS settings before like set above.
 
+STS AssumeRole / MFA
+--------------------
+
+For cross-account or multi-tenant deployments, the viewer can run
+``sts:AssumeRole`` on top of the base credentials (profile / env /
+IRSA / IMDS — whatever boto3 resolves by default). Pass the role
+config inside the ``config`` dict:
+
+.. code-block:: python
+    :linenos:
+
+    FlaskS3Viewer(
+        app,
+        namespace='cross-account',
+        config={
+            'bucket_name': 'target-bucket',
+            'region_name': 'us-east-1',
+            # Base credentials still come from boto3's default chain.
+            'role_arn': 'arn:aws:iam::123456789012:role/AppRole',
+            'external_id': 'shared-secret',     # optional
+            'role_session_name': 'my-app',      # default: flask-s3-viewer
+            'duration_seconds': 3600,           # 15 min ~ 12 h
+        },
+    )
+
+For MFA-protected roles, supply either ``token_code`` directly or a
+``token_code_callback`` callable that returns the current code on demand
+(useful for interactive prompts that mustn't expire):
+
+.. code-block:: python
+    :linenos:
+
+    FlaskS3Viewer(
+        app,
+        namespace='mfa-account',
+        config={
+            'bucket_name': 'secure-bucket',
+            'region_name': 'us-east-1',
+            'role_arn': 'arn:aws:iam::123456789012:role/AdminRole',
+            'mfa_serial': 'arn:aws:iam::123456789012:mfa/alice',
+            'token_code_callback': lambda: input('MFA code: ').strip(),
+        },
+    )
+
+If ``role_arn`` is omitted, no STS call happens — the direct credential
+path is used. That covers static keys, named profiles (including
+profiles that themselves declare ``role_arn``+``source_profile`` in
+``~/.aws/config`` — boto3 handles AssumeRole automatically), env vars,
+EC2 IMDS, ECS task role, AWS SSO, and EKS IRSA.
+
 Range requests / partial downloads
 ----------------------------------
 

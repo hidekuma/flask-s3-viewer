@@ -155,6 +155,13 @@ All `config` keys are forwarded to the underlying S3 client:
 | `use_cache`      | bool             | False   | File-system pickle cache.                      |
 | `cache_dir`      | str \| None      | None    | Required when `use_cache=True`.                |
 | `ttl`            | int (seconds)    | 300     | Cache time-to-live.                            |
+| `role_arn`       | str \| None      | None    | If set, the wrapper runs STS `AssumeRole` on top of the base credentials and uses the returned temporary keys (cross-account, multi-tenant). |
+| `role_session_name` | str \| None   | `"flask-s3-viewer"` | Identifier for the assumed session.    |
+| `external_id`    | str \| None      | None    | Forwarded to STS for cross-account roles that require it. |
+| `duration_seconds` | int \| None    | None    | Lifetime of the assumed credentials in seconds (15 min – 12 h). |
+| `mfa_serial`     | str \| None      | None    | MFA device ARN/serial for STS `AssumeRole`.    |
+| `token_code`     | str \| None      | None    | One-time MFA code (paired with `mfa_serial`).  |
+| `token_code_callback` | callable    | None    | Alternative to `token_code` — called once to prompt the user. |
 
 Constructor options:
 
@@ -169,6 +176,49 @@ Constructor options:
 | `logo_url`           | URL of a custom logo image (absolute, `url_for(...)`, or `/static/...`). |
 | `logo_path`          | Local filesystem path to a logo image — auto-inlined as a `data:` URI. Takes precedence over `logo_url`. |
 | `template_folder`    | Directory whose Jinja files override the bundled templates (Flask `ChoiceLoader` pattern). Seed it via the CLI scaffold. |
+
+## AWS authentication
+
+`flask-s3-viewer` defers to boto3's default credential chain, so these all work out of the box:
+
+- Static keys (`access_key` / `secret_key` / `session_token`)
+- Named profile (`profile_name='my-profile'`) — including profiles with `role_arn` + `source_profile` in `~/.aws/config` (boto3 handles AssumeRole automatically)
+- `AWS_*` environment variables
+- EC2 IMDS / ECS task role / AWS SSO cache / EKS IRSA (Web Identity OIDC) — picked up automatically when nothing else is set.
+
+For workflows that need **explicit STS AssumeRole** (cross-account, multi-tenant, ad-hoc role delegation from a base credential), pass `role_arn` in the `config`:
+
+```python
+FlaskS3Viewer(
+    app,
+    namespace="cross-account",
+    config={
+        "bucket_name": "target-bucket",
+        "region_name": "us-east-1",
+        # Base credentials come from the default chain (profile/env/IRSA).
+        "role_arn": "arn:aws:iam::123456789012:role/AppRole",
+        "external_id": "shared-secret",          # optional
+        "role_session_name": "my-app",           # default: "flask-s3-viewer"
+        "duration_seconds": 3600,                # 15 min – 12 h
+    },
+)
+```
+
+For MFA-protected roles, supply a token (or a callback for interactive prompting):
+
+```python
+FlaskS3Viewer(
+    app,
+    namespace="mfa-account",
+    config={
+        "bucket_name": "secure-bucket",
+        "region_name": "us-east-1",
+        "role_arn": "arn:aws:iam::123456789012:role/AdminRole",
+        "mfa_serial": "arn:aws:iam::123456789012:mfa/alice",
+        "token_code_callback": lambda: input("MFA code: ").strip(),
+    },
+)
+```
 
 ## Security
 

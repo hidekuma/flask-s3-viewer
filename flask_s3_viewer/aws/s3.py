@@ -37,6 +37,13 @@ class AWSS3Client(AWSSession):
         use_cache: bool = False,
         verify: bool | str | None = False,
         base_path: str = '',
+        role_arn: str | None = None,
+        role_session_name: str | None = None,
+        external_id: str | None = None,
+        duration_seconds: int | None = None,
+        mfa_serial: str | None = None,
+        token_code: str | None = None,
+        token_code_callback: Any = None,
     ) -> None:
         super().__init__(
             profile_name=profile_name,
@@ -44,6 +51,13 @@ class AWSS3Client(AWSSession):
             secret_key=secret_key,
             access_key=access_key,
             session_token=session_token,
+            role_arn=role_arn,
+            role_session_name=role_session_name,
+            external_id=external_id,
+            duration_seconds=duration_seconds,
+            mfa_serial=mfa_serial,
+            token_code=token_code,
+            token_code_callback=token_code_callback,
         )
 
         if not self.runnable:
