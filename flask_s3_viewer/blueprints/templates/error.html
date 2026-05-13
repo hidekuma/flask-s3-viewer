@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+{% block title %}Error{% endblock %}
+{% block body %}
+  <div class="mx-auto max-w-md mt-20 p-6 rounded-md border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/30 shadow-sm">
+    <div class="flex items-start gap-3">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+           stroke-width="1.5" stroke="currentColor"
+           class="h-6 w-6 text-red-600 dark:text-red-300 flex-shrink-0">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+      </svg>
+      <div>
+        <h1 class="text-lg font-semibold text-red-700 dark:text-red-300">{{ FS3V_CODE | default('Error') }}</h1>
+        <p class="mt-2 text-sm">{{ FS3V_MESSAGE | default('Something went wrong.') }}</p>
+      </div>
+    </div>
+  </div>
+{% endblock %}

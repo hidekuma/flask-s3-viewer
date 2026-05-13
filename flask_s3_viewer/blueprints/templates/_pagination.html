@@ -1,0 +1,15 @@
+{% if FS3V_NEXT_TOKEN %}
+  <div class="flex justify-center pt-2">
+    <a class="inline-flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+       href="{{ url_for('flask_s3_viewer.files', prefix=request.args.get('prefix',''), starting_token=FS3V_NEXT_TOKEN) }}"
+       hx-get="{{ url_for('flask_s3_viewer.files', prefix=request.args.get('prefix',''), starting_token=FS3V_NEXT_TOKEN) }}"
+       hx-target="#file-list"
+       hx-push-url="true">
+      Next
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+           stroke-width="2" stroke="currentColor" class="h-4 w-4">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+      </svg>
+    </a>
+  </div>
+{% endif %}

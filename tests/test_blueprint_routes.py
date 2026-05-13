@@ -1,0 +1,214 @@
+"""Blueprint integration tests with moto-mocked S3.
+
+Exercises every public route plus the A3 security boundary
+(400 on path-traversal prefix).
+
+Route layout (see flask_s3_viewer/blueprints/view.py):
+    GET    /<ns>/files                  -> HTML listing
+    POST   /<ns>/files                  -> mkdir (no files) or upload
+    GET    /<ns>/files/<path:key>       -> download
+    DELETE /<ns>/files/<path:key>       -> remove
+    POST   /<ns>/files/presign          -> presigned POST JSON
+
+The ``client`` and ``s3_bucket`` fixtures come from conftest.py.
+"""
+from __future__ import annotations
+
+import io
+import urllib.parse
+
+
+def _ns_path(suffix: str) -> str:
+    """Build a path under the registered FlaskS3Viewer namespace ('fsv-test')."""
+    return f'/fsv-test{suffix}'
+
+
+class TestListing:
+    def test_get_files_empty_bucket(self, client) -> None:
+        rv = client.get(_ns_path('/files'))
+        assert rv.status_code == 200
+        # Page rendered; nothing to assert on body shape beyond a 200.
+
+    def test_get_files_invalid_prefix_rejected(self, client) -> None:
+        # A3: traversal in the query string must surface as 400.
+        rv = client.get(_ns_path('/files?prefix=../etc'))
+        assert rv.status_code == 400
+
+
+class TestMkdir:
+    def test_post_mkdir_creates_empty_object(self, client, s3_bucket) -> None:
+        s3_client, bucket = s3_bucket
+        rv = client.post(
+            _ns_path('/files'),
+            data={'prefix': 'newdir/'},
+            content_type='application/x-www-form-urlencoded',
+        )
+        assert rv.status_code == 201
+        # S3 should now have a placeholder object at 'newdir/'.
+        resp = s3_client.list_objects_v2(Bucket=bucket, Prefix='newdir/')
+        keys = [obj['Key'] for obj in resp.get('Contents', [])]
+        assert 'newdir/' in keys
+
+    def test_post_mkdir_invalid_prefix_rejected(self, client) -> None:
+        rv = client.post(_ns_path('/files'), data={'prefix': '../etc'})
+        assert rv.status_code == 400
+
+
+class TestUpload:
+    def test_post_upload_file_creates_object(self, client, s3_bucket) -> None:
+        s3_client, bucket = s3_bucket
+        data = {
+            'prefix': 'uploads/',
+            'files[]': (io.BytesIO(b'hello world'), 'hello.txt'),
+        }
+        rv = client.post(
+            _ns_path('/files'),
+            data=data,
+            content_type='multipart/form-data',
+        )
+        assert rv.status_code == 201
+        resp = s3_client.list_objects_v2(Bucket=bucket, Prefix='uploads/')
+        keys = [obj['Key'] for obj in resp.get('Contents', [])]
+        assert 'uploads/hello.txt' in keys
+
+
+class TestDownload:
+    def test_get_download_returns_object(self, client, s3_bucket) -> None:
+        s3_client, bucket = s3_bucket
+        s3_client.put_object(Bucket=bucket, Key='dl/hello.txt', Body=b'hi!')
+        rv = client.get(_ns_path('/files/dl/hello.txt'))
+        assert rv.status_code == 200
+        assert b'hi!' in rv.data
+        assert 'attachment' in rv.headers.get('Content-Disposition', '')
+
+    def test_get_download_missing_returns_404(self, client) -> None:
+        rv = client.get(_ns_path('/files/missing/never.txt'))
+        # The handler renders the error template with HTTP 404.
+        assert rv.status_code == 404
+
+
+class TestDelete:
+    def test_delete_object_returns_204(self, client, s3_bucket) -> None:
+        s3_client, bucket = s3_bucket
+        s3_client.put_object(Bucket=bucket, Key='del/bye.txt', Body=b'bye')
+        rv = client.delete(_ns_path('/files/del/bye.txt'))
+        assert rv.status_code == 204
+        resp = s3_client.list_objects_v2(Bucket=bucket, Prefix='del/')
+        keys = [o['Key'] for o in resp.get('Contents', [])]
+        assert 'del/bye.txt' not in keys
+
+    def test_delete_invalid_prefix_returns_400(self, client) -> None:
+        # A3: ``..%2Fetc/`` decodes to '../etc/' which triggers the trailing-/
+        # branch in AWSS3Client.remove() -> find_all() -> prefixer() which
+        # raises InvalidPrefix. files_delete catches it and returns 400
+        # (not 500).
+        escaped = urllib.parse.quote('../etc/', safe='')
+        rv = client.delete(_ns_path(f'/files/{escaped}'))
+        assert rv.status_code == 400
+
+
+class TestPresign:
+    def test_post_presign_returns_json(self, client) -> None:
+        rv = client.post(
+            _ns_path('/files/presign'),
+            data={'prefix': 'uploads/', 'file_list': 'a.txt,b.txt'},
+        )
+        assert rv.status_code == 200
+        body = rv.get_json()
+        assert isinstance(body, list)
+        assert len(body) == 2
+
+    def test_post_presign_invalid_prefix_returns_400(self, client) -> None:
+        rv = client.post(
+            _ns_path('/files/presign'),
+            data={'prefix': '../etc', 'file_list': 'a.txt'},
+        )
+        assert rv.status_code == 400
+
+
+class TestHTMXPartials:
+    """B3: ``HX-Request`` header switches /files GET to the partial."""
+
+    def test_files_get_full_page_includes_layout(self, client) -> None:
+        rv = client.get(_ns_path('/files'))
+        assert rv.status_code == 200
+        # Full page renders the <html> shell from layout.html.
+        assert b'<html' in rv.data
+
+    def test_files_get_htmx_returns_partial(self, client) -> None:
+        rv = client.get(
+            _ns_path('/files'),
+            headers={'HX-Request': 'true'},
+        )
+        assert rv.status_code == 200
+        # Partial response is the inner fragment — no layout shell.
+        assert b'<html' not in rv.data
+
+    def test_files_delete_htmx_returns_200(self, client, s3_bucket) -> None:
+        s3_client, bucket = s3_bucket
+        s3_client.put_object(Bucket=bucket, Key='hx/bye.txt', Body=b'bye')
+        rv = client.delete(
+            _ns_path('/files/hx/bye.txt'),
+            headers={'HX-Request': 'true'},
+        )
+        # HTMX flow swaps the row on 200; non-HTMX callers still get 204.
+        assert rv.status_code == 200
+
+
+class TestObjectHostname:
+    """B4: ``object_hostname`` switches file name anchors to external links.
+
+    The default ``client`` fixture leaves ``object_hostname`` unset so the
+    file name links to the in-process download route. To assert the external
+    prefix path we build a dedicated app + client without reusing the cached
+    fixture chain (different ``object_hostname`` value).
+    """
+
+    def _make_client(self, s3_bucket, tmp_path, hostname):
+        from flask import Flask
+
+        from flask_s3_viewer import FlaskS3Viewer
+
+        _client, bucket = s3_bucket
+        flask_app = Flask(__name__)
+        flask_app.config['TESTING'] = True
+        FlaskS3Viewer(
+            flask_app,
+            namespace='fsv-test',
+            object_hostname=hostname,
+            config={
+                'profile_name': None,
+                'bucket_name': bucket,
+                'region_name': 'us-east-1',
+                'access_key': 'testing',
+                'secret_key': 'testing',
+                'cache_dir': str(tmp_path / 'cache'),
+                'use_cache': True,
+                'ttl': 60,
+            },
+        )
+        return flask_app.test_client()
+
+    def test_listing_uses_object_hostname_for_download_link(self, s3_bucket, tmp_path) -> None:
+        s3_client, bucket = s3_bucket
+        s3_client.put_object(Bucket=bucket, Key='media/cat.jpg', Body=b'jpg')
+        client = self._make_client(
+            s3_bucket, tmp_path, hostname='https://cdn.example.com',
+        )
+        # Root listing only surfaces the 'media/' prefix; navigate into it to
+        # exercise the file row anchor.
+        rv = client.get(_ns_path('/files?prefix=media/'))
+        assert rv.status_code == 200
+        # External link prefix wins when object_hostname is configured.
+        assert b'https://cdn.example.com/media/cat.jpg' in rv.data
+        # Anchor should target a new tab (rel/target attributes present).
+        assert b'rel="noopener noreferrer"' in rv.data
+
+    def test_listing_falls_back_to_download_route_without_hostname(self, client, s3_bucket) -> None:
+        s3_client, bucket = s3_bucket
+        s3_client.put_object(Bucket=bucket, Key='media/dog.jpg', Body=b'jpg')
+        rv = client.get(_ns_path('/files?prefix=media/'))
+        assert rv.status_code == 200
+        # In-process download route is used when object_hostname is not set.
+        assert b'/files/media/dog.jpg' in rv.data
+        assert b'https://cdn.example.com' not in rv.data

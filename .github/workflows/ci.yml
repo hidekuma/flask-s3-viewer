@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+          cache-dependency-path: |
+            pyproject.toml
+            requirements.dev.txt
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      # Re-run the Tailwind build and fail if the committed artifact drifts
+      # from what the current sources produce. Keeps `app.css` honest without
+      # requiring contributors to remember to commit the rebuild.
+      - name: Verify Tailwind build is up-to-date
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+          cd ..
+          git diff --exit-code flask_s3_viewer/blueprints/static/css/app.css
+
+      - name: Lint (ruff check)
+        run: ruff check flask_s3_viewer/ tests/
+
+      # NOTE: `ruff format --check` is intentionally omitted at this phase.
+      # The current codebase pre-dates ruff format adoption and would produce
+      # a wide reformat diff (~1.7k lines, mostly quote style). A dedicated
+      # format-only sub-phase will introduce it without confusing review of
+      # other changes. Until then, ruff check (lint) is the binding gate.
+
+      - name: Type check (mypy)
+        run: mypy flask_s3_viewer/ --config-file pyproject.toml
+
+      - name: Test (pytest + coverage)
+        run: pytest --cov=flask_s3_viewer --cov-report=term --cov-report=xml tests/
+
+      - name: Build (sdist + wheel)
+        run: python -m build
+
+      - name: Upload coverage artifact
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: warn
+          retention-days: 7

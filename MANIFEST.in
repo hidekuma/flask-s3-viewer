@@ -1,3 +1,9 @@
 include LICENSE
 include README.md
 include requirements.txt
+
+# Bundled frontend build inputs live under ``frontend/`` (Tailwind/npm).
+# The compiled output is shipped via package_data on ``flask_s3_viewer``;
+# the dev scaffold itself is not part of the sdist/wheel.
+prune frontend
+exclude frontend

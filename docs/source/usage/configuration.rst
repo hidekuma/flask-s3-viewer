@@ -51,8 +51,8 @@ Initiailize Flask application and FlaskS3Viewer.
     # Init Flask
     app = Flask(__name__)
 
-    # Init Flask S3Viewer
-    s3viewer = FlaskS3Viewer(
+    # Init Flask S3Viewer (auto-registers in v1.0+)
+    FlaskS3Viewer(
         # Flask App
         app,
         # Namespace must be unique
@@ -66,11 +66,13 @@ Initiailize Flask application and FlaskS3Viewer.
         }
     )
 
-    # Register Flask S3Viewer's router
-    s3viewer.register()
-
     if __name__ == '__main__':
         app.run(debug=True, port=3000)
+
+.. note::
+   In v1.0+, the constructor auto-registers the blueprint via Flask extension pattern.
+   The legacy ``s3viewer.register()`` call has been removed. For deferred registration,
+   pass ``app=None`` and call ``viewer.init_app(app)`` later.
 
 The values in the code above are mandatory. If the setting is finished, run your Flask application and visit ``http://localhost/{namespace}/files``, e.g. http://localhost:3000/flask-s3-viewer/files.
 
@@ -108,7 +110,6 @@ You can also initiailize multiple bucket.
             'bucket_name': 'S3_BUCKET_NAME'
         }
     )
-    s3viewer.register()
 
 Mount a specific path in a bucket for browsing
 ----------------------------------------------
@@ -135,7 +136,6 @@ You can mount a specific path in the bucket to the browser.
             'base_path': 'path/to/your/folder'
         }
     )
-    s3viewer.register()
 
 
 
@@ -157,30 +157,58 @@ You can limit the file extensions that are uploaded, if you want.
         }
     )
 
-Choose the design template
----------------------------
-Flask S3 Viewer supports the templates below.
+Design template
+---------------
 
-================== ==================== ============================
-Template namespace Design type          Description
-================== ==================== ============================
-base               *Default*             Not designed at all
-mdl                Material Design Lite `link <https://getmdl.io>`__
-================== ==================== ============================
+Since v1.0, Flask S3 Viewer ships a single unified design built with
+**Tailwind CSS + HTMX**, with light/dark mode and inline heroicons.
+
+.. note::
+   The ``template_namespace='base'|'mdl'`` argument is deprecated. Passing it
+   emits a :class:`DeprecationWarning` and is otherwise ignored. The previous
+   ``base/`` and ``mdl/`` template directories have been removed.
+
+Branding (title + logo)
+-----------------------
+
+Three constructor options let you brand the UI without overriding templates:
 
 .. code-block:: python
     :linenos:
-    :emphasize-lines: 3-4
 
-    s3viewer = FlaskS3Viewer(
-        ...
-        # Enter template namespace (default: base)
-        template_namespace='mdl',
-        config={
-            ...
-        }
+    FlaskS3Viewer(
+        app,
+        namespace='my-bucket',
+        title='ACME File Vault',
+        logo_path='/opt/acme/assets/logo.svg',   # local file, auto-inlined
+        # logo_url='https://cdn.acme.io/logo.svg',  # alternatively, any URL
+        config={...},
     )
-    s3viewer.register()
+
+``logo_path`` reads the file once at construction time and embeds it as a
+``data:`` URI so you don't need to expose it via a separate static route.
+``logo_url`` accepts any browser-resolvable URL (CDN, ``url_for("static",
+filename=...)`` result, or absolute URL). ``logo_path`` takes precedence
+over ``logo_url`` when both are provided.
+
+Template overrides
+------------------
+
+To customize the design further, override the templates in
+``flask_s3_viewer/blueprints/templates/`` (``layout.html``, ``files.html``,
+``_file_list.html``, ``_pagination.html``, ``_upload_form.html``,
+``error.html``) using Flask's standard template override mechanism.
+
+``layout.html`` exposes a ``{% block extra_head %}`` hook so downstream apps
+can inject custom ``<link>`` / ``<script>`` / ``<meta>`` tags without
+replacing the whole layout:
+
+.. code-block:: jinja
+
+    {% extends "flask_s3_viewer/layout.html" %}
+    {% block extra_head %}
+      <link rel="stylesheet" href="{{ url_for('static', filename='custom.css') }}">
+    {% endblock %}
 
 Controll large files
 --------------------
@@ -199,7 +227,6 @@ Flask S3Viewer is going to use S3's presigned URL. It's nice to controll large f
             ...
         }
     )
-    s3viewer.register()
 
 but you must do S3’s CORS settings before like set above.
 
@@ -244,7 +271,6 @@ S3 is charged per call. Therefore, Flask S3Viewer supports caching (currently on
             'ttl': 86400
         }
     )
-    s3viewer.register()
 
 Full example
 ------------
@@ -254,13 +280,11 @@ Full example
 
     ...
 
-     s3viewer = FlaskS3Viewer(
+     FlaskS3Viewer(
          # Flask app
          app,
          # Namespace must be unique
          namespace='flask-s3-viewer',
-         # Enter template namespace(default: base)
-         template_namespace='mdl',
          # File's hostname
          object_hostname='http://flask-s3-viewer.com',
          # Allowed extension

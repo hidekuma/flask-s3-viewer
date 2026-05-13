@@ -1,48 +1,190 @@
 ![logo](https://raw.githubusercontent.com/hidekuma/flask-s3-viewer/master/i/logo.png)
 
-## Flask S3Viewer - browsing S3 with Flask
+# Flask S3 Viewer
+
+Browse, upload, and manage Amazon S3 buckets from any Flask application.
 
 [![PyPI version](https://badge.fury.io/py/flask-s3-viewer.svg)](https://badge.fury.io/py/flask-s3-viewer)
-[![Build Status](https://travis-ci.org/hidekuma/flask-s3-viewer.svg?branch=master)](https://travis-ci.org/hidekuma/flask-s3-viewer)
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/hidekuma/flask-s3-viewer/graphs/commit-activity)
-[![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
+[![CI](https://github.com/hidekuma/flask-s3-viewer/actions/workflows/ci.yml/badge.svg)](https://github.com/hidekuma/flask-s3-viewer/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-## TL;DR
+> **v1.0 is a major rewrite.** Modern UI (Tailwind + HTMX, dark mode), Flask 3 support, hardened path-traversal defenses, Flask extension pattern, type hints, pytest + moto test suite, GitHub Actions CI. See [migration guide](MIGRATION.md) if upgrading from `0.x`.
 
-Flask S3 Viewer is a powerful extension that makes it easy to browse S3 in any Flask application. If you are familiar with Flask, Flask S3 Viewer should be easy to pick up.
+## Highlights
 
-- Stable version : **0.2.6 | 0.3.1**
-
-### Dependencies
-- python 3.9 ~
-
-#### Show video
-
-[![flask-s3-viewer-video](http://img.youtube.com/vi/MPFo1scGlws/0.jpg)](https://youtu.be/MPFo1scGlws?t=0s "Click to play on Youtube")
+- **Modern UI** — Tailwind CSS, HTMX-driven partial updates, light/dark mode, inline heroicons. No build pipeline required for end users (CSS ships pre-built).
+- **Secure by default** — Rejects path-traversal tokens (`..`, `.`, `//`, `\`) at every prefix boundary. Cache directory escape blocked by `realpath` containment.
+- **Flask extension pattern** — `FlaskS3Viewer(app, namespace=...)` auto-registers. Supports multiple buckets per app via `add_new_one(...)`. Works with `init_app(app)` for deferred binding.
+- **Multi-bucket** — Independent namespaces, optional per-bucket CloudFront / external `object_hostname`.
+- **Presigned uploads** — Multi-file presigned POST flow for large files; default form upload also supported.
+- **Caching** — File-system pickle cache with TTL; automatically invalidated on writes.
+- **Tested** — 74 pytest cases, 83% coverage, moto-based S3 mock.
 
 ## Installation
 
-You can [download FlaskS3Viewer executable](https://github.com/hidekuma/flask-s3-viewer/releases) and [binary distributions from PyPI](https://pypi.org/project/flask-s3-viewer/)
-
-### Using pip
-
-```python
+```bash
 pip install flask_s3_viewer
 ```
 
-## Documentation
+Requires Python 3.10+, Flask 3.0+, boto3 1.34+.
 
-The latest documentation for Flask-S3-Viewer can be found [here](https://hidekuma.github.io/flask-s3-viewer/html/index.html).
+## Quick start
 
-[License](LICENSE)
-------------------
+```python
+from flask import Flask
+from flask_s3_viewer import FlaskS3Viewer
+from flask_s3_viewer.aws.ref import Region
 
-Copyright (c) 2020 by Hoiwoong Jung
+app = Flask(__name__)
 
----
+# Auto-register. No `register()` call needed.
+FlaskS3Viewer(
+    app,
+    namespace="my-bucket",
+    object_hostname="https://cdn.example.com",  # optional CloudFront host
+    config={
+        "profile_name": "default",
+        "region_name": Region.SEOUL.value,
+        "bucket_name": "my-bucket",
+        "cache_dir": "/tmp/flask_s3_viewer",
+        "use_cache": True,
+        "ttl": 86400,
+    },
+)
 
-###### TODOs
+@app.route("/")
+def index():
+    return "App index"
 
-- mode (api / view)
-- semaphore
-- timezone
+if __name__ == "__main__":
+    app.run(debug=True, port=3000)
+```
+
+Visit `http://localhost:3000/my-bucket/files` to browse the bucket.
+
+### Branding (title + logo)
+
+```python
+FlaskS3Viewer(
+    app,
+    namespace="my-bucket",
+    title="ACME File Vault",
+    logo_path="/opt/acme/assets/logo.svg",   # local file, auto inlined as a data: URI
+    # or: logo_url="https://cdn.acme.io/logo.svg",
+    config={...},
+)
+```
+
+`logo_path` reads the file once at construction time and embeds it as a `data:` URI so you don't need a separate static route. `logo_url` accepts any browser-resolvable URL (CDN, `url_for("static", filename=...)`, etc.). `logo_path` takes precedence.
+
+### Multiple buckets
+
+```python
+viewer = FlaskS3Viewer(app, namespace="primary", config={...})
+viewer.add_new_one(namespace="backups", config={...})
+```
+
+Each namespace gets its own URL prefix and its own configuration.
+
+### Deferred initialization
+
+```python
+viewer = FlaskS3Viewer(namespace="my-bucket", config={...})
+
+def create_app():
+    app = Flask(__name__)
+    viewer.init_app(app)
+    return app
+```
+
+### Accessing the underlying boto3 client
+
+```python
+from flask import current_app
+from flask_s3_viewer import FlaskS3Viewer
+
+# Inside a request:
+client = current_app.extensions["flask_s3_viewer"]["my-bucket"]._s3
+
+# Or via the helper:
+client = FlaskS3Viewer.get_boto_client(app, "my-bucket")
+session = FlaskS3Viewer.get_boto_session(app, "my-bucket")
+```
+
+## Configuration
+
+All `config` keys are forwarded to the underlying S3 client:
+
+| Key              | Type             | Default | Notes                                          |
+|------------------|------------------|---------|------------------------------------------------|
+| `bucket_name`    | str              | —       | Required.                                      |
+| `profile_name`   | str \| None      | None    | Uses boto3 default credential chain if None.   |
+| `region_name`    | str \| None      | None    | e.g. `ap-northeast-2`.                         |
+| `endpoint_url`   | str \| None      | None    | Custom S3 endpoint (MinIO, etc.).              |
+| `access_key`     | str \| None      | None    | Prefer profiles / IAM roles.                   |
+| `secret_key`     | str \| None      | None    |                                                |
+| `session_token`  | str \| None      | None    |                                                |
+| `verify`         | bool \| str      | False   | TLS verify (or path to CA bundle).             |
+| `base_path`      | str              | `""`    | Object key prefix scope for this viewer.       |
+| `use_cache`      | bool             | False   | File-system pickle cache.                      |
+| `cache_dir`      | str \| None      | None    | Required when `use_cache=True`.                |
+| `ttl`            | int (seconds)    | 300     | Cache time-to-live.                            |
+
+Constructor options:
+
+| Option               | Notes                                                            |
+|----------------------|------------------------------------------------------------------|
+| `app`                | Flask app (optional; pass later via `init_app(app)`).            |
+| `namespace`          | Unique per app. Becomes the URL prefix.                          |
+| `object_hostname`    | External link prefix (e.g. CloudFront).                          |
+| `allowed_extensions` | `set[str] \| None` — only allow these uploads.                   |
+| `upload_type`        | `"default"` (multipart form post) or `"presign"`.                |
+| `title`              | Heading + browser tab title text. Default `"Flask S3 Viewer"`.   |
+| `logo_url`           | URL of a custom logo image (absolute, `url_for(...)`, or `/static/...`). |
+| `logo_path`          | Local filesystem path to a logo image — auto-inlined as a `data:` URI. Takes precedence over `logo_url`. |
+
+## Security
+
+- **Path traversal hardening** — Every user-supplied `prefix` is validated. Tokens `..`, `.`, empty segments, and `\` are rejected with HTTP 400.
+- **Defense in depth** — The cache layer additionally enforces `realpath` containment, preventing any path that would resolve outside `cache_dir`.
+- **Subresource Integrity** — Bundled `htmx.min.js` references its `sha384` hash; the Tailwind output is shipped pre-built and signed by the package.
+- **Credentials** — Never log credentials. Prefer named profiles or instance roles over hard-coded keys.
+
+## Development
+
+The frontend assets are pre-built and committed to the repo. To rebuild after editing templates:
+
+```bash
+cd frontend
+npm install
+npm run build       # writes flask_s3_viewer/blueprints/static/css/app.css
+```
+
+CI verifies the CSS is up to date (`git diff --exit-code`).
+
+Tests:
+
+```bash
+pip install -e ".[dev]"
+ruff check flask_s3_viewer/ tests/
+mypy flask_s3_viewer/
+pytest tests/ --cov=flask_s3_viewer
+```
+
+## Migrating from 0.x
+
+See [`MIGRATION.md`](MIGRATION.md) for the full guide. Highlights:
+
+- Drop `s3viewer.register()` — the constructor now auto-registers.
+- `FlaskS3Viewer.get_instance(ns)` → `FlaskS3Viewer.get_instance(app, ns)` (same for `get_boto_client`, `get_boto_session`).
+- Duplicate namespace registration now raises `ValueError` instead of silently reusing.
+- Unknown namespaces return HTTP 404 instead of 500.
+- Single template namespace — `template_namespace="base"|"mdl"` is ignored with a deprecation warning.
+- CLI `--template` option removed.
+- Path-traversal tokens in `prefix` now return HTTP 400.
+- Requires Flask 3.0+ and boto3 1.34+.
+
+## License
+
+[MIT](LICENSE) © Hoiwoong Jung

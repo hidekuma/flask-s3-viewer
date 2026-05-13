@@ -1,0 +1,13 @@
+{
+  "name": "flask-s3-viewer-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tailwindcss -i ./src/app.css -o ../flask_s3_viewer/blueprints/static/css/app.css --minify",
+    "watch": "tailwindcss -i ./src/app.css -o ../flask_s3_viewer/blueprints/static/css/app.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0",
+    "@tailwindcss/forms": "^0.5.7"
+  }
+}

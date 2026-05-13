@@ -1,0 +1,82 @@
+{% extends "layout.html" %}
+{% block title %}Files{% endblock %}
+{% block body %}
+  {%- set current_prefix = request.args.get('prefix', '') -%}
+  <header class="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 shadow-sm">
+    <div class="mx-auto max-w-7xl px-6 py-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div class="flex items-center gap-3 min-w-0">
+        {% if FS3V_LOGO_URL %}
+          <img src="{{ FS3V_LOGO_URL }}" alt="" class="h-6 w-6 object-contain flex-shrink-0">
+        {% else %}
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+               stroke-width="1.5" stroke="currentColor" class="h-6 w-6 text-blue-600 flex-shrink-0">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
+          </svg>
+        {% endif %}
+        <h1 class="text-lg font-semibold truncate">{{ FS3V_TITLE | default("Flask S3 Viewer") }}</h1>
+      </div>
+      <div class="flex items-center gap-2 md:gap-3">
+        <form class="relative block"
+              hx-get="{{ url_for('flask_s3_viewer.files') }}"
+              hx-trigger="keyup changed delay:300ms from:find input[type='search'], search from:find input[type='search']"
+              hx-target="#file-list"
+              hx-push-url="true">
+          {# Hidden prefix kept in sync with the live #file-list value on every
+             keystroke. Sync happens BEFORE htmx fires its debounced request. #}
+          <input type="hidden" name="prefix" value="{{ current_prefix }}" id="fsv-search-prefix">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                 stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+            </svg>
+          </span>
+          <input type="search"
+                 name="search"
+                 value="{{ request.args.get('search', '') }}"
+                 placeholder="Search files..."
+                 autocomplete="off"
+                 spellcheck="false"
+                 oninput="(function(){var live=document.querySelector('#file-list input[name=prefix]');var dst=document.getElementById('fsv-search-prefix');if(live&&dst)dst.value=live.value||'';})();"
+                 class="rounded-md border border-gray-300 dark:bg-gray-700 dark:border-gray-600 pl-8 pr-3 py-1.5 text-sm w-48 md:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </form>
+        {# Outer hidden mirror — left as a fallback for older HTMX builds that
+           don't evaluate `hx-vals` js expressions. Not the primary source. #}
+        <button type="button"
+                aria-label="Refresh listing"
+                title="Refresh listing"
+                class="rounded-md p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                onclick="window.location.reload();">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+               stroke-width="1.5" stroke="currentColor" class="h-5 w-5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+          </svg>
+        </button>
+        <button id="fsv-dark-toggle"
+                type="button"
+                aria-label="Toggle dark mode"
+                class="rounded-md p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                onclick="(function(){var d=document.documentElement.classList.toggle('dark');try{localStorage.setItem('fsv-theme',d?'dark':'light');}catch(e){}})()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+               stroke-width="1.5" stroke="currentColor" class="h-5 w-5 hidden dark:inline">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
+          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+               stroke-width="1.5" stroke="currentColor" class="h-5 w-5 inline dark:hidden">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+  <main class="mx-auto max-w-7xl px-6 py-6 space-y-6">
+    {% include '_upload_form.html' %}
+    <div id="file-list">
+      {% include '_file_list.html' %}
+    </div>
+  </main>
+{% endblock %}

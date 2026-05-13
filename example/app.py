@@ -4,6 +4,8 @@ from flask import Flask
 from flask_s3_viewer import FlaskS3Viewer
 from flask_s3_viewer.aws.ref import Region
 
+FS3V_NAMESPACE = 'flask-s3-viewer'
+
 app = Flask(__name__)
 
 # For test, disable template caching
@@ -13,7 +15,7 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 # FlaskS3Viewer Init
 s3viewer = FlaskS3Viewer(
     app,  # Flask app
-    namespace='flask-s3-viewer',  # namespace be unique
+    namespace=FS3V_NAMESPACE,  # namespace be unique
     template_namespace='mdl',  # set template
     object_hostname='http://flask-s3-viewer.com',  # file's hostname
     allowed_extensions=[],  # allowed extension
@@ -45,11 +47,11 @@ s3viewer.add_new_one(
 # print(s3viewer.FLASK_S3_VIEWER_BUCKET_CONFIGS)
 
 # You can use boto3's session and client if you want
-# print(FlaskS3Viewer.get_boto_client(FS3V_NAMESPACE))
-# print(FlaskS3Viewer.get_boto_session(FS3V_NAMESPACE))
+# print(FlaskS3Viewer.get_boto_client(app, FS3V_NAMESPACE))
+# print(FlaskS3Viewer.get_boto_session(app, FS3V_NAMESPACE))
 
-# Apply FlaskS3Viewer blueprint
-s3viewer.register()
+# v1.0+: blueprint registration is automatic in FlaskS3Viewer(app, ...).
+# The legacy `s3viewer.register()` call is no longer needed and has been removed.
 
 
 @app.route('/index')

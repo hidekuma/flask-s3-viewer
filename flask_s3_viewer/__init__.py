@@ -1,43 +1,61 @@
+import base64
 import logging
-
-# from weakref import WeakValueDictionary
+import mimetypes
+import warnings
 from collections import namedtuple
+from typing import Any, Optional, Set
 
-from .aws.s3 import AWSS3Client, List, Optional
+from flask import Flask
+
+from .aws.s3 import AWSS3Client
+from .config import (
+    FIXED_TEMPLATE_FOLDER,
+    NAMESPACE,
+    UPLOAD_TYPES,
+)
 from .errors import (
     NotConfiguredCacheDir,
-    NotSupportUploadType
-)
-from .config import (
-    NAMESPACE,
-    FIXED_TEMPLATE_FOLDER,
-    UPLOAD_TYPES
+    NotSupportUploadType,
 )
 
-APP_TEMPLATE_FOLDER = FIXED_TEMPLATE_FOLDER
+APP_TEMPLATE_FOLDER: str = FIXED_TEMPLATE_FOLDER
 
-__version__ = "0.3.1"
+__version__: str = "1.0.0a1"
 
-
-class Singleton(type):
-
-    # _instances = WeakValueDictionary({})
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        key = kwargs["namespace"]
-
-        if not cls._instances.get(key):
-            i = super(Singleton, cls).__call__(*args, **kwargs)
-            cls._instances[key] = i
-            logging.info(f"*** {i} Initialized ! ***")
-            return cls._instances[key]
+_EXTENSION_KEY: str = 'flask_s3_viewer'
 
 
-class FlaskS3Viewer(AWSS3Client, metaclass=Singleton):
-    FLASK_S3_VIEWER_BUCKET_CONFIGS = {}
+def _resolve_logo(logo_url: Optional[str], logo_path: Optional[str]) -> Optional[str]:
+    """Return a browser-usable URL for the logo.
+
+    If ``logo_path`` is provided, read the file once and inline it as a
+    ``data:`` URI so the deployer doesn't need to expose it via a static
+    route. Otherwise fall through to ``logo_url`` (which may itself be a
+    Flask ``url_for`` result, an absolute URL, or ``None``).
+    """
+    if logo_path:
+        mime, _ = mimetypes.guess_type(logo_path)
+        if not mime:
+            mime = 'application/octet-stream'
+        with open(logo_path, 'rb') as fh:
+            encoded = base64.b64encode(fh.read()).decode('ascii')
+        return f'data:{mime};base64,{encoded}'
+    return logo_url
+
+
+class FlaskS3Viewer(AWSS3Client):
+    """
+    v1.0 breaking change:
+      - Singleton 메타클래스 제거.
+      - 동일 namespace 재초기화 시 ValueError raise.
+      - blueprint는 첫 init_app 호출에서 자동 등록되며 `register()`는 제거됨.
+      - `get_instance`/`get_boto_client`/`get_boto_session`은 staticmethod(app, namespace).
+    """
+
+    FLASK_S3_VIEWER_BUCKET_CONFIGS: dict = {}
+    # mypy: namedtuple typename은 변수명과 동일해야 한다.
     FLASK_S3_VIEWER_BUCKET = namedtuple(
-        'FlaskS3ViewerBucketConfig',
+        'FLASK_S3_VIEWER_BUCKET',
         '''
         profile_name
         region_name
@@ -51,45 +69,68 @@ class FlaskS3Viewer(AWSS3Client, metaclass=Singleton):
         use_cache
         verify
         base_path
-        '''
+        ''',
     )
-    template_namespace = NAMESPACE
-
     def __init__(
         self,
-        app,
+        app: Optional[Flask] = None,
         namespace: Optional[str] = None,
         object_hostname: Optional[str] = None,
-        allowed_extensions: Optional[List[str]] = None,
-        template_namespace: str = 'base',
+        allowed_extensions: Optional[Set[str]] = None,
+        template_namespace: Optional[str] = None,
         upload_type: str = 'default',
-        config: Optional[dict] = None
-    ):
+        title: Optional[str] = None,
+        logo_url: Optional[str] = None,
+        logo_path: Optional[str] = None,
+        config: Optional[dict] = None,
+    ) -> None:
         """
-        :param Flask.app app: Required
-        :param str namespace: Unique namespace of Flask S3Viewer
+        :param Flask.app app: Flask application (Optional, v1.0+). If provided,
+            extension is auto-registered. Otherwise call :meth:`init_app` later.
+        :param str namespace: Unique namespace of Flask S3Viewer (Required)
         :param url object_hostname: Hostname, e.g. Cloudfront endpoint
         :param set allowed_extensions: e.g. {'jpg', 'png'}
-        :param str template_namespace: Template name
+        :param str template_namespace: DEPRECATED — templates were unified in
+            v1.0. Passing this argument emits a :class:`DeprecationWarning`
+            and the value is ignored.
         :param str upload_type: Upload type
+        :param str title: Heading + browser title text. Defaults to
+            ``"Flask S3 Viewer"``.
+        :param str logo_url: URL of a custom logo image (absolute URL, Flask
+            ``url_for`` result, or any browser-resolvable path).
+        :param str logo_path: Local filesystem path to a logo image. It is
+            read once and inlined as a ``data:`` URI — convenient when you
+            don't want to expose the file via a separate static route.
+            ``logo_path`` takes precedence over ``logo_url``.
         :param dict config: Bucket configs
         """
-        self.app = app
+        if template_namespace is not None:
+            warnings.warn(
+                'template_namespace is removed in v1.0; templates are unified.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        self.app: Optional[Flask] = app
+        self.namespace: Optional[str] = namespace
         if object_hostname and object_hostname.endswith('/'):
             object_hostname = object_hostname[:-1]
-        self.object_hostname = object_hostname
-        self.allowed_extensions = allowed_extensions
-        self.template_namespace = template_namespace
+        self.object_hostname: Optional[str] = object_hostname
+        self.allowed_extensions: Optional[Set[str]] = allowed_extensions
+        self.title: str = title or 'Flask S3 Viewer'
+        self.logo_url: Optional[str] = _resolve_logo(logo_url, logo_path)
         if upload_type not in UPLOAD_TYPES:
             raise NotSupportUploadType
-        self.upload_type = upload_type
-        self.__max_pages = 10
-        self.__max_items = 100
+        self.upload_type: str = upload_type
+        self.__max_pages: int = 10
+        self.__max_items: int = 100
 
         if not config:
             config = dict()
 
-        # bucket_name, profile_name is required
+        # bucket_name is required. profile_name은 호출자가 항상 명시할
+        # 것이라는 암묵 가정을 제거하기 위해 None default를 추가한다.
+        # namedtuple FLASK_S3_VIEWER_BUCKET 필드 누락에 의한 TypeError 방어.
+        config.setdefault('profile_name', None)
         config.setdefault('region_name', None)
         config.setdefault('endpoint_url', None)
         config.setdefault('secret_key', None)
@@ -109,73 +150,106 @@ class FlaskS3Viewer(AWSS3Client, metaclass=Singleton):
             **config
         )
 
+        if app is not None:
+            self.init_app(app)
+
     @property
-    def max_pages(self):
+    def max_pages(self) -> int:
         return self.__max_pages
 
     @property
-    def max_items(self):
+    def max_items(self) -> int:
         return self.__max_items
 
-    @classmethod
-    def get_instance(cls, namespace=None) -> "FlaskS3Viewer":
+    def init_app(self, app: Flask) -> None:
         """
-        Return a Flask S3Viewer instance.
+        Register this FlaskS3Viewer instance to a Flask application.
 
-        :param str namespace: namespace
-
-        Return:
-            :class:`FlaskS3Viewer`
+        - Stores the instance in ``app.extensions['flask_s3_viewer'][namespace]``.
+        - Registers the blueprint once per app (first init_app call).
+        - Raises :class:`ValueError` if the namespace is already registered for
+          the given app (this is the v1.0 breaking change replacing Singleton's
+          silent reuse semantics).
         """
-        # print(cls._instances.data, namespace)
-        return cls._instances[namespace]
+        if self.namespace is None:
+            raise ValueError('FlaskS3Viewer requires a non-empty namespace.')
 
-    @classmethod
-    def get_boto_client(cls, namespace=None):
+        registry = app.extensions.setdefault(_EXTENSION_KEY, {})
+        if self.namespace in registry:
+            raise ValueError(
+                f"FlaskS3Viewer namespace '{self.namespace}' is already "
+                f"registered on this app."
+            )
+        registry[self.namespace] = self
+        # Remember the first app so add_new_one() can default to it.
+        if self.app is None:
+            self.app = app
+
+        # Register the blueprint only once per app.
+        if NAMESPACE not in app.blueprints:
+            from .blueprints.view import blueprint
+            app.register_blueprint(blueprint)
+            logging.info("*** registered FlaskS3Viewer blueprint! ***")
+            logging.info(app.url_map)
+
+        logging.info(
+            f"*** FlaskS3Viewer initialized for namespace='{self.namespace}' ***"
+        )
+
+    @staticmethod
+    def get_instance(app: Flask, namespace: str) -> "FlaskS3Viewer":
         """
-        Return a Boto3's S3 client.
+        Return a Flask S3Viewer instance for the given app + namespace.
 
-        :param str namespace: namespace
-
-        Return:
-            boto3's S3 client.
+        v1.0 breaking: previously ``get_instance(namespace)`` returned the
+        global Singleton entry. It now requires an explicit ``app`` argument
+        (or use ``current_app.extensions['flask_s3_viewer'][namespace]`` from
+        within a request).
         """
-        return cls._instances[namespace]._s3
+        instance: "FlaskS3Viewer" = app.extensions[_EXTENSION_KEY][namespace]
+        return instance
 
-    @classmethod
-    def get_boto_session(cls, namespace=None):
+    @staticmethod
+    def get_boto_client(app: Flask, namespace: str) -> Any:
         """
-        Return a Boto3's Sesson.
-
-        :param str namespace: namespace
-
-        Return:
-            boto3's Session.
+        Return the underlying boto3 S3 client for the given app + namespace.
         """
-        return cls._instances[namespace]._session
+        return app.extensions[_EXTENSION_KEY][namespace]._s3
+
+    @staticmethod
+    def get_boto_session(app: Flask, namespace: str) -> Any:
+        """
+        Return the underlying boto3 Session for the given app + namespace.
+        """
+        return app.extensions[_EXTENSION_KEY][namespace]._session
 
     def add_new_one(
         self,
-        namespace=None,
-        object_hostname=None,
-        allowed_extensions=None,
-        template_namespace='base',
-        upload_type='default',
-        config=None
-    ):
+        namespace: Optional[str] = None,
+        object_hostname: Optional[str] = None,
+        allowed_extensions: Optional[Set[str]] = None,
+        template_namespace: Optional[str] = None,
+        upload_type: str = 'default',
+        config: Optional[dict] = None,
+    ) -> "FlaskS3Viewer":
         """
-        Initialize another bucket
+        Initialize another bucket bound to the same Flask app.
 
         :param str namespace: Unique namespace of Flask S3Viewer
         :param url object_hostname: Hostname, e.g. Cloudfront endpoint
         :param set allowed_extensions: e.g. {'jpg', 'png'}
-        :param str template_namespace: Template name
+        :param str template_namespace: DEPRECATED — see :meth:`__init__`.
         :param str upload_type: Upload type
         :param dict config: Bucket configs
 
         Return:
             :class:`FlaskS3Viewer`
         """
+        if self.app is None:
+            raise RuntimeError(
+                'add_new_one() requires the initial FlaskS3Viewer to be bound '
+                'to a Flask app (pass app=... or call init_app() first).'
+            )
         return FlaskS3Viewer(
             self.app,
             namespace=namespace,
@@ -183,26 +257,5 @@ class FlaskS3Viewer(AWSS3Client, metaclass=Singleton):
             allowed_extensions=allowed_extensions,
             template_namespace=template_namespace,
             upload_type=upload_type,
-            config=config
+            config=config,
         )
-
-    def register(self, template_folder=None):
-        """
-        Register FlaskS3Viewer to Flask's blueprint.
-
-        :param path template_folder: FIXME
-
-        .. warning::
-
-            `template_folder` is Not ready yet. DON'T USE THIS PARAM.
-        """
-        if template_folder:
-            # FIXME: 하나에만 적용불가..
-            raise ValueError('not ready')
-            # global APP_TEMPLATE_FOLDER
-            # APP_TEMPLATE_FOLDER = template_folder
-        # Dynamic import (have to)
-        from .routers import FlaskS3ViewerViewRouter
-        self.app.register_blueprint(FlaskS3ViewerViewRouter)
-        logging.info(f"*** registerd FlaskS3Viewer blueprint! ***")
-        logging.info(self.app.url_map)

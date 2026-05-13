@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}{% endblock %} | {{ FS3V_TITLE | default("Flask S3 Viewer") }}</title>
+    {# Inline SVG favicon so the browser stops 404'ing /favicon.ico. #}
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='1.5'><path stroke-linecap='round' stroke-linejoin='round' d='M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75'/></svg>" />
+    <link rel="stylesheet" href="{{ url_for('flask_s3_viewer.static', filename='css/app.css') }}">
+    {% block extra_head %}{% endblock %}
+    {#
+      htmx 2.x is vendored alongside the package (no network fetch at runtime).
+      A subresource integrity hash is supplied for defense-in-depth even though
+      the asset is served from our own static endpoint — if a downstream proxy
+      mutates the file the browser will refuse to execute it.
+    #}
+    <script defer
+            src="{{ url_for('flask_s3_viewer.static', filename='vendor/htmx.min.js') }}"
+            integrity="sha384-0895/pl2MU10Hqc6jd4RvrthNlDiE9U1tWmX7WRESftEDRosgxNsQG/Ze9YMRzHq"
+            crossorigin="anonymous"></script>
+    <script>
+      // Apply the persisted theme synchronously before first paint to avoid
+      // a light-mode flash for users who prefer dark mode.
+      (function () {
+        try {
+          var stored = localStorage.getItem('fsv-theme');
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (stored === 'dark' || (!stored && prefersDark)) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {
+          /* localStorage may be unavailable (private mode); fail open. */
+        }
+      })();
+    </script>
+  </head>
+  <body class="h-full bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+    <script charset="utf-8">
+      var FLASK_S3_VIEWER_FILES_ENDPOINT = "{{ url_for('flask_s3_viewer.files') }}";
+      var FLASK_S3_VIEWER_UPLOAD_TYPE = "{{ FS3V_UPLOAD_TYPE }}";
+
+      // Shared selection helpers — defined once on the layout so they survive
+      // partial swaps. The inline `<script>` inside _file_list.html may not
+      // always re-execute consistently after HTMX innerHTML swaps; row
+      // checkboxes call this function via `onchange=` instead.
+      window.fsvRefreshSelection = function () {
+        var fileList = document.getElementById('file-list');
+        if (!fileList) return;
+        var rows = fileList.querySelectorAll('.fsv-row-select');
+        var checked = 0;
+        rows.forEach(function (c) { if (c.checked) checked++; });
+        var bar = fileList.querySelector('#fsv-selection-bar');
+        var btn = fileList.querySelector('#fsv-bulk-delete');
+        var sa  = fileList.querySelector('#fsv-select-all');
+        if (bar) {
+          var emptyText = bar.dataset.emptyText || 'Select rows for bulk actions';
+          bar.textContent = checked > 0 ? (checked + ' selected') : emptyText;
+        }
+        if (btn) btn.disabled = checked === 0;
+        if (sa) {
+          sa.checked = rows.length > 0 && checked === rows.length;
+          sa.indeterminate = checked > 0 && checked < rows.length;
+        }
+      };
+      window.fsvToggleAll = function (sourceCheckbox) {
+        var fileList = document.getElementById('file-list');
+        if (!fileList) return;
+        var ck = sourceCheckbox.checked;
+        fileList.querySelectorAll('.fsv-row-select').forEach(function (c) {
+          c.checked = ck;
+        });
+        window.fsvRefreshSelection();
+      };
+
+      // Bulk delete fires N parallel DELETEs and then refreshes the listing.
+      // Defined on the layout so it survives partial swaps; called via the
+      // bulk-delete button's `onclick=` attribute.
+      // Reset selection state after every #file-list swap (folder navigation,
+      // upload partial, refresh, etc.). Defined once at the layout level so
+      // it survives the swap that triggered it.
+      document.addEventListener('DOMContentLoaded', function () {
+        document.body.addEventListener('htmx:afterSwap', function (e) {
+          if (e.target && e.target.id === 'file-list') {
+            window.fsvRefreshSelection();
+          }
+        });
+        window.fsvRefreshSelection();
+      });
+
+      window.fsvBulkDelete = function () {
+        var fileList = document.getElementById('file-list');
+        if (!fileList) return;
+        var rows = fileList.querySelectorAll('.fsv-row-select');
+        var sel = [];
+        rows.forEach(function (cb) {
+          if (cb.checked) sel.push({ key: cb.dataset.fsvKey, type: cb.dataset.fsvType });
+        });
+        if (sel.length === 0) return;
+        var folderCount = sel.filter(function (s) { return s.type === 'folder'; }).length;
+        var fileCount = sel.length - folderCount;
+        var parts = [];
+        if (folderCount) parts.push(folderCount + ' folder(s) including ALL of their contents');
+        if (fileCount) parts.push(fileCount + ' file(s)');
+        var msg = 'Delete ' + sel.length + ' selected item(s): ' + parts.join(', ') + '? This cannot be undone.';
+        if (!window.confirm(msg)) return;
+
+        var btn = fileList.querySelector('#fsv-bulk-delete');
+        var bar = fileList.querySelector('#fsv-selection-bar');
+        if (btn) btn.disabled = true;
+        if (bar) bar.textContent = 'Deleting ' + sel.length + '...';
+
+        var sampleBtn = fileList.querySelector('button[hx-delete]');
+        var sampleUrl = sampleBtn && sampleBtn.getAttribute('hx-delete');
+        var basePrefix = '';
+        if (sampleUrl) {
+          var idx = sampleUrl.lastIndexOf('/files/');
+          if (idx >= 0) basePrefix = sampleUrl.substring(0, idx + 7);
+        }
+        function encodeKey(k) {
+          return k.split('/').map(encodeURIComponent).join('/');
+        }
+        var requests = sel.map(function (item) {
+          return fetch(basePrefix + encodeKey(item.key), {
+            method: 'DELETE',
+            headers: { 'HX-Request': 'true' },
+            credentials: 'same-origin',
+          }).then(function (r) { return { item: item, ok: r.ok, status: r.status }; })
+            .catch(function (err) { return { item: item, ok: false, error: String(err) }; });
+        });
+        Promise.all(requests).then(function (results) {
+          var failed = results.filter(function (r) { return !r.ok; });
+          if (failed.length) {
+            window.alert(failed.length + ' delete(s) failed (status '
+              + failed.map(function (f) { return f.status || '?'; }).join(',') + ').');
+          }
+          if (window.htmx) {
+            var hiddenPrefix = fileList.querySelector('input[name="prefix"]');
+            var pf = hiddenPrefix ? hiddenPrefix.value : '';
+            var listUrl = (basePrefix.replace(/\/files\/$/, '/files'))
+              + (pf ? '?prefix=' + encodeURIComponent(pf) : '');
+            window.htmx.ajax('GET', listUrl, { target: '#file-list', swap: 'innerHTML' });
+          } else {
+            window.location.reload();
+          }
+        });
+      };
+    </script>
+    {% block body %}{% endblock %}
+  </body>
+</html>

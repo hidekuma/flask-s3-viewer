@@ -1,5 +1,6 @@
 import enum
 
+
 class Region(enum.Enum):
     """
     AWS Service Regions

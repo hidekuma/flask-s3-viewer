@@ -215,5 +215,19 @@ $RECYCLE.BIN/
 
 # for vim
 *.swp
+
+# Frontend build (Node) — keep compiled CSS tracked via package_data but
+# ignore the local node_modules cache.
+frontend/node_modules/
 # End of https://www.gitignore.io/api/macos,flask,python,windows
 
+
+# Harness / agent artifacts (local development only)
+.claude/
+.omc/
+CLAUDE.md
+_workspace/
+_workspace_*/
+
+# Playwright MCP cache
+.playwright-mcp/
