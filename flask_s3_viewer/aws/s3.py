@@ -321,7 +321,13 @@ class AWSS3Client(AWSSession):
             return prefixes, contents, next_token
 
         data: tuple[list, list, str | None]
-        if self.use_cache and apply_cache:
+        # Search results bypass the disk cache entirely. The cache is
+        # keyed by ``search`` so different queries can't collide, but
+        # caching stale results across deployments turned out to be a
+        # foot-gun (old JMESPath-filtered listings being served by new
+        # Python-filtered code, etc.), and the value of caching a
+        # one-shot query is low anyway.
+        if self.use_cache and apply_cache and not search:
             salt = self._cache.make_hash(
                 f"""{delimiter}|{starting_token}|{
                     search}|{max_items}|{page_size}"""
