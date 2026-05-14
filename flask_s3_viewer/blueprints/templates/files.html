@@ -38,6 +38,7 @@
                  placeholder="Search files..."
                  autocomplete="off"
                  spellcheck="false"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();}"
                  oninput="(function(){var live=document.querySelector('#file-list input[name=prefix]');var dst=document.getElementById('fsv-search-prefix');if(live&&dst)dst.value=live.value||'';})();"
                  class="rounded-md border border-gray-300 dark:bg-gray-700 dark:border-gray-600 pl-8 pr-3 py-1.5 text-sm w-48 md:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500">
         </form>
