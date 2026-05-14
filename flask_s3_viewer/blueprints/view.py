@@ -41,6 +41,29 @@ blueprint = Blueprint(
     url_prefix='/<path:BUCKET_NAMESPACE>',
 )
 
+# Auth routes intentionally live OUTSIDE the namespace prefix: OAuth is
+# an app-level concern (one client per Flask app, shared across every
+# FlaskS3Viewer namespace), and tying the callback URL to a specific
+# namespace would force the deployer to register N redirect URIs in
+# Google Console — and re-register every time a namespace name changes.
+auth_blueprint = Blueprint(
+    f'{NAMESPACE}_auth',
+    __name__,
+    url_prefix='/auth',
+)
+
+
+def _any_oauth_configured() -> bool:
+    """Return True when at least one viewer instance has Google OAuth wired up."""
+    registry = current_app.extensions.get(NAMESPACE, {})
+    return any(getattr(v, 'google_client_id', None) for v in registry.values())
+
+
+def _any_auth_enabled() -> bool:
+    """Return True when at least one viewer has any auth opt-in."""
+    registry = current_app.extensions.get(NAMESPACE, {})
+    return any(getattr(v, 'auth_enabled', False) for v in registry.values())
+
 
 def _get_viewer(namespace: str) -> FlaskS3Viewer:
     """Lookup a FlaskS3Viewer instance via the Flask extensions registry.
@@ -76,7 +99,7 @@ def _enforce_auth(fs3viewer: FlaskS3Viewer, action: str, key: str | None = None)
         # client (the dominant case) needs.
         if request.method == 'GET' and fs3viewer.google_client_id:
             return redirect(url_for(
-                'flask_s3_viewer.auth_login',
+                'flask_s3_viewer_auth.login',
                 next=request.url,
             ))
         abort(401, 'Authentication required.')
@@ -363,34 +386,36 @@ def files() -> Any:
         )
 
 
-@blueprint.route("/auth/login")
-def auth_login() -> Any:
-    """Kick off the Google OAuth dance. Only available when the viewer
-    was configured with ``google_client_id``; otherwise a 404 is the
-    correct signal (the route exists, but the flow isn't enabled).
+@auth_blueprint.route("/login")
+def login() -> Any:
+    """Kick off the Google OAuth dance. Returns 404 when no viewer on
+    this app has Google configured — the route exists app-wide, but
+    the flow isn't enabled.
     """
-    viewer = _get_viewer(g.BUCKET_NAMESPACE)
-    if not viewer.google_client_id:
+    if not _any_oauth_configured():
         abort(404)
     from ..auth.google import login as _login
     return _login()
 
 
-@blueprint.route("/auth/callback")
-def auth_callback() -> Any:
-    """Google OAuth redirect target."""
-    viewer = _get_viewer(g.BUCKET_NAMESPACE)
-    if not viewer.google_client_id:
+@auth_blueprint.route("/callback")
+def callback() -> Any:
+    """Google OAuth redirect target. App-level (not namespaced) so the
+    deployer registers a single redirect URI in Google Console even when
+    the app hosts multiple FlaskS3Viewer namespaces.
+    """
+    if not _any_oauth_configured():
         abort(404)
     from ..auth.google import auth_callback as _cb
     return _cb()
 
 
-@blueprint.route("/auth/logout")
-def auth_logout() -> Any:
-    """Drop the session marker. Always available when auth is enabled."""
-    viewer = _get_viewer(g.BUCKET_NAMESPACE)
-    if not viewer.auth_enabled:
+@auth_blueprint.route("/logout")
+def logout() -> Any:
+    """Drop the session marker. Available whenever any viewer on the
+    app has auth wired up (Google or a custom auth_callback).
+    """
+    if not _any_auth_enabled():
         abort(404)
     from ..auth.google import logout as _logout
     return _logout()

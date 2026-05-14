@@ -270,7 +270,7 @@ FlaskS3Viewer(
 )
 ```
 
-Installs `/auth/login`, `/auth/callback`, `/auth/logout` on the blueprint. Configure the redirect URI as `https://<host>/<namespace>/auth/callback` in Google Cloud Console. Anonymous browser visits to a protected page are redirected through Google sign-in automatically.
+Installs `/auth/login`, `/auth/callback`, `/auth/logout` as app-level routes (outside the FlaskS3Viewer namespace prefix). Configure the redirect URI as `https://<host>/auth/callback` in Google Cloud Console — one URI per app even when you mount multiple namespaces. Anonymous browser visits to a protected page are redirected through Google sign-in automatically.
 
 Mix and match: pass your own `auth_callback` / `permission_callback` even when Google is enabled, or use `email_allowlist()` as a permission builder for non-Google deployments.
 

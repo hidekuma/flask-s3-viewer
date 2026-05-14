@@ -250,8 +250,12 @@ class FlaskS3Viewer(AWSS3Client):
 
         # Register the blueprint only once per app.
         if NAMESPACE not in app.blueprints:
-            from .blueprints.view import blueprint
+            from .blueprints.view import auth_blueprint, blueprint
             app.register_blueprint(blueprint)
+            # Auth blueprint lives outside the namespace prefix — the
+            # handlers themselves 404 when no viewer on this app has
+            # auth wired up, so it's safe to always register.
+            app.register_blueprint(auth_blueprint)
             logging.info("*** registered FlaskS3Viewer blueprint! ***")
             logging.info(app.url_map)
 

@@ -403,10 +403,13 @@ triggers a ``403``.
     )
 
 Routes ``/auth/login``, ``/auth/callback``, ``/auth/logout`` are
-registered on the blueprint. Configure the redirect URI as
-``https://<host>/<namespace>/auth/callback`` in Google Cloud Console.
-Anonymous browser GETs are redirected through Google sign-in; non-browser
-clients still get a bare ``401``.
+registered as app-level routes — they live OUTSIDE the FlaskS3Viewer
+namespace prefix. Configure the redirect URI as
+``https://<host>/auth/callback`` in Google Cloud Console. One URI per
+app even when you mount multiple namespaces via ``add_new_one()``;
+renaming a namespace does not require updating Google Console.
+Anonymous browser GETs are redirected through Google sign-in;
+non-browser clients still get a bare ``401``.
 
 ``allowed_emails`` / ``allowed_domains`` are a shortcut for the common
 allow-list case — internally they wire up the

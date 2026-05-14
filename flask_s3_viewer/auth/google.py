@@ -96,10 +96,12 @@ def login() -> Any:
     if oauth is None:
         abort(500, 'Google OAuth not configured on this app.')
     google = oauth.google
-    # Where to come back AFTER the callback. Default: current namespace's files.
-    next_url = request.args.get('next') or url_for('flask_s3_viewer.files')
+    # ``next`` is virtually always present — ``_enforce_auth`` sets it to
+    # ``request.url`` before redirecting here. Fall back to root only when
+    # someone hits /auth/login directly.
+    next_url = request.args.get('next') or '/'
     session['fsv_login_next'] = next_url
-    redirect_uri = url_for('flask_s3_viewer.auth_callback', _external=True)
+    redirect_uri = url_for('flask_s3_viewer_auth.callback', _external=True)
     return google.authorize_redirect(redirect_uri)
 
 

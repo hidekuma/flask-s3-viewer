@@ -226,14 +226,14 @@ def test_login_callback_return_404_when_google_not_configured(s3_bucket, tmp_pat
         auth_callback=lambda _req: None,  # auth enabled, but no google_client_id
     )
     client = app.test_client()
-    assert client.get('/fsv-auth/auth/login').status_code == 404
-    assert client.get('/fsv-auth/auth/callback').status_code == 404
+    assert client.get('/auth/login').status_code == 404
+    assert client.get('/auth/callback').status_code == 404
 
 
 def test_logout_route_returns_404_when_auth_disabled(s3_bucket, tmp_path):
     """The logout route exists but 404s for the legacy no-auth deployment."""
     app = _make_app(s3_bucket, tmp_path)  # no auth wired
-    assert app.test_client().get('/fsv-auth/auth/logout').status_code == 404
+    assert app.test_client().get('/auth/logout').status_code == 404
 
 
 def test_logout_route_available_even_without_google(s3_bucket, tmp_path):
@@ -245,7 +245,7 @@ def test_logout_route_available_even_without_google(s3_bucket, tmp_path):
         s3_bucket, tmp_path,
         auth_callback=lambda _req: None,
     )
-    resp = app.test_client().get('/fsv-auth/auth/logout', follow_redirects=False)
+    resp = app.test_client().get('/auth/logout', follow_redirects=False)
     assert resp.status_code in (301, 302)
 
 
@@ -266,7 +266,7 @@ def test_google_login_redirects_to_google(s3_bucket, tmp_path):
         google_client_secret='secret',
     )
     client = app.test_client()
-    resp = client.get('/fsv-auth/auth/login', follow_redirects=False)
+    resp = client.get('/auth/login', follow_redirects=False)
     assert resp.status_code in (301, 302)
     assert 'accounts.google.com' in resp.headers.get('Location', '')
 
@@ -281,7 +281,7 @@ def test_google_logout_clears_session(s3_bucket, tmp_path):
     client = app.test_client()
     with client.session_transaction() as s:
         s['fsv_user_email'] = 'me@example.com'
-    resp = client.get('/fsv-auth/auth/logout', follow_redirects=False)
+    resp = client.get('/auth/logout', follow_redirects=False)
     assert resp.status_code in (301, 302)
     with client.session_transaction() as s:
         assert 'fsv_user_email' not in s
