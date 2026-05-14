@@ -302,6 +302,20 @@ class AWSS3Client(AWSSession):
                 raw_contents = [c for c in raw_contents if c.get('Size', 0) > 0]
             if search:
                 needle = search.lower()
+                # Strip ``base_path`` BEFORE matching so the user sees
+                # search behave on the key they actually see in the UI.
+                # Otherwise the namespace's mount point itself leaks
+                # into every comparison — e.g. base_path='/test' would
+                # make 'test' match every object in the bucket.
+                base_strip = (
+                    self._base_path + '/' if self._base_path else ''
+                )
+
+                def _visible_key(k: str) -> str:
+                    if base_strip and k.startswith(base_strip):
+                        return k[len(base_strip):]
+                    return k
+
                 # Recursive listing returns every key under ``prefix``,
                 # including the zero-byte folder markers — drop those
                 # before the substring filter so they don't appear as
@@ -310,7 +324,7 @@ class AWSS3Client(AWSSession):
                     c for c in raw_contents
                     if (c.get('Key') or '')
                     and not (c['Key'].endswith('/') and c.get('Size', 0) == 0)
-                    and needle in c['Key'].lower()
+                    and needle in _visible_key(c['Key']).lower()
                 ]
                 # No CommonPrefixes come back when delimiter='', so the
                 # folder column is empty during search by design.

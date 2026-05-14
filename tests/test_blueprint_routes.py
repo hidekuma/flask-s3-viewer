@@ -248,6 +248,45 @@ class TestSearch:
         assert '한글.pdf'.encode() in rv.data
         assert b'other.pdf' not in rv.data
 
+    def test_search_does_not_match_base_path_segment(self, s3_bucket, tmp_path) -> None:
+        """Regression: when ``base_path='/test'``, typing 'test' used to
+        match every object in the bucket because the comparison ran
+        against the full S3 key. Match against the user-visible key.
+        """
+        import boto3
+        from flask import Flask
+
+        from flask_s3_viewer import FlaskS3Viewer
+
+        _, bucket = s3_bucket
+        c = boto3.client('s3', region_name='us-east-1')
+        c.put_object(Bucket=bucket, Key='test/photo.png', Body=b'x')
+        c.put_object(Bucket=bucket, Key='test/report.pdf', Body=b'x')
+
+        app = Flask(__name__)
+        app.config['TESTING'] = True
+        FlaskS3Viewer(
+            app, namespace='bp',
+            config={
+                'profile_name': None, 'bucket_name': bucket,
+                'region_name': 'us-east-1',
+                'access_key': 'x', 'secret_key': 'x',
+                'cache_dir': str(tmp_path / 'cache'),
+                'use_cache': True, 'ttl': 60,
+                'base_path': '/test',
+            },
+        )
+        # 'test' should match NOTHING — it's the base_path segment, not
+        # part of any user-visible key.
+        rv = app.test_client().get('/bp/files?search=test')
+        assert rv.status_code == 200
+        assert b'photo.png' not in rv.data
+        assert b'report.pdf' not in rv.data
+        # 'report' still matches its file as before.
+        rv2 = app.test_client().get('/bp/files?search=report')
+        assert rv2.status_code == 200
+        assert b'report.pdf' in rv2.data
+
     def test_search_with_special_characters_does_not_crash(self, client, s3_bucket) -> None:
         """A query containing JMESPath metacharacters (backtick, quote,
         backslash) used to break the listing — now it's a plain Python
