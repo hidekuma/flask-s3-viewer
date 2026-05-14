@@ -260,6 +260,24 @@ class TestSearch:
         assert b'weird`key.txt' in rv.data
 
 
+class TestBranding:
+    """Title / logo come from the FlaskS3Viewer instance and have to
+    survive every render path — the GET listing handler had been
+    silently dropping them, which is what made ``title='...'`` look
+    like a no-op in earlier builds.
+    """
+
+    def test_title_renders_in_full_page(self, app, client) -> None:
+        # The default fixture uses title=None → 'Flask S3 Viewer'.
+        # Mutate the running viewer so we don't need a second fixture.
+        viewer = app.extensions['flask_s3_viewer']['fsv-test']
+        viewer.title = 'My Files'
+        rv = client.get(_ns_path('/files'))
+        assert rv.status_code == 200
+        assert b'<h1' in rv.data
+        assert b'My Files' in rv.data
+
+
 class TestParentNavigation:
     """Parent-folder (".." row) appears only inside a sub-prefix and links
     one segment up, mirroring familiar file-browser semantics.

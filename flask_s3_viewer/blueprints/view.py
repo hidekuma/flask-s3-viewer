@@ -314,15 +314,14 @@ def files() -> Any:
             listing_prefix = raw_prefix
         if request.headers.get('HX-Request'):
             prefixes, contents, next_token = fs3viewer.find(prefix=listing_prefix)
+            # FS3V_TITLE/LOGO/UPLOAD_TYPE/OBJECT_HOSTNAME come from the
+            # blueprint context processor — keep request-specific data
+            # (listing + current_prefix) here.
             return render_template(
                 '_file_list.html',
-                FS3V_UPLOAD_TYPE=fs3viewer.upload_type,
                 FS3V_CONTENTS=contents,
                 FS3V_PREFIXES=prefixes,
                 FS3V_NEXT_TOKEN=next_token,
-                FS3V_OBJECT_HOSTNAME=fs3viewer.object_hostname,
-                FS3V_TITLE=fs3viewer.title,
-                FS3V_LOGO_URL=fs3viewer.logo_url,
                 current_prefix=listing_prefix,
             ), 200
         return {}, 201
@@ -375,13 +374,13 @@ def files() -> Any:
             if request.headers.get('HX-Request')
             else 'files.html'
         )
+        # Branding / upload_type / object_hostname / auth widget data are
+        # injected by the blueprint context processor.
         return render_template(
             template,
-            FS3V_UPLOAD_TYPE=fs3viewer.upload_type,
             FS3V_CONTENTS=content_pages[page] if content_pages else [],
             FS3V_PREFIXES=prefixes,
             FS3V_NEXT_TOKEN=next_token,
-            FS3V_OBJECT_HOSTNAME=fs3viewer.object_hostname,
             current_prefix=prefix,
         )
 
@@ -452,16 +451,25 @@ def utility_processor() -> dict:
                 return f"{size:.1f} {unit}"
         return f"{size:.1f} PB"
 
-    # Per-namespace auth state for the header's user widget. Best-effort:
-    # ``auth_callback`` is the same path ``_enforce_auth`` uses to identify
-    # the caller, so a custom deployer integration shows the right user
-    # too (not just the Google session).
+    # Per-namespace state for the header — branding + auth widget.
+    # Both used to be re-passed by each individual ``render_template``
+    # call, which made it easy to forget (e.g. the listing GET handler
+    # dropped ``FS3V_TITLE`` for a while). Centralising here means every
+    # template — full page, HTMX partial, error — sees the same values.
     user_email: str | None = None
     auth_enabled = False
     google_configured = False
+    title: str | None = None
+    logo_url: str | None = None
+    upload_type: str | None = None
+    object_hostname: str | None = None
     if hasattr(g, 'BUCKET_NAMESPACE'):
         viewer = current_app.extensions.get(NAMESPACE, {}).get(g.BUCKET_NAMESPACE)
         if viewer is not None:
+            title = getattr(viewer, 'title', None)
+            logo_url = getattr(viewer, 'logo_url', None)
+            upload_type = getattr(viewer, 'upload_type', None)
+            object_hostname = getattr(viewer, 'object_hostname', None)
             auth_enabled = bool(getattr(viewer, 'auth_enabled', False))
             google_configured = bool(getattr(viewer, 'google_client_id', None))
             if auth_enabled:
@@ -475,6 +483,10 @@ def utility_processor() -> dict:
         unquote_plus=unquote_plus,
         list_append=list_append,
         humansize=humansize,
+        FS3V_TITLE=title,
+        FS3V_LOGO_URL=logo_url,
+        FS3V_UPLOAD_TYPE=upload_type,
+        FS3V_OBJECT_HOSTNAME=object_hostname,
         FSV_USER_EMAIL=user_email,
         FSV_AUTH_ENABLED=auth_enabled,
         FSV_GOOGLE_CONFIGURED=google_configured,
