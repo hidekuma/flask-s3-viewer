@@ -36,7 +36,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          # ``[auth]`` brings authlib in so the Google OAuth tests can
+          # exercise the real import path — without it 7 tests fail
+          # because ``configure_google_oauth`` raises ImportError before
+          # the assertions ever run.
+          pip install -e ".[dev,auth]"
 
       # Re-run the Tailwind build and fail if the committed artifact drifts
       # from what the current sources produce. Keeps `app.css` honest without
