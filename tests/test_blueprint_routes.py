@@ -214,6 +214,40 @@ class TestObjectHostname:
         assert b'https://cdn.example.com' not in rv.data
 
 
+class TestSearch:
+    """Listing search runs as a Python substring filter (case-insensitive,
+    Unicode-safe). Earlier versions used a JMESPath f-string and could
+    only match ASCII reliably.
+    """
+
+    def test_search_matches_korean_keys(self, client, s3_bucket) -> None:
+        s3_client, bucket = s3_bucket
+        s3_client.put_object(Bucket=bucket, Key='보고서.txt', Body=b'kr')
+        s3_client.put_object(Bucket=bucket, Key='report.txt', Body=b'en')
+        rv = client.get(_ns_path('/files?search=보고서'))
+        assert rv.status_code == 200
+        assert '보고서.txt'.encode() in rv.data
+        assert b'report.txt' not in rv.data
+
+    def test_search_is_case_insensitive(self, client, s3_bucket) -> None:
+        s3_client, bucket = s3_bucket
+        s3_client.put_object(Bucket=bucket, Key='README.MD', Body=b'a')
+        rv = client.get(_ns_path('/files?search=readme'))
+        assert rv.status_code == 200
+        assert b'README.MD' in rv.data
+
+    def test_search_with_special_characters_does_not_crash(self, client, s3_bucket) -> None:
+        """A query containing JMESPath metacharacters (backtick, quote,
+        backslash) used to break the listing — now it's a plain Python
+        ``in`` check and just returns whatever matches.
+        """
+        s3_client, bucket = s3_bucket
+        s3_client.put_object(Bucket=bucket, Key='weird`key.txt', Body=b'x')
+        rv = client.get(_ns_path('/files?search=' + urllib.parse.quote('`')))
+        assert rv.status_code == 200
+        assert b'weird`key.txt' in rv.data
+
+
 class TestParentNavigation:
     """Parent-folder (".." row) appears only inside a sub-prefix and links
     one segment up, mirroring familiar file-browser semantics.

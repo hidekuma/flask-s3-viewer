@@ -278,23 +278,35 @@ class AWSS3Client(AWSSession):
                     'StartingToken': starting_token,
                 },
             )
-            next_token = page_iterator.build_full_result().get('NextToken', None)
+            # ``build_full_result`` aggregates every page into one dict
+            # already (Contents + CommonPrefixes + NextToken), so we use
+            # that directly and apply size / search filtering in Python.
+            # This keeps search Unicode-safe (Korean, Japanese, etc.) and
+            # sidesteps the JMESPath f-string interpolation that earlier
+            # versions used.
+            result = page_iterator.build_full_result()
+            next_token = result.get('NextToken')
+            raw_contents = result.get('Contents') or []
+            raw_prefixes = result.get('CommonPrefixes') or []
+            if delimiter != '':
+                # Drop the empty "folder placeholder" objects so they
+                # don't pollute the file list. They are still returned
+                # when delimiter='' (flat listing for delete-recursive).
+                raw_contents = [c for c in raw_contents if c.get('Size', 0) > 0]
             if search:
-                # generator
-                contents = page_iterator.search(
-                    f'Contents[?Size > `0` && contains(Key, `"{search}"`)]'
-                )
-                prefixes = page_iterator.search(
-                    f'CommonPrefixes[?contains(Prefix, `"{search}"`)]'
-                )
+                needle = search.lower()
+                contents = [
+                    c for c in raw_contents
+                    if needle in (c.get('Key') or '').lower()
+                ]
+                prefixes = [
+                    p for p in raw_prefixes
+                    if needle in (p.get('Prefix') or '').lower()
+                ]
             else:
-                # generator
-                if delimiter == '':
-                    contents = page_iterator.search('Contents')
-                else:
-                    contents = page_iterator.search('Contents[?Size > `0`]')
-                prefixes = page_iterator.search('CommonPrefixes')
-            return list(prefixes), list(contents), next_token
+                contents = raw_contents
+                prefixes = raw_prefixes
+            return prefixes, contents, next_token
 
         data: tuple[list, list, str | None]
         if self.use_cache and apply_cache:

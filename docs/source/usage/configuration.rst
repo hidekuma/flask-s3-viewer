@@ -481,4 +481,10 @@ Things to know
 
 Searching
 `````````
-- Search only working in EN, because of JMESPath.
+Case-insensitive substring match on the current prefix's keys and folder
+names, applied in Python after S3 returns the page. Works for any
+Unicode (Korean, Japanese, accented Latin, emoji) — the EN-only
+JMESPath limitation in earlier versions is gone.
+
+The filter scope is the **current page** of the listing, so for very
+large prefixes a search may need to page through to find later matches.
