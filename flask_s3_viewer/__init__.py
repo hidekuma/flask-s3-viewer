@@ -22,19 +22,19 @@ APP_TEMPLATE_FOLDER: str = FIXED_TEMPLATE_FOLDER
 
 __version__: str = "1.0.0a2"
 
-_EXTENSION_KEY: str = 'flask_s3_viewer'
+_EXTENSION_KEY: str = "flask_s3_viewer"
 
 
 def _install_security_headers(app: Flask) -> None:
-    if app.extensions.get('flask_s3_viewer.security_headers'):
+    if app.extensions.get("flask_s3_viewer.security_headers"):
         return
 
     @app.after_request
     def _apply_security_headers(response: Any) -> Any:
         response.headers.setdefault(
-            'Content-Security-Policy',
+            "Content-Security-Policy",
             "default-src 'self'; "
-            "img-src 'self' data:; "
+            "img-src 'self' data: https:; "
             "style-src 'self' 'unsafe-inline'; "
             "script-src 'self' 'unsafe-inline'; "
             "font-src 'self' data:; "
@@ -43,11 +43,11 @@ def _install_security_headers(app: Flask) -> None:
             "base-uri 'self'; "
             "form-action 'self'",
         )
-        response.headers.setdefault('X-Content-Type-Options', 'nosniff')
-        response.headers.setdefault('X-Frame-Options', 'DENY')
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
         return response
 
-    app.extensions['flask_s3_viewer.security_headers'] = True
+    app.extensions["flask_s3_viewer.security_headers"] = True
 
 
 def _resolve_logo(logo_url: str | None, logo_path: str | None) -> str | None:
@@ -61,10 +61,10 @@ def _resolve_logo(logo_url: str | None, logo_path: str | None) -> str | None:
     if logo_path:
         mime, _ = mimetypes.guess_type(logo_path)
         if not mime:
-            mime = 'application/octet-stream'
-        with open(logo_path, 'rb') as fh:
-            encoded = base64.b64encode(fh.read()).decode('ascii')
-        return f'data:{mime};base64,{encoded}'
+            mime = "application/octet-stream"
+        with open(logo_path, "rb") as fh:
+            encoded = base64.b64encode(fh.read()).decode("ascii")
+        return f"data:{mime};base64,{encoded}"
     return logo_url
 
 
@@ -80,8 +80,8 @@ class FlaskS3Viewer(AWSS3Client):
     FLASK_S3_VIEWER_BUCKET_CONFIGS: dict = {}
     # mypy: namedtuple typename은 변수명과 동일해야 한다.
     FLASK_S3_VIEWER_BUCKET = namedtuple(
-        'FLASK_S3_VIEWER_BUCKET',
-        '''
+        "FLASK_S3_VIEWER_BUCKET",
+        """
         profile_name
         region_name
         endpoint_url
@@ -101,8 +101,9 @@ class FlaskS3Viewer(AWSS3Client):
         mfa_serial
         token_code
         token_code_callback
-        ''',
+        """,
     )
+
     def __init__(
         self,
         app: Flask | None = None,
@@ -110,7 +111,7 @@ class FlaskS3Viewer(AWSS3Client):
         object_hostname: str | None = None,
         allowed_extensions: set[str] | None = None,
         template_namespace: str | None = None,
-        upload_type: str = 'default',
+        upload_type: str = "default",
         title: str | None = None,
         logo_url: str | None = None,
         logo_path: str | None = None,
@@ -151,17 +152,17 @@ class FlaskS3Viewer(AWSS3Client):
         """
         if template_namespace is not None:
             warnings.warn(
-                'template_namespace is removed in v1.0; templates are unified.',
+                "template_namespace is removed in v1.0; templates are unified.",
                 DeprecationWarning,
                 stacklevel=2,
             )
         self.app: Flask | None = app
         self.namespace: str | None = namespace
-        if object_hostname and object_hostname.endswith('/'):
+        if object_hostname and object_hostname.endswith("/"):
             object_hostname = object_hostname[:-1]
         self.object_hostname: str | None = object_hostname
         self.allowed_extensions: set[str] | None = allowed_extensions
-        self.title: str = title or 'Flask S3 Viewer'
+        self.title: str = title or "Flask S3 Viewer"
         self.logo_url: str | None = _resolve_logo(logo_url, logo_path)
         self.template_folder: str | None = template_folder
         # ---- auth wiring ----
@@ -170,6 +171,7 @@ class FlaskS3Viewer(AWSS3Client):
             allow_all_permissions,
             email_allowlist,
         )
+
         # Google OAuth opt-in: deploying with credentials wires the
         # session-based default auth_callback unless the caller
         # supplies their own.
@@ -177,6 +179,7 @@ class FlaskS3Viewer(AWSS3Client):
         self.google_client_secret: str | None = google_client_secret
         if auth_callback is None and google_client_id:
             from .auth.google import session_auth_callback
+
             auth_callback = session_auth_callback
         self.auth_callback = auth_callback or allow_all_auth
         # Permission wiring precedence: explicit callback > allow_lists > allow-all.
@@ -201,7 +204,7 @@ class FlaskS3Viewer(AWSS3Client):
             raise NotSupportUploadType
         self.upload_type: str = upload_type
         self.__max_pages: int = 10
-        self.__max_items: int = 100
+        self.__max_items: int = 50
 
         if not config:
             config = dict()
@@ -209,34 +212,32 @@ class FlaskS3Viewer(AWSS3Client):
         # bucket_name is required. profile_name은 호출자가 항상 명시할
         # 것이라는 암묵 가정을 제거하기 위해 None default를 추가한다.
         # namedtuple FLASK_S3_VIEWER_BUCKET 필드 누락에 의한 TypeError 방어.
-        config.setdefault('profile_name', None)
-        config.setdefault('region_name', None)
-        config.setdefault('endpoint_url', None)
-        config.setdefault('secret_key', None)
-        config.setdefault('access_key', None)
-        config.setdefault('session_token', None)
-        if config.get('use_cache'):
-            if not config.get('cache_dir'):
+        config.setdefault("profile_name", None)
+        config.setdefault("region_name", None)
+        config.setdefault("endpoint_url", None)
+        config.setdefault("secret_key", None)
+        config.setdefault("access_key", None)
+        config.setdefault("session_token", None)
+        if config.get("use_cache"):
+            if not config.get("cache_dir"):
                 raise NotConfiguredCacheDir
-        config.setdefault('cache_dir', None)
-        config.setdefault('ttl', 300)
-        config.setdefault('use_cache', None)
-        config.setdefault('verify', None)
-        config.setdefault('base_path', '')
+        config.setdefault("cache_dir", None)
+        config.setdefault("ttl", 300)
+        config.setdefault("use_cache", None)
+        config.setdefault("verify", None)
+        config.setdefault("base_path", "")
         # STS AssumeRole + MFA — all None by default so boto3's standard
         # credential chain handles 99% of deployments untouched.
-        config.setdefault('role_arn', None)
-        config.setdefault('role_session_name', None)
-        config.setdefault('external_id', None)
-        config.setdefault('duration_seconds', None)
-        config.setdefault('mfa_serial', None)
-        config.setdefault('token_code', None)
-        config.setdefault('token_code_callback', None)
+        config.setdefault("role_arn", None)
+        config.setdefault("role_session_name", None)
+        config.setdefault("external_id", None)
+        config.setdefault("duration_seconds", None)
+        config.setdefault("mfa_serial", None)
+        config.setdefault("token_code", None)
+        config.setdefault("token_code_callback", None)
         super().__init__(**config)
 
-        self.FLASK_S3_VIEWER_BUCKET_CONFIGS[namespace] = self.FLASK_S3_VIEWER_BUCKET(
-            **config
-        )
+        self.FLASK_S3_VIEWER_BUCKET_CONFIGS[namespace] = self.FLASK_S3_VIEWER_BUCKET(**config)
 
         if app is not None:
             self.init_app(app)
@@ -260,13 +261,12 @@ class FlaskS3Viewer(AWSS3Client):
           silent reuse semantics).
         """
         if self.namespace is None:
-            raise ValueError('FlaskS3Viewer requires a non-empty namespace.')
+            raise ValueError("FlaskS3Viewer requires a non-empty namespace.")
 
         registry = app.extensions.setdefault(_EXTENSION_KEY, {})
         if self.namespace in registry:
             raise ValueError(
-                f"FlaskS3Viewer namespace '{self.namespace}' is already "
-                f"registered on this app."
+                f"FlaskS3Viewer namespace '{self.namespace}' is already registered on this app."
             )
         registry[self.namespace] = self
         # Remember the first app so add_new_one() can default to it.
@@ -276,6 +276,7 @@ class FlaskS3Viewer(AWSS3Client):
         # Register the blueprint only once per app.
         if NAMESPACE not in app.blueprints:
             from .blueprints.view import auth_blueprint, blueprint
+
             app.register_blueprint(blueprint)
             # Auth blueprint lives outside the namespace prefix — the
             # handlers themselves 404 when no viewer on this app has
@@ -298,11 +299,10 @@ class FlaskS3Viewer(AWSS3Client):
         # extra remains optional for the no-auth flow.
         if self.google_client_id and self.google_client_secret:
             from .auth.google import configure_google_oauth
+
             configure_google_oauth(app, self.google_client_id, self.google_client_secret)
 
-        logging.info(
-            f"*** FlaskS3Viewer initialized for namespace='{self.namespace}' ***"
-        )
+        logging.info(f"*** FlaskS3Viewer initialized for namespace='{self.namespace}' ***")
 
     @staticmethod
     def _install_template_override(app: Flask, folder: str) -> None:
@@ -312,6 +312,7 @@ class FlaskS3Viewer(AWSS3Client):
         blueprints' template resolution is untouched.
         """
         from jinja2 import ChoiceLoader, FileSystemLoader
+
         custom = FileSystemLoader(folder)
         existing = app.jinja_loader
         if isinstance(existing, ChoiceLoader):
@@ -356,7 +357,7 @@ class FlaskS3Viewer(AWSS3Client):
         object_hostname: str | None = None,
         allowed_extensions: set[str] | None = None,
         template_namespace: str | None = None,
-        upload_type: str = 'default',
+        upload_type: str = "default",
         config: dict | None = None,
     ) -> "FlaskS3Viewer":
         """
@@ -374,8 +375,8 @@ class FlaskS3Viewer(AWSS3Client):
         """
         if self.app is None:
             raise RuntimeError(
-                'add_new_one() requires the initial FlaskS3Viewer to be bound '
-                'to a Flask app (pass app=... or call init_app() first).'
+                "add_new_one() requires the initial FlaskS3Viewer to be bound "
+                "to a Flask app (pass app=... or call init_app() first)."
             )
         return FlaskS3Viewer(
             self.app,

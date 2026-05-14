@@ -105,6 +105,10 @@ def session_auth_callback(_request: Any) -> str | None:
     return session.get('fsv_user_email')
 
 
+def session_avatar_url() -> str | None:
+    return session.get('fsv_user_avatar')
+
+
 # ---------------------------------------------------------------------------
 # Route handlers — wired by view.py only when google_client_id is set
 # ---------------------------------------------------------------------------
@@ -143,6 +147,7 @@ def auth_callback() -> Any:
     if not email or not info.get('email_verified'):
         abort(401, 'Google did not return a verified email.')
     session['fsv_user_email'] = email
+    session['fsv_user_avatar'] = (info or {}).get('picture')
     return redirect(session.pop('fsv_login_next', '/'))
 
 
@@ -152,6 +157,7 @@ def logout() -> Any:
     re-auth at the IdP).
     """
     session.pop('fsv_user_email', None)
+    session.pop('fsv_user_avatar', None)
     next_url = request.args.get('next')
     if not _is_safe_next_url(current_app, next_url):
         next_url = '/'

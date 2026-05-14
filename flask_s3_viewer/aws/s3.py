@@ -287,18 +287,11 @@ class AWSS3Client(AWSSession):
 
         def run() -> tuple[list, list, str | None]:
             nonlocal prefix, delimiter, max_items, page_size, starting_token, search
-            # When the user types a search query, switch to a flat
-            # (recursive) listing so matches inside sub-prefixes are
-            # visible — otherwise a Korean filename three folders deep
-            # would never show up. Folder rows are suppressed during
-            # search; results are matching files (with their full
-            # relative key) only.
-            effective_delimiter = '' if search else delimiter
             paginator = self._s3.get_paginator("list_objects_v2")
             page_iterator = paginator.paginate(
                 Bucket=self._bucket_name,
                 Prefix=prefix,
-                Delimiter=effective_delimiter,
+                Delimiter=delimiter,
                 PaginationConfig={
                     'MaxItems': max_items,
                     'PageSize': page_size,
@@ -315,11 +308,10 @@ class AWSS3Client(AWSSession):
             next_token = result.get('NextToken')
             raw_contents = result.get('Contents') or []
             raw_prefixes = result.get('CommonPrefixes') or []
-            if effective_delimiter != '':
-                # Drop the empty "folder placeholder" objects so they
-                # don't pollute the file list. They are still returned
-                # when delimiter='' (flat listing for delete-recursive).
-                raw_contents = [c for c in raw_contents if c.get('Size', 0) > 0]
+            # Drop the empty "folder placeholder" objects so they
+            # don't pollute the file list. They are still returned
+            # when delimiter='' (flat listing for delete-recursive).
+            raw_contents = [c for c in raw_contents if c.get('Size', 0) > 0]
             if search:
                 # NFC normalisation matters: macOS Finder uploads
                 # decomposed Hangul (NFD: ㅅ+ㅡ+...), while the browser
@@ -345,44 +337,24 @@ class AWSS3Client(AWSSession):
                 def _norm(s: str) -> str:
                     return unicodedata.normalize('NFC', s).lower()
 
-                # File hits — recursive listing returns every key under
-                # ``prefix``, including the zero-byte folder markers.
-                # Drop those before the substring filter so they don't
-                # appear as phantom matches.
+                # Search is scoped to the current listing level only.
+                # ``Delimiter='/'`` means ``raw_contents`` already holds
+                # only the current folder's direct files.
                 contents = [
                     c for c in raw_contents
                     if (c.get('Key') or '')
-                    and not (c['Key'].endswith('/') and c.get('Size', 0) == 0)
                     and needle in _norm(_visible_key(c['Key']))
                 ]
-                # Folder hits — synthesize one entry per unique
-                # sub-prefix whose own last segment contains the needle.
-                # We walk every returned key and slice the path at each
-                # boundary. delimiter='' would otherwise hide folders
-                # from the search result entirely.
-                seen: set[str] = set()
-                prefixes: list = []
-                for c in raw_contents:
-                    visible = _visible_key(c.get('Key') or '')
-                    if not visible:
-                        continue
-                    parts = visible.split('/')
-                    # parts[-1] is the file basename (or '' for folder
-                    # markers); never treat it as a folder segment.
-                    for i in range(len(parts) - 1):
-                        seg = parts[i]
-                        if not seg or needle not in _norm(seg):
-                            continue
-                        folder = '/'.join(parts[: i + 1]) + '/'
-                        if folder in seen:
-                            continue
-                        seen.add(folder)
-                        # Re-attach base_path so the post-find strip
-                        # below produces the same shape as a normal
-                        # listing's CommonPrefix entry.
-                        prefixes.append({
-                            'Prefix': (base_strip + folder) if base_strip else folder,
-                        })
+                # Folder hits come from the current listing's direct
+                # child prefixes only; match against the visible folder
+                # name instead of recursing into descendants.
+                prefixes = [
+                    p for p in raw_prefixes
+                    if (p.get('Prefix') or '')
+                    and needle in _norm(
+                        _visible_key(p['Prefix']).rstrip('/').rsplit('/', 1)[-1]
+                    )
+                ]
             else:
                 contents = raw_contents
                 prefixes = raw_prefixes

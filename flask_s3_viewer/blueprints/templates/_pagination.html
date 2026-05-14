@@ -1,15 +1,48 @@
-{% if FS3V_NEXT_TOKEN %}
-  <div class="flex justify-center pt-2">
-    <a class="inline-flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
-       href="{{ url_for('flask_s3_viewer.files', prefix=request.args.get('prefix',''), starting_token=FS3V_NEXT_TOKEN) }}"
-       hx-get="{{ url_for('flask_s3_viewer.files', prefix=request.args.get('prefix',''), starting_token=FS3V_NEXT_TOKEN) }}"
-       hx-target="#file-list"
-       hx-push-url="true">
-      Next
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-           stroke-width="2" stroke="currentColor" class="h-4 w-4">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-      </svg>
-    </a>
+{%- set page_prefix = current_prefix if current_prefix is defined else request.args.get('prefix', '') -%}
+{%- set page_search = current_search if current_search is defined else request.args.get('search', '') -%}
+{%- set page_current = current_page if current_page is defined else (request.args.get('page', 1) | int) -%}
+{%- set page_total = total_pages if total_pages is defined else 0 -%}
+{%- set page_token = request.args.get('starting_token') -%}
+{% if page_total > 1 or FS3V_NEXT_TOKEN %}
+  <div class="flex items-center justify-center gap-2 pt-3">
+    {% if page_current > 1 %}
+      <a class="inline-flex items-center rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+         href="{{ url_for('flask_s3_viewer.files', prefix=page_prefix, search=page_search or None, starting_token=page_token or None, page=page_current - 1) }}"
+         hx-get="{{ url_for('flask_s3_viewer.files', prefix=page_prefix, search=page_search or None, starting_token=page_token or None, page=page_current - 1) }}"
+         hx-target="#file-list"
+         hx-push-url="true">Prev</a>
+    {% else %}
+      <span class="inline-flex items-center rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-500">Prev</span>
+    {% endif %}
+
+    <div class="flex items-center gap-1">
+      {% for page_num in range(1, page_total + 1) %}
+        {% if page_num == page_current %}
+          <span class="inline-flex min-w-9 items-center justify-center rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white shadow-sm dark:bg-gray-100 dark:text-gray-900">{{ page_num }}</span>
+        {% else %}
+          <a class="inline-flex min-w-9 items-center justify-center rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+             href="{{ url_for('flask_s3_viewer.files', prefix=page_prefix, search=page_search or None, starting_token=page_token or None, page=page_num) }}"
+             hx-get="{{ url_for('flask_s3_viewer.files', prefix=page_prefix, search=page_search or None, starting_token=page_token or None, page=page_num) }}"
+             hx-target="#file-list"
+             hx-push-url="true">{{ page_num }}</a>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    {% if page_current < page_total %}
+      <a class="inline-flex items-center rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+         href="{{ url_for('flask_s3_viewer.files', prefix=page_prefix, search=page_search or None, starting_token=page_token or None, page=page_current + 1) }}"
+         hx-get="{{ url_for('flask_s3_viewer.files', prefix=page_prefix, search=page_search or None, starting_token=page_token or None, page=page_current + 1) }}"
+         hx-target="#file-list"
+         hx-push-url="true">Next</a>
+    {% elif FS3V_NEXT_TOKEN %}
+      <a class="inline-flex items-center rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+         href="{{ url_for('flask_s3_viewer.files', prefix=page_prefix, search=page_search or None, starting_token=FS3V_NEXT_TOKEN, page=1) }}"
+         hx-get="{{ url_for('flask_s3_viewer.files', prefix=page_prefix, search=page_search or None, starting_token=FS3V_NEXT_TOKEN, page=1) }}"
+         hx-target="#file-list"
+         hx-push-url="true">Next</a>
+    {% else %}
+      <span class="inline-flex items-center rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-500">Next</span>
+    {% endif %}
   </div>
 {% endif %}

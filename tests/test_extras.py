@@ -335,6 +335,24 @@ class TestViewBranches:
         assert 'conflicts' in body
         assert 'dup.txt' in body['conflicts']
 
+    def test_post_upload_conflicts_preflight_returns_existing_names(self, client, s3_bucket):
+        client_s3, bucket = s3_bucket
+        client_s3.put_object(Bucket=bucket, Key='dup.txt', Body=b'old')
+        rv = client.post(
+            '/fsv-test/files/conflicts',
+            data={'prefix': '', 'file_names[]': ['dup.txt', 'new.txt']},
+        )
+        assert rv.status_code == 200
+        assert rv.get_json() == {'conflicts': ['dup.txt']}
+
+    def test_post_upload_conflicts_preflight_rejects_duplicate_selection(self, client):
+        rv = client.post(
+            '/fsv-test/files/conflicts',
+            data={'prefix': '', 'file_names[]': ['dup.txt', 'dup.txt']},
+        )
+        assert rv.status_code == 200
+        assert rv.get_json() == {'conflicts': ['dup.txt', 'dup.txt']}
+
     def test_post_upload_with_overwrite_flag_succeeds(self, client, s3_bucket):
         client_s3, bucket = s3_bucket
         client_s3.put_object(Bucket=bucket, Key='dup2.txt', Body=b'old')
@@ -351,6 +369,56 @@ class TestViewBranches:
         # Object body should be the new payload.
         got = client_s3.get_object(Bucket=bucket, Key='dup2.txt')['Body'].read()
         assert got == b'new'
+
+    def test_post_multi_upload_rejects_duplicate_target_names_in_same_request(self, client, s3_bucket):
+        client_s3, bucket = s3_bucket
+        rv = client.post(
+            '/fsv-test/files',
+            data={
+                'prefix': '',
+                'files[]': [
+                    (BytesIO(b'first'), 'dup.txt'),
+                    (BytesIO(b'second'), 'dup.txt'),
+                ],
+            },
+            content_type='multipart/form-data',
+        )
+        assert rv.status_code == 409
+        assert rv.get_json() == {'conflicts': ['dup.txt']}
+        assert client_s3.list_objects_v2(Bucket=bucket).get('Contents') is None
+
+    def test_post_multi_upload_validates_all_extensions_before_writing(self, s3_bucket, tmp_path):
+        client_s3, bucket = s3_bucket
+        app = Flask(__name__)
+        app.config['TESTING'] = True
+        FlaskS3Viewer(
+            app,
+            namespace='fsv-test',
+            allowed_extensions={'txt'},
+            config={
+                'profile_name': None,
+                'bucket_name': bucket,
+                'region_name': 'us-east-1',
+                'access_key': 'testing',
+                'secret_key': 'testing',
+                'cache_dir': str(tmp_path / 'cache'),
+                'use_cache': True,
+                'ttl': 60,
+            },
+        )
+        rv = app.test_client().post(
+            '/fsv-test/files',
+            data={
+                'prefix': '',
+                'files[]': [
+                    (BytesIO(b'ok'), 'good.txt'),
+                    (BytesIO(b'bad'), 'bad.exe'),
+                ],
+            },
+            content_type='multipart/form-data',
+        )
+        assert rv.status_code == 403
+        assert client_s3.list_objects_v2(Bucket=bucket).get('Contents') is None
 
     def test_delete_missing_key_still_returns_204(self, client):
         """boto3 delete_object is idempotent — deleting an absent key is OK."""

@@ -6,6 +6,7 @@
       The presign branch preserves the old DOM IDs that core.js looks up.
 #}
 {%- set current_prefix = current_prefix if current_prefix is defined else request.args.get('prefix', '') -%}
+{%- set current_search = current_search if current_search is defined else request.args.get('search', '') -%}
 
 {% if FS3V_UPLOAD_TYPE == 'presign' %}
 {# Legacy presign multi-upload still lives in flask.s3viewer.core.js. The
@@ -17,42 +18,56 @@
         method="post"
         accept-charset="utf-8"
         enctype="multipart/form-data"
-        class="rounded-md border-2 border-dashed border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        class="rounded-lg border border-gray-200 bg-white px-5 py-4 shadow-sm transition hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600">
     <input type="hidden" name="prefix" id="fs3viewer_prefix" value="{{ current_prefix }}">
-    <div class="flex items-start gap-3">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-           stroke-width="1.5" stroke="currentColor"
-           class="h-8 w-8 text-blue-500 flex-shrink-0">
-        <path stroke-linecap="round" stroke-linejoin="round"
-              d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
-      </svg>
-      <div>
-        <p class="text-sm font-medium">Attach files (presign mode)</p>
-        <p class="text-xs text-gray-500 dark:text-gray-400">Multi-part presigned PUT to S3.</p>
+    <input type="hidden" name="search" id="fs3viewer_search" value="{{ current_search }}">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex min-w-0 items-center gap-3">
+        <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+               stroke-width="1.7" stroke="currentColor" class="h-5 w-5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">Upload files</p>
+          <p class="truncate text-xs text-gray-500 dark:text-gray-400">Presigned S3 transfer</p>
+        </div>
       </div>
-    </div>
-    <div class="flex items-center gap-2">
       <label for="fs3viewer_files"
-             class="inline-flex items-center gap-1.5 rounded-md bg-blue-50 dark:bg-gray-700 px-3 py-1.5 text-xs text-blue-700 dark:text-blue-300 cursor-pointer hover:bg-blue-100">
-        Attach
+             class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+             stroke-width="1.8" stroke="currentColor" class="h-4 w-4">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+        Select files
       </label>
       <input id="fs3viewer_files" type="file" name="files[]" multiple style="display: none;"
              onchange="FLASK_S3_VIEWER_CORE.readyFileHandling(event, fsvPresignReady)">
     </div>
   </form>
   <div id="file_chip" style="display: none;"
-       class="mt-2 inline-flex items-center gap-2 rounded-md border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 text-xs text-blue-700 dark:text-blue-300">
-    <span id="file_count"></span>
-    <button type="button"
-            onclick="document.getElementById('floading').style.display='inline-block'; FLASK_S3_VIEWER_CORE.uploadFiles(event, fsvPresignDone); document.getElementById('file_chip').style.display='none';"
-            class="rounded-md bg-blue-600 px-2 py-1 text-white hover:bg-blue-700">Upload</button>
-    <button type="button"
-            onclick="FLASK_S3_VIEWER_CORE.preventDefaults(event); document.getElementById('upload_form').reset(); document.getElementById('file_chip').style.display='none';"
-            class="rounded-md border border-blue-300 px-2 py-1 hover:bg-blue-100 dark:hover:bg-blue-800">Cancel</button>
+       class="mt-3 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="min-w-0">
+        <p id="file_count" class="text-sm font-medium text-gray-900 dark:text-gray-100"></p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">Ready to upload</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button type="button"
+                onclick="document.getElementById('floading').style.display='inline-block'; FLASK_S3_VIEWER_CORE.uploadFiles(event, fsvPresignDone); document.getElementById('file_chip').style.display='none';"
+                class="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-300">Upload</button>
+        <button type="button"
+                onclick="FLASK_S3_VIEWER_CORE.preventDefaults(event); document.getElementById('upload_form').reset(); document.getElementById('file_chip').style.display='none';"
+                class="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">Cancel</button>
+      </div>
+    </div>
   </div>
-  <span id="floading" style="display: none;" class="ml-2 text-xs text-gray-500">Uploading…</span>
-  <div class="mt-2 h-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-    <div id="fsv-presign-bar" class="h-full bg-blue-500 transition-[width] duration-150" style="width: 0%"></div>
+  <span id="floading" style="display: none;" class="mt-2 text-xs font-medium text-gray-500">Uploading...</span>
+  <div class="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+    <div id="fsv-presign-bar" class="h-full rounded-full bg-gray-900 transition-[width] duration-150 dark:bg-gray-100" style="width: 0%"></div>
   </div>
   {# core.js writes the percent to #fs3viewer_progress.value via onchange. #}
   <input type="hidden" name="fs3viewer_progress" id="fs3viewer_progress" value="0"
@@ -64,7 +79,7 @@
   <script>
     function fsvPresignReady(e, files, presigns) {
       var n = (files && files.length) || 0;
-      document.getElementById('file_count').textContent = n + ' file(s)';
+      document.getElementById('file_count').textContent = n + (n === 1 ? ' file selected' : ' files selected');
       document.getElementById('file_chip').style.display = 'inline-flex';
     }
     function fsvPresignDone(e, results) {
@@ -86,58 +101,140 @@
 </section>
 
 {# Hidden mkdir form is shared across both modes. #}
-<form id="fsv-mkdir-form"
+  <form id="fsv-mkdir-form"
       class="hidden"
       hx-post="{{ url_for('flask_s3_viewer.files') }}"
       hx-target="#file-list">
   <input id="fsv-mkdir-prefix" type="hidden" name="prefix" value="">
+  <input id="fsv-mkdir-search" type="hidden" name="search" value="{{ current_search }}">
 </form>
 
 {% else %}
 
 <section aria-label="Upload">
+  <style>
+    @keyframes fsv-progress-slide {
+      0% { transform: translateX(-140%); }
+      100% { transform: translateX(260%); }
+    }
+    .fsv-progress-sheen {
+      animation: fsv-progress-slide 1.4s linear infinite;
+    }
+  </style>
   <form id="fsv-upload-form"
-        class="rounded-md border-2 border-dashed border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 transition"
-        hx-post="{{ url_for('flask_s3_viewer.files') }}"
-        hx-encoding="multipart/form-data"
-        hx-target="#file-list"
-        hx-vals='js:{prefix: ((document.querySelector("#file-list input[name=prefix]")||{}).value || "")}'>
-    <div class="flex items-start gap-3">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-           stroke-width="1.5" stroke="currentColor"
-           class="h-8 w-8 text-blue-500 flex-shrink-0">
-        <path stroke-linecap="round" stroke-linejoin="round"
-              d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
-      </svg>
-      <div>
-        <p class="text-sm font-medium">Drop files here or pick from disk</p>
-        <p class="text-xs text-gray-500 dark:text-gray-400">Uploads land under the current prefix.</p>
+        class="group rounded-lg border border-gray-200 bg-white px-5 py-4 shadow-sm transition hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600"
+        action="{{ url_for('flask_s3_viewer.files') }}"
+        method="post"
+        accept-charset="utf-8"
+        enctype="multipart/form-data"
+        onsubmit="event.preventDefault(); return false;">
+    <input id="fsv-upload-prefix" type="hidden" name="prefix" value="{{ current_prefix }}">
+    <input id="fsv-upload-search" type="hidden" name="search" value="{{ current_search }}">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex min-w-0 items-center gap-3">
+        <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gray-900 text-white transition group-hover:bg-gray-700 dark:bg-gray-100 dark:text-gray-900 dark:group-hover:bg-gray-300">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+               stroke-width="1.7" stroke="currentColor" class="h-5 w-5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">Upload files</p>
+          <p class="truncate text-xs text-gray-500 dark:text-gray-400">Drop files here or select from disk</p>
+        </div>
       </div>
-    </div>
-    <div class="flex items-center gap-2">
-      <input id="fsv-upload-input" type="file" name="files[]" multiple
-             class="text-xs file:mr-2 file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-gray-700 dark:file:text-blue-300">
-      <button class="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              type="submit">
+      <label for="fsv-upload-input"
+             class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-             stroke-width="2" stroke="currentColor" class="h-4 w-4">
+             stroke-width="1.8" stroke="currentColor" class="h-4 w-4">
           <path stroke-linecap="round" stroke-linejoin="round"
-                d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                d="M12 4.5v15m7.5-7.5h-15" />
         </svg>
-        Upload
-      </button>
-    </div>
-    <div id="fsv-upload-progress" class="hidden sm:col-span-full">
-      <div class="h-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-        <div id="fsv-upload-progress-bar"
-             class="h-full bg-blue-500 transition-[width] duration-150"
-             style="width: 0%"></div>
-      </div>
-      <p id="fsv-upload-progress-text" class="mt-1 text-xs text-gray-500 dark:text-gray-400 tabular-nums">
-        Uploading…
-      </p>
+        Select files
+      </label>
+      <input id="fsv-upload-input" type="file" name="files[]" multiple class="hidden">
     </div>
   </form>
+  <div id="fsv-upload-pending"
+       class="hidden mt-3 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex min-w-0 items-center gap-3">
+        <div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+               stroke-width="1.7" stroke="currentColor" class="h-4 w-4">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5A3.375 3.375 0 0 0 10.125 2.25H8.25m0 12.75h7.5m-7.5 3h7.5M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <p id="fsv-upload-pending-count" class="text-sm font-semibold text-gray-900 dark:text-gray-100"></p>
+          <p id="fsv-upload-pending-names" class="truncate text-xs text-gray-500 dark:text-gray-400"></p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="fsv-upload-submit"
+                class="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-300"
+                type="button">Upload</button>
+        <button id="fsv-upload-cancel"
+                class="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                type="button">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <div id="fsv-upload-progress"
+       class="hidden mt-3 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div class="mb-2 flex items-center justify-between gap-3">
+      <span id="fsv-upload-progress-label" class="truncate text-xs font-medium text-gray-600 dark:text-gray-300"></span>
+      <span id="fsv-upload-progress-meta" class="flex-shrink-0 text-xs tabular-nums text-gray-500 dark:text-gray-400"></span>
+    </div>
+    <div class="h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+      <div id="fsv-upload-progress-bar"
+           class="h-full rounded-full bg-gray-900 transition-[width] duration-150 dark:bg-gray-100"
+           style="width: 0%">
+      </div>
+    </div>
+  </div>
+  <div id="fsv-upload-overwrite"
+       class="hidden fixed inset-0 z-50 items-center justify-center bg-gray-950/45 px-4 py-6 backdrop-blur-sm">
+    <div role="dialog"
+         aria-modal="true"
+         aria-labelledby="fsv-upload-overwrite-title"
+         aria-describedby="fsv-upload-overwrite-meta"
+         class="relative w-full max-w-xl overflow-hidden rounded-lg border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800">
+      <div class="flex min-w-0 items-start gap-4 px-6 pt-6">
+        <div class="mt-0.5 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600 ring-1 ring-amber-100 dark:bg-amber-900/30 dark:text-amber-300 dark:ring-amber-800">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+               stroke-width="1.7" stroke="currentColor" class="h-5 w-5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+          </svg>
+        </div>
+        <div class="min-w-0 flex-1">
+          <p id="fsv-upload-overwrite-title" class="text-base font-semibold text-gray-900 dark:text-gray-100">Replace existing files?</p>
+          <p id="fsv-upload-overwrite-meta" class="mt-1.5 text-sm leading-6 text-gray-500 dark:text-gray-400">
+            Some selected files already exist in this folder.
+          </p>
+        </div>
+      </div>
+      <div class="mt-5 border-y border-gray-100 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-900/40">
+        <ul id="fsv-upload-overwrite-list"
+            class="max-h-56 space-y-2 overflow-auto text-sm text-gray-700 dark:text-gray-200"></ul>
+      </div>
+      <div class="flex items-center justify-end gap-3 px-6 py-5">
+        <button id="fsv-upload-overwrite-cancel"
+                type="button"
+                class="rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+          Keep existing
+        </button>
+        <button id="fsv-upload-overwrite-confirm"
+                type="button"
+                class="rounded-md bg-gray-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-300">
+          Replace files
+        </button>
+      </div>
+    </div>
+  </div>
   {# Hidden form used by the New Folder button. POST with only `prefix` (no files[]) reaches the mkdir branch in view.py. #}
   <form id="fsv-mkdir-form"
         class="hidden"
@@ -146,6 +243,7 @@
     {# Value set dynamically by the New Folder onclick handler — joins the live
        #file-list prefix with the user-typed name. #}
     <input id="fsv-mkdir-prefix" type="hidden" name="prefix" value="">
+    <input id="fsv-mkdir-search" type="hidden" name="search" value="{{ current_search }}">
   </form>
   <script>
     (function () {
@@ -153,106 +251,378 @@
       var input = document.getElementById('fsv-upload-input');
       if (!form || !input || form.dataset.fsvDndBound) return;
       form.dataset.fsvDndBound = '1';
+      var prefixInput = document.getElementById('fsv-upload-prefix');
+      var searchInput = document.getElementById('fsv-upload-search');
+      var mkdirSearchInput = document.getElementById('fsv-mkdir-search');
+
+      function syncUploadPrefix() {
+        if (!prefixInput) return;
+        var live = document.querySelector('#file-list input[name=prefix]');
+        prefixInput.value = (live && live.value) || '';
+      }
+      function syncSearchState() {
+        var live = document.querySelector('#file-list input[name=search]');
+        var value = (live && live.value) || '';
+        if (searchInput) searchInput.value = value;
+        if (mkdirSearchInput) mkdirSearchInput.value = value;
+      }
+      syncUploadPrefix();
+      syncSearchState();
+      document.body.addEventListener('htmx:afterSwap', function (e) {
+        if (!e.target || e.target.id !== 'file-list') return;
+        syncUploadPrefix();
+        syncSearchState();
+      });
+      form.addEventListener('htmx:configRequest', function () {
+        syncUploadPrefix();
+        syncSearchState();
+      });
 
       // Upload progress + file input reset on success.
       var progress = document.getElementById('fsv-upload-progress');
       var bar = document.getElementById('fsv-upload-progress-bar');
-      var label = document.getElementById('fsv-upload-progress-text');
+      var progressLabel = document.getElementById('fsv-upload-progress-label');
+      var progressMeta = document.getElementById('fsv-upload-progress-meta');
+      var overwritePanel = document.getElementById('fsv-upload-overwrite');
+      var overwriteMeta = document.getElementById('fsv-upload-overwrite-meta');
+      var overwriteList = document.getElementById('fsv-upload-overwrite-list');
+      var overwriteConfirmBtn = document.getElementById('fsv-upload-overwrite-confirm');
+      var overwriteCancelBtn = document.getElementById('fsv-upload-overwrite-cancel');
+      var submitBtn = document.getElementById('fsv-upload-submit');
+      var cancelBtn = document.getElementById('fsv-upload-cancel');
+      var pending = document.getElementById('fsv-upload-pending');
+      var pendingCount = document.getElementById('fsv-upload-pending-count');
+      var pendingNames = document.getElementById('fsv-upload-pending-names');
+      var uploadInFlight = false;
+      var pendingOverwrite = null;
       function fmtPct(n) { return Math.round(n) + '%'; }
-      form.addEventListener('htmx:xhr:loadstart', function () {
-        if (!input.files || !input.files.length) return;
+      function fileCountLabel(n) { return n + (n === 1 ? ' file' : ' files'); }
+
+      function setOverwriteActionsEnabled(enabled) {
+        if (overwriteConfirmBtn) overwriteConfirmBtn.disabled = !enabled;
+        if (overwriteCancelBtn) overwriteCancelBtn.disabled = !enabled;
+      }
+
+      function setBusy(busy) {
+        uploadInFlight = busy;
+        if (submitBtn) submitBtn.disabled = busy;
+        if (cancelBtn) cancelBtn.disabled = busy;
+        if (input) input.disabled = busy;
+        if (submitBtn) submitBtn.textContent = busy ? 'Uploading...' : 'Upload';
+      }
+
+      function syncPendingChip() {
+        var files = Array.prototype.slice.call(input.files || []);
+        if (!pending) return;
+        if (!files.length) {
+          pending.classList.add('hidden');
+          if (pendingCount) pendingCount.textContent = '';
+          if (pendingNames) pendingNames.textContent = '';
+          return;
+        }
+        if (pendingCount) pendingCount.textContent = fileCountLabel(files.length) + ' selected';
+        if (pendingNames) {
+          pendingNames.textContent = files.length === 1
+            ? files[0].name
+            : files[0].name + ' and ' + (files.length - 1) + ' more';
+        }
+        pending.classList.remove('hidden');
+      }
+
+      function clearPendingFiles() {
+        try { input.value = ''; } catch (err) { /* noop */ }
+        syncPendingChip();
+      }
+
+      function showProgress(text, pct, meta) {
         if (progress) progress.classList.remove('hidden');
+        if (bar && typeof pct === 'number') bar.style.width = pct + '%';
+        if (progressLabel) progressLabel.textContent = text || 'Preparing upload';
+        if (progressMeta) progressMeta.textContent = meta || '';
+      }
+
+      function hideProgress() {
+        if (progress) progress.classList.add('hidden');
         if (bar) bar.style.width = '0%';
-        if (label) label.textContent = 'Uploading…';
-      });
-      form.addEventListener('htmx:xhr:progress', function (e) {
-        var d = e.detail || {};
-        if (!d.lengthComputable || !d.total) return;
-        var pct = (d.loaded / d.total) * 100;
-        if (bar) bar.style.width = pct + '%';
-        if (label) label.textContent = 'Uploading… ' + fmtPct(pct);
-      });
+        if (progressLabel) progressLabel.textContent = '';
+        if (progressMeta) progressMeta.textContent = '';
+      }
+
       function flashDone(ok, customLabel) {
         if (bar) bar.style.width = ok ? '100%' : '0%';
-        if (label) label.textContent = customLabel || (ok ? 'Done' : 'Failed');
+        if (overwritePanel) {
+          overwritePanel.classList.add('hidden');
+          overwritePanel.classList.remove('flex');
+        }
+        pendingOverwrite = null;
+        setOverwriteActionsEnabled(true);
         if (ok) {
-          try { input.value = ''; } catch (err) { /* noop */ }
+          clearPendingFiles();
         }
         setTimeout(function () {
-          if (progress) progress.classList.add('hidden');
-          if (bar) bar.style.width = '0%';
+          hideProgress();
         }, ok ? 600 : 1500);
+        setBusy(false);
       }
 
-      // Direct upload via fetch so we have full control over headers, form
-      // fields and the response body when overwriting. htmx's trigger('submit')
-      // reuse path was unreliable for multipart re-submission.
-      function retryOverwrite() {
-        var fd = new FormData(form);
-        fd.set('overwrite', '1');
-        var liveHidden = document.querySelector('#file-list input[name=prefix]');
-        if (liveHidden) fd.set('prefix', liveHidden.value || '');
-        if (label) label.textContent = 'Overwriting…';
-        if (progress) progress.classList.remove('hidden');
-        if (bar) bar.style.width = '0%';
+      function refreshFileList() {
+        var fileList = document.getElementById('file-list');
+        if (!fileList) return;
+        var current = document.querySelector('#file-list input[name=prefix]');
+        var liveSearch = document.querySelector('#file-list input[name=search]');
+        var prefix = (current && current.value) || '';
+        var search = (liveSearch && liveSearch.value) || '';
+        var url = '{{ url_for("flask_s3_viewer.files") }}';
+        var params = new URLSearchParams();
+        if (prefix) params.set('prefix', prefix);
+        if (search) params.set('search', search);
+        var query = params.toString();
+        if (query) url += '?' + query;
+        if (window.htmx) {
+          window.htmx.ajax('GET', url, { target: '#file-list', swap: 'innerHTML' });
+        } else {
+          window.location.reload();
+        }
+      }
 
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', form.getAttribute('hx-post') || form.action);
-        xhr.setRequestHeader('HX-Request', 'true');
-        xhr.setRequestHeader('HX-Fsv-Overwrite', '1');
-        if (xhr.upload) {
-          xhr.upload.addEventListener('progress', function (ev) {
-            if (!ev.lengthComputable || !ev.total) return;
-            var pct = (ev.loaded / ev.total) * 100;
-            if (bar) bar.style.width = pct + '%';
-            if (label) label.textContent = 'Overwriting… ' + Math.round(pct) + '%';
+      function showOverwritePrompt(conflicts, completedBefore, totalOverall) {
+        pendingOverwrite = {
+          conflicts: conflicts,
+          completedBefore: completedBefore,
+          totalOverall: totalOverall,
+        };
+        if (!overwritePanel) return;
+        overwritePanel.classList.remove('hidden');
+        overwritePanel.classList.add('flex');
+        setOverwriteActionsEnabled(true);
+        if (overwriteMeta) {
+          var uploaded = completedBefore > 0
+            ? completedBefore + ' uploaded. '
+            : '';
+          overwriteMeta.textContent = uploaded + fileCountLabel(conflicts.length)
+            + ' match existing names in this folder.';
+        }
+        if (overwriteList) {
+          overwriteList.textContent = '';
+          conflicts.forEach(function (file) {
+            var item = document.createElement('li');
+            item.className = 'flex min-w-0 items-center gap-3 rounded-md border border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-800';
+            var icon = document.createElement('span');
+            icon.className = 'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-gray-100 text-xs font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-200';
+            var parts = file.name ? file.name.split('.') : [];
+            icon.textContent = parts.length > 1
+              ? parts[parts.length - 1].slice(0, 3).toUpperCase()
+              : 'FILE';
+            var name = document.createElement('span');
+            name.className = 'min-w-0 flex-1 truncate font-medium';
+            name.textContent = file.name;
+            var note = document.createElement('span');
+            note.className = 'flex-shrink-0 text-xs text-gray-500 dark:text-gray-400';
+            note.textContent = 'Will be replaced';
+            item.appendChild(icon);
+            item.appendChild(name);
+            item.appendChild(note);
+            overwriteList.appendChild(item);
           });
         }
-        xhr.addEventListener('load', function () {
-          var ok = xhr.status >= 200 && xhr.status < 300;
-          if (ok) {
-            var fileList = document.getElementById('file-list');
-            if (fileList) {
-              fileList.innerHTML = xhr.responseText;
-              if (window.htmx) window.htmx.process(fileList);
-            }
-          }
-          flashDone(ok, ok ? 'Done' : ('Failed (' + xhr.status + ')'));
-        });
-        xhr.addEventListener('error', function () { flashDone(false); });
-        xhr.send(fd);
       }
 
-      form.addEventListener('htmx:afterRequest', function (e) {
-        var d = e.detail || {};
-        var xhr = d.xhr;
-        // Conflict: server says some keys already exist. Confirm with the user
-        // and resubmit (via fetch) with overwrite=1.
-        if (xhr && xhr.status === 409) {
-          var conflicts = [];
-          try {
-            var data = JSON.parse(xhr.responseText || '{}');
-            conflicts = Array.isArray(data.conflicts) ? data.conflicts : [];
-          } catch (err) { /* not JSON; fall through to generic failure */ }
-          if (conflicts.length) {
-            // Hide the progress UI so the confirm reads as the primary signal.
-            if (progress) progress.classList.add('hidden');
-            if (bar) bar.style.width = '0%';
-            if (label) label.textContent = '';
-            var preview = conflicts.slice(0, 5).join('\n');
-            var more = conflicts.length > 5 ? '\n…and ' + (conflicts.length - 5) + ' more' : '';
-            var msg = conflicts.length + ' file(s) already exist. Overwrite?\n\n' + preview + more;
-            if (window.confirm(msg)) {
-              retryOverwrite();
+      function checkUploadConflicts(files) {
+        return new Promise(function (resolve) {
+          var fd = new FormData();
+          fd.set('prefix', prefixInput ? (prefixInput.value || '') : '');
+          files.forEach(function (file) {
+            fd.append('file_names[]', file.name);
+          });
+
+          var xhr = new XMLHttpRequest();
+          xhr.open('POST', form.action + '/conflicts');
+          xhr.setRequestHeader('HX-Request', 'true');
+          xhr.addEventListener('load', function () {
+            var names = [];
+            try {
+              names = (JSON.parse(xhr.responseText || '{}').conflicts || []);
+            } catch (err) {
+              names = [];
+            }
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve({
+                ok: true,
+                conflicts: files.filter(function (file) {
+                  return names.indexOf(file.name) !== -1;
+                }),
+              });
               return;
             }
-            flashDone(false, 'Cancelled');
-            return;
+            resolve({ ok: false, status: xhr.status, conflicts: [] });
+          });
+          xhr.addEventListener('error', function () {
+            resolve({ ok: false, status: 0, conflicts: [] });
+          });
+          xhr.send(fd);
+        });
+      }
+
+      function uploadSingle(file, index, total, forceOverwrite) {
+        return new Promise(function (resolve) {
+          var fd = new FormData();
+          fd.set('prefix', prefixInput ? (prefixInput.value || '') : '');
+          fd.set('search', searchInput ? (searchInput.value || '') : '');
+          if (forceOverwrite) fd.set('overwrite', '1');
+          fd.append('files[]', file, file.name);
+          showProgress(
+            file.name,
+            (index / total) * 100,
+            (index + 1) + ' / ' + total + (forceOverwrite ? ' • overwrite' : '')
+          );
+
+          var xhr = new XMLHttpRequest();
+          xhr.open('POST', form.action);
+          xhr.setRequestHeader('HX-Request', 'true');
+          if (forceOverwrite) xhr.setRequestHeader('HX-Fsv-Overwrite', '1');
+          if (xhr.upload) {
+            xhr.upload.addEventListener('progress', function (ev) {
+              if (!ev.lengthComputable || !ev.total) return;
+              var filePct = (ev.loaded / ev.total) * 100;
+              var batchPct = ((index + (filePct / 100)) / total) * 100;
+              showProgress(
+                file.name,
+                batchPct,
+                (index + 1) + ' / ' + total + ' • ' + fmtPct(filePct)
+              );
+            });
           }
+          xhr.addEventListener('load', function () {
+            resolve({
+              ok: xhr.status >= 200 && xhr.status < 300,
+              status: xhr.status,
+              responseText: xhr.responseText,
+              file: file,
+            });
+          });
+          xhr.addEventListener('error', function () {
+            resolve({ ok: false, status: 0, responseText: '', file: file });
+          });
+          xhr.send(fd);
+        });
+      }
+
+      async function uploadBatch(files, overwriteSet, completedBefore, totalOverall) {
+        var conflicts = [];
+        var succeededInThisPass = 0;
+        for (var i = 0; i < files.length; i++) {
+          var file = files[i];
+          var overallIndex = completedBefore + i;
+          var result = await uploadSingle(
+            file,
+            overallIndex,
+            totalOverall,
+            overwriteSet[file.name] === true
+          );
+          if (result.ok) {
+            succeededInThisPass += 1;
+            continue;
+          }
+          if (result.status === 409) {
+            conflicts.push(file);
+            continue;
+          }
+          flashDone(false, 'Failed on ' + file.name + (result.status ? ' (' + result.status + ')' : ''));
+          return;
         }
-        flashDone(d.successful);
+        if (conflicts.length) {
+          hideProgress();
+          showOverwritePrompt(
+            conflicts,
+            completedBefore + succeededInThisPass,
+            totalOverall
+          );
+          return;
+        }
+        showProgress('Upload complete', 100, totalOverall + ' / ' + totalOverall);
+        refreshFileList();
+        flashDone(true, 'Done');
+      }
+
+      async function startBatchUpload() {
+        if (uploadInFlight) return;
+        syncUploadPrefix();
+        if (overwritePanel) {
+          overwritePanel.classList.add('hidden');
+          overwritePanel.classList.remove('flex');
+        }
+        var files = Array.prototype.slice.call(input.files || []);
+        if (!files.length) return;
+        setBusy(true);
+        hideProgress();
+        var preflight = await checkUploadConflicts(files);
+        if (!preflight.ok) {
+          flashDone(false, 'Failed before upload' + (preflight.status ? ' (' + preflight.status + ')' : ''));
+          return;
+        }
+        if (preflight.conflicts.length) {
+          showOverwritePrompt(preflight.conflicts, 0, files.length);
+          return;
+        }
+        showProgress('', 0, '');
+        await uploadBatch(files, {}, 0, files.length);
+      }
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        startBatchUpload();
       });
-      var ringOn = ['ring-2', 'ring-blue-500', 'border-blue-400'];
+      input.addEventListener('change', function () {
+        syncPendingChip();
+      });
+      if (submitBtn) {
+        submitBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          startBatchUpload();
+        });
+      }
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          clearPendingFiles();
+          if (overwritePanel) {
+            overwritePanel.classList.add('hidden');
+            overwritePanel.classList.remove('flex');
+          }
+        });
+      }
+      if (overwriteConfirmBtn) {
+        overwriteConfirmBtn.addEventListener('click', async function (e) {
+          e.preventDefault();
+          if (!pendingOverwrite) return;
+          setOverwriteActionsEnabled(false);
+          if (overwritePanel) overwritePanel.classList.add('hidden');
+          if (overwritePanel) overwritePanel.classList.remove('flex');
+          var nextOverwriteSet = {};
+          pendingOverwrite.conflicts.forEach(function (file) { nextOverwriteSet[file.name] = true; });
+          await uploadBatch(
+            pendingOverwrite.conflicts,
+            nextOverwriteSet,
+            pendingOverwrite.completedBefore,
+            pendingOverwrite.totalOverall
+          );
+        });
+      }
+      if (overwriteCancelBtn) {
+        overwriteCancelBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          setOverwriteActionsEnabled(false);
+          flashDone(false, 'Cancelled');
+        });
+      }
+      if (overwritePanel) {
+        overwritePanel.addEventListener('click', function (e) {
+          if (e.target !== overwritePanel || !pendingOverwrite) return;
+          setOverwriteActionsEnabled(false);
+          flashDone(false, 'Cancelled');
+        });
+      }
+      var ringOn = ['ring-2', 'ring-gray-900', 'border-gray-400', 'dark:ring-gray-100'];
       function over(e) { e.preventDefault(); e.stopPropagation(); form.classList.add.apply(form.classList, ringOn); }
       function off(e) { e.preventDefault(); e.stopPropagation(); form.classList.remove.apply(form.classList, ringOn); }
       ['dragenter', 'dragover'].forEach(function (n) { form.addEventListener(n, over); });
@@ -275,6 +645,7 @@
         }
         input.dispatchEvent(new Event('change', { bubbles: true }));
       });
+      syncPendingChip();
     })();
   </script>
 </section>

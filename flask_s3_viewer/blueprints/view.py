@@ -303,6 +303,48 @@ def files_presign() -> Any:
     return jsonify(rtns), 200
 
 
+@blueprint.route("/files/conflicts", methods=['POST'])
+def files_conflicts() -> Any:
+    fs3viewer = _get_viewer(g.BUCKET_NAMESPACE)
+    try:
+        _decoded_prefix, prefix = _normalize_prefix_key(
+            fs3viewer,
+            request.form.get('prefix', ''),
+        )
+    except InvalidPrefix:
+        abort(400, 'Invalid prefix')
+    _redirect = _enforce_auth(fs3viewer, ACTION_UPLOAD, prefix)
+    if _redirect is not None and not isinstance(_redirect, str):
+        return _redirect
+
+    filenames = request.form.getlist('file_names[]')
+    if not filenames:
+        file_list = request.form.get('file_list', '')
+        filenames = [f for f in file_list.split(',') if f]
+
+    targets: list[tuple[str, str]] = []
+    for filename in filenames:
+        try:
+            safe_name = _normalize_upload_filename(filename)
+        except InvalidPrefix:
+            abort(400, 'Invalid prefix')
+        target = f'{prefix}{safe_name}'
+        targets.append((safe_name, target))
+
+    target_keys = [target for _safe_name, target in targets]
+    duplicate_targets = sorted({target for target in target_keys if target_keys.count(target) > 1})
+    conflicts = [
+        safe_name
+        for safe_name, target in targets
+        if target in duplicate_targets or fs3viewer.is_exists(target)
+    ]
+    disallowed_targets = [target for _safe_name, target in targets if not is_allowed(fs3viewer, target)]
+    if disallowed_targets:
+        abort(403, 'Not allowd file extension')
+
+    return jsonify({'conflicts': conflicts}), 200
+
+
 @blueprint.route("/files", methods=['GET', 'POST'])
 def files() -> Any:
     # files() carries two distinct actions (LIST vs UPLOAD) so it can't
@@ -348,20 +390,29 @@ def files() -> Any:
                 except InvalidPrefix:
                     abort(400, 'Invalid prefix')
                 targets.append(f'{full_prefix}{safe_name}')
+            # A single multi-file request must not silently upload two
+            # different payloads to the same target key. Browsers often strip
+            # directory names, so duplicate basenames can collide here.
+            duplicate_targets = sorted({t for t in targets if targets.count(t) > 1})
+            if duplicate_targets:
+                return jsonify({'conflicts': duplicate_targets}), 409
+            disallowed_targets = [t for t in targets if not is_allowed(fs3viewer, t)]
+            if disallowed_targets:
+                abort(403, 'Not allowd file extension')
             if not allow_overwrite:
                 conflicts = [t for t in targets if fs3viewer.is_exists(t)]
                 if conflicts:
                     return jsonify({'conflicts': conflicts}), 409
             for f, target in zip(files_list, targets, strict=True):
                 f.filename = target
-                if not is_allowed(fs3viewer, f.filename):
-                    abort(403, 'Not allowd file extension')
                 fs3viewer.add_one(f, f.filename)
             # upload: stay on the same prefix the user was viewing.
             listing_prefix = raw_prefix
         if request.headers.get('HX-Request'):
+            current_search = request.form.get('search', '')
             prefixes, contents, next_token = fs3viewer.find(
                 prefix=listing_prefix,
+                search=current_search or None,
                 cache_identity=getattr(g, 'FSV_AUTH_EMAIL', None),
             )
             # FS3V_TITLE/LOGO/UPLOAD_TYPE/OBJECT_HOSTNAME come from the
@@ -373,6 +424,7 @@ def files() -> Any:
                 FS3V_PREFIXES=prefixes,
                 FS3V_NEXT_TOKEN=next_token,
                 current_prefix=listing_prefix,
+                current_search=current_search,
             ), 200
         return {}, 201
 
@@ -384,7 +436,7 @@ def files() -> Any:
         # args
         starting_token: str | None = request.args.get('starting_token')
         search = request.args.get('search')
-        page = int(request.args.get('page', 1)) - 1
+        requested_page = int(request.args.get('page', 1))
         if not starting_token or starting_token == 'None':
             starting_token = None
 
@@ -423,6 +475,8 @@ def files() -> Any:
                 max_items,
             )
         ]
+        total_pages = len(content_pages)
+        current_page = 1 if total_pages == 0 else min(max(requested_page, 1), total_pages)
 
         # HTMX partial swap returns only the inner #file-list fragment;
         # full-page navigation returns the layout-wrapped page.
@@ -435,10 +489,13 @@ def files() -> Any:
         # injected by the blueprint context processor.
         return render_template(
             template,
-            FS3V_CONTENTS=content_pages[page] if content_pages else [],
+            FS3V_CONTENTS=content_pages[current_page - 1] if content_pages else [],
             FS3V_PREFIXES=prefixes,
             FS3V_NEXT_TOKEN=next_token,
             current_prefix=prefix,
+            current_search=search or '',
+            current_page=current_page,
+            total_pages=total_pages,
         )
 
 
@@ -534,6 +591,13 @@ def utility_processor() -> dict:
                     user_email = viewer.auth_callback(request)
                 except Exception:  # pragma: no cover - deployer callback safety
                     user_email = None
+    user_avatar: str | None = None
+    if user_email:
+        try:
+            from ..auth.google import session_avatar_url
+            user_avatar = session_avatar_url()
+        except Exception:  # pragma: no cover - optional auth helper safety
+            user_avatar = None
 
     return dict(
         split=split,
@@ -545,6 +609,7 @@ def utility_processor() -> dict:
         FS3V_UPLOAD_TYPE=upload_type,
         FS3V_OBJECT_HOSTNAME=object_hostname,
         FSV_USER_EMAIL=user_email,
+        FSV_USER_AVATAR=user_avatar,
         FSV_AUTH_ENABLED=auth_enabled,
         FSV_GOOGLE_CONFIGURED=google_configured,
     )

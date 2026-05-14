@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}{% endblock %} | {{ FS3V_TITLE | default("Flask S3 Viewer") }}</title>
     {# Inline SVG favicon so the browser stops 404'ing /favicon.ico. #}
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='1.5'><path stroke-linecap='round' stroke-linejoin='round' d='M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75'/></svg>" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23111827' stroke-width='1.8'><path stroke-linecap='round' stroke-linejoin='round' d='M3.75 6.75A2.25 2.25 0 0 1 6 4.5h3.879c.597 0 1.169.237 1.591.659l1.371 1.371c.422.422.994.659 1.591.659H18a2.25 2.25 0 0 1 2.25 2.25v7.811A2.25 2.25 0 0 1 18 19.5H6a2.25 2.25 0 0 1-2.25-2.25V6.75Z'/><path stroke-linecap='round' stroke-linejoin='round' d='M8.25 12h7.5M8.25 15h4.5'/></svg>" />
     <link rel="stylesheet" href="{{ url_for('flask_s3_viewer.static', filename='css/app.css') }}">
     {% block extra_head %}{% endblock %}
     {#
@@ -19,23 +19,8 @@
             src="{{ url_for('flask_s3_viewer.static', filename='vendor/htmx.min.js') }}"
             integrity="sha384-0895/pl2MU10Hqc6jd4RvrthNlDiE9U1tWmX7WRESftEDRosgxNsQG/Ze9YMRzHq"
             crossorigin="anonymous"></script>
-    <script>
-      // Apply the persisted theme synchronously before first paint to avoid
-      // a light-mode flash for users who prefer dark mode.
-      (function () {
-        try {
-          var stored = localStorage.getItem('fsv-theme');
-          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-          if (stored === 'dark' || (!stored && prefersDark)) {
-            document.documentElement.classList.add('dark');
-          }
-        } catch (e) {
-          /* localStorage may be unavailable (private mode); fail open. */
-        }
-      })();
-    </script>
   </head>
-  <body class="h-full bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+  <body class="h-full bg-gray-50 text-gray-900">
     <script charset="utf-8">
       var FLASK_S3_VIEWER_FILES_ENDPOINT = "{{ url_for('flask_s3_viewer.files') }}";
       var FLASK_S3_VIEWER_UPLOAD_TYPE = "{{ FS3V_UPLOAD_TYPE }}";
@@ -49,7 +34,9 @@
         if (!fileList) return;
         var rows = fileList.querySelectorAll('.fsv-row-select');
         var checked = 0;
-        rows.forEach(function (c) { if (c.checked) checked++; });
+        rows.forEach(function (c) {
+          if (c.checked) checked++;
+        });
         var bar = fileList.querySelector('#fsv-selection-bar');
         var btn = fileList.querySelector('#fsv-bulk-delete');
         var sa  = fileList.querySelector('#fsv-select-all');
@@ -70,7 +57,52 @@
         fileList.querySelectorAll('.fsv-row-select').forEach(function (c) {
           c.checked = ck;
         });
+        window.fsvLastSelectedCheckbox = null;
         window.fsvRefreshSelection();
+      };
+      window.fsvSelectRow = function (checkbox, event) {
+        var fileList = document.getElementById('file-list');
+        if (!fileList || !checkbox) return;
+        var rows = Array.prototype.slice.call(fileList.querySelectorAll('.fsv-row-select'));
+        var last = window.fsvLastSelectedCheckbox;
+        if (event && event.shiftKey && last && last !== checkbox) {
+          var currentIndex = rows.indexOf(checkbox);
+          var lastIndex = rows.indexOf(last);
+          if (currentIndex >= 0 && lastIndex >= 0) {
+            var start = Math.min(currentIndex, lastIndex);
+            var end = Math.max(currentIndex, lastIndex);
+            rows.slice(start, end + 1).forEach(function (rowCheckbox) {
+              rowCheckbox.checked = checkbox.checked;
+            });
+          }
+        }
+        window.fsvLastSelectedCheckbox = checkbox;
+        window.fsvRefreshSelection();
+      };
+      window.fsvSyncSearchUi = function () {
+        var fileList = document.getElementById('file-list');
+        var searchInput = document.getElementById('fsv-search-input');
+        var prefixInput = document.getElementById('fsv-search-prefix');
+        if (!fileList) return;
+        var livePrefix = fileList.querySelector('input[name="prefix"]');
+        var liveSearch = fileList.querySelector('input[name="search"]');
+        if (prefixInput) prefixInput.value = (livePrefix && livePrefix.value) || '';
+        if (searchInput) searchInput.value = (liveSearch && liveSearch.value) || '';
+      };
+
+      window.fsvConfirmDelete = function (trigger) {
+        var message = trigger && trigger.getAttribute ? trigger.getAttribute('data-delete-message') : '';
+        if (!window.confirm(message)) return false;
+        var row = trigger && trigger.closest && trigger.closest('tr');
+        if (row) {
+          row.classList.add('opacity-70');
+          row.classList.add('pointer-events-none');
+          var action = row.querySelector('.fsv-delete-action');
+          var loading = row.querySelector('.fsv-delete-loading');
+          if (action) action.classList.add('hidden');
+          if (loading) loading.classList.remove('hidden');
+        }
+        return true;
       };
 
       // Bulk delete fires N parallel DELETEs and then refreshes the listing.
@@ -82,10 +114,36 @@
       document.addEventListener('DOMContentLoaded', function () {
         document.body.addEventListener('htmx:afterSwap', function (e) {
           if (e.target && e.target.id === 'file-list') {
+            window.fsvSyncSearchUi();
             window.fsvRefreshSelection();
           }
         });
+        document.body.addEventListener('htmx:responseError', function (e) {
+          var elt = e.detail && e.detail.elt;
+          var row = elt && elt.closest ? elt.closest('tr') : null;
+          if (row) {
+            row.classList.remove('opacity-70');
+            row.classList.remove('pointer-events-none');
+            var action = row.querySelector('.fsv-delete-action');
+            var loading = row.querySelector('.fsv-delete-loading');
+            if (action) action.classList.remove('hidden');
+            if (loading) loading.classList.add('hidden');
+          }
+        });
+        document.body.addEventListener('htmx:sendError', function (e) {
+          var elt = e.detail && e.detail.elt;
+          var row = elt && elt.closest ? elt.closest('tr') : null;
+          if (row) {
+            row.classList.remove('opacity-70');
+            row.classList.remove('pointer-events-none');
+            var action = row.querySelector('.fsv-delete-action');
+            var loading = row.querySelector('.fsv-delete-loading');
+            if (action) action.classList.remove('hidden');
+            if (loading) loading.classList.add('hidden');
+          }
+        });
         window.fsvRefreshSelection();
+        window.fsvSyncSearchUi();
       });
 
       window.fsvBulkDelete = function () {
@@ -136,9 +194,15 @@
           }
           if (window.htmx) {
             var hiddenPrefix = fileList.querySelector('input[name="prefix"]');
+            var hiddenSearch = fileList.querySelector('input[name="search"]');
             var pf = hiddenPrefix ? hiddenPrefix.value : '';
+            var q = hiddenSearch ? hiddenSearch.value : '';
+            var params = new URLSearchParams();
+            if (pf) params.set('prefix', pf);
+            if (q) params.set('search', q);
+            var query = params.toString();
             var listUrl = (basePrefix.replace(/\/files\/$/, '/files'))
-              + (pf ? '?prefix=' + encodeURIComponent(pf) : '');
+              + (query ? '?' + query : '');
             window.htmx.ajax('GET', listUrl, { target: '#file-list', swap: 'innerHTML' });
           } else {
             window.location.reload();

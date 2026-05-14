@@ -231,3 +231,4 @@ _workspace_*/
 
 # Playwright MCP cache
 .playwright-mcp/
+logo.svg

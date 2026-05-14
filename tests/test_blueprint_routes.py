@@ -40,6 +40,23 @@ class TestListing:
         assert rv.headers['X-Frame-Options'] == 'DENY'
         assert 'Content-Security-Policy' in rv.headers
 
+    def test_listing_does_not_emit_htmx_js_eval_attrs(self, client) -> None:
+        rv = client.get(_ns_path('/files'))
+        assert b"hx-vals='js:" not in rv.data
+        assert b'hx-vals="js:' not in rv.data
+
+    def test_listing_paginates_after_max_items(self, app, client, s3_bucket) -> None:
+        s3_client, bucket = s3_bucket
+        max_items = app.extensions['flask_s3_viewer']['fsv-test'].max_items
+        for i in range(max_items + 1):
+            s3_client.put_object(Bucket=bucket, Key=f'page-{i}.txt', Body=b'x')
+        rv = client.get(_ns_path('/files'))
+        assert rv.status_code == 200
+        assert b'>1<' in rv.data
+        assert b'>2<' in rv.data
+        assert b'page=2' in rv.data
+        assert rv.data.count(b'data-fsv-type="file"') == max_items
+
 
 class TestMkdir:
     def test_post_mkdir_creates_empty_object(self, client, s3_bucket) -> None:
@@ -242,17 +259,26 @@ class TestSearch:
         assert rv.status_code == 200
         assert b'README.MD' in rv.data
 
-    def test_search_recurses_into_subfolders(self, client, s3_bucket) -> None:
-        """A search query switches the listing to flat / recursive mode so
-        matches inside sub-prefixes are visible too.
+    def test_search_does_not_recurse_into_subfolders(self, client, s3_bucket) -> None:
+        """Search stays scoped to the current folder and does not pull
+        matches from nested descendants.
         """
         s3_client, bucket = s3_bucket
         s3_client.put_object(Bucket=bucket, Key='reports/2026/한글.pdf', Body=b'x')
         s3_client.put_object(Bucket=bucket, Key='reports/2025/other.pdf', Body=b'x')
         rv = client.get(_ns_path('/files?search=한글'))
         assert rv.status_code == 200
-        assert '한글.pdf'.encode() in rv.data
+        assert '한글.pdf'.encode() not in rv.data
         assert b'other.pdf' not in rv.data
+
+    def test_search_within_prefix_finds_direct_children_only(self, client, s3_bucket) -> None:
+        s3_client, bucket = s3_bucket
+        s3_client.put_object(Bucket=bucket, Key='reports/한글.pdf', Body=b'x')
+        s3_client.put_object(Bucket=bucket, Key='reports/2026/한글-깊음.pdf', Body=b'x')
+        rv = client.get(_ns_path('/files?prefix=reports/&search=한글'))
+        assert rv.status_code == 200
+        assert '한글.pdf'.encode() in rv.data
+        assert '한글-깊음.pdf'.encode() not in rv.data
 
     def test_search_matches_nfd_keys_with_nfc_query(self, s3_bucket) -> None:
         """macOS-style uploads land in S3 as NFD (decomposed Hangul);
@@ -311,7 +337,7 @@ class TestSearch:
         rv = client.get(_ns_path('/files?search=rep'))
         assert rv.status_code == 200
         # Folder row links into the matching folder.
-        assert b'href="/fsv-test/files?prefix=reports/"' in rv.data
+        assert b'href="/fsv-test/files?prefix=reports/&amp;search=rep"' in rv.data
         # Files outside the match are absent.
         assert b'untouched.txt' not in rv.data
 
@@ -353,6 +379,32 @@ class TestSearch:
         rv2 = app.test_client().get('/bp/files?search=report')
         assert rv2.status_code == 200
         assert b'report.pdf' in rv2.data
+
+    def test_search_folder_navigation_preserves_query(self, client, s3_bucket) -> None:
+        s3_client, bucket = s3_bucket
+        s3_client.put_object(Bucket=bucket, Key='reports/Q1.pdf', Body=b'x')
+        rv = client.get(_ns_path('/files?search=rep'))
+        assert rv.status_code == 200
+        assert b'/fsv-test/files?prefix=reports/&amp;search=rep' in rv.data
+
+    def test_htmx_upload_refresh_keeps_search_filter(self, client, s3_bucket) -> None:
+        s3_client, bucket = s3_bucket
+        s3_client.put_object(Bucket=bucket, Key='report-old.txt', Body=b'old')
+        data = {
+            'prefix': '',
+            'search': 'report',
+            'files[]': (io.BytesIO(b'new'), 'report-new.txt'),
+        }
+        rv = client.post(
+            _ns_path('/files'),
+            data=data,
+            content_type='multipart/form-data',
+            headers={'HX-Request': 'true'},
+        )
+        assert rv.status_code == 200
+        assert b'name="search" value="report"' in rv.data
+        assert b'report-old.txt' in rv.data
+        assert b'report-new.txt' in rv.data
 
     def test_search_with_special_characters_does_not_crash(self, client, s3_bucket) -> None:
         """A query containing JMESPath metacharacters (backtick, quote,

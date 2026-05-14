@@ -1,17 +1,19 @@
 {%- set current_prefix = current_prefix if current_prefix is defined else request.args.get('prefix', '') -%}
+{%- set current_search = current_search if current_search is defined else request.args.get('search', '') -%}
 <input type="hidden" name="prefix" value="{{ current_prefix }}">
+<input type="hidden" name="search" value="{{ current_search }}">
 <div class="space-y-4">
   {# breadcrumb — uses the same current_prefix as the hidden input above #}
-  <nav class="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 truncate"
+  <nav class="flex items-center gap-1.5 truncate text-sm font-medium text-gray-600 dark:text-gray-300"
        aria-label="Breadcrumb">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
          stroke-width="1.5" stroke="currentColor" class="h-4 w-4 text-gray-400 flex-shrink-0">
       <path stroke-linecap="round" stroke-linejoin="round"
             d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
     </svg>
-    <a class="hover:text-blue-600 hover:underline"
-       href="{{ url_for('flask_s3_viewer.files') }}"
-       hx-get="{{ url_for('flask_s3_viewer.files') }}"
+    <a class="rounded px-1 py-0.5 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+       href="{{ url_for('flask_s3_viewer.files', search=current_search or None) }}"
+       hx-get="{{ url_for('flask_s3_viewer.files', search=current_search or None) }}"
        hx-target="#file-list"
        hx-push-url="true">root</a>
     {%- set parts = current_prefix.strip('/').split('/') if current_prefix else [] -%}
@@ -23,25 +25,50 @@
       {%- if loop.last -%}
         <span class="text-gray-900 dark:text-gray-100">{{ part }}</span>
       {%- else -%}
-        <a class="hover:text-blue-600 hover:underline"
-           href="{{ url_for('flask_s3_viewer.files', prefix=crumb) }}"
-           hx-get="{{ url_for('flask_s3_viewer.files', prefix=crumb) }}"
+        <a class="rounded px-1 py-0.5 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+           href="{{ url_for('flask_s3_viewer.files', prefix=crumb, search=current_search or None) }}"
+           hx-get="{{ url_for('flask_s3_viewer.files', prefix=crumb, search=current_search or None) }}"
            hx-target="#file-list"
            hx-push-url="true">{{ part }}</a>
       {%- endif -%}
     {%- endfor -%}
   </nav>
 
-  <div class="flex items-center justify-between gap-3 -mb-1">
-    <div id="fsv-selection-bar" class="text-xs text-gray-500 dark:text-gray-400" data-empty-text="Select rows for bulk actions">
+  <div class="-mb-1 flex items-center justify-between gap-3">
+    <div id="fsv-selection-bar" class="text-xs font-medium text-gray-500 dark:text-gray-400" data-empty-text="Select rows for bulk actions">
       Select rows for bulk actions
     </div>
-    <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center justify-end gap-2">
+      <form class="relative block"
+            hx-get="{{ url_for('flask_s3_viewer.files') }}"
+            hx-trigger="keyup changed delay:300ms from:find input[type='search'], search from:find input[type='search']"
+            hx-target="#file-list"
+            hx-push-url="true">
+        <input type="hidden" name="prefix" value="{{ current_prefix }}" id="fsv-search-prefix">
+        <input type="hidden" name="search_state" value="{{ current_search }}" id="fsv-search-state">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none text-gray-400">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+               stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+          </svg>
+        </span>
+        <input type="search"
+               id="fsv-search-input"
+               name="search"
+               value="{{ current_search }}"
+               placeholder="Search files..."
+               autocomplete="off"
+               spellcheck="false"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();}"
+               oninput="(function(){var live=document.querySelector('#file-list input[name=prefix]');var dst=document.getElementById('fsv-search-prefix');if(live&&dst)dst.value=live.value||'';})();"
+               class="h-9 w-52 rounded-md border border-gray-300 bg-white pl-8 pr-3 text-sm text-gray-900 shadow-sm focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/10 md:w-64">
+      </form>
       <button id="fsv-bulk-delete"
               type="button"
               disabled
               onclick="window.fsvBulkDelete();"
-              class="inline-flex items-center gap-1.5 rounded-md border border-red-300 text-red-600 px-3 py-1 text-xs font-medium whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed hover:bg-red-50 dark:hover:bg-red-900/30 transition">
+              class="inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs font-medium whitespace-nowrap text-red-600 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-red-900/50 dark:bg-gray-800 dark:text-red-300 dark:hover:bg-red-900/30">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
              stroke-width="1.5" stroke="currentColor" class="h-3.5 w-3.5">
           <path stroke-linecap="round" stroke-linejoin="round"
@@ -51,7 +78,7 @@
       </button>
       <button type="button"
               onclick="(function(){var n=prompt('New folder name:');if(!n)return;n=n.replace(/^\/+|\/+$/g,'');if(!n)return;var hidden=document.querySelector('#file-list input[name=prefix]')||document.querySelector('input[name=prefix]');var base=(hidden||{}).value||'';var mk=document.getElementById('fsv-mkdir-prefix');if(!mk)return;mk.value=base+n+'/';if(window.htmx){window.htmx.trigger('#fsv-mkdir-form','submit');}else{document.getElementById('fsv-mkdir-form').submit();}})();"
-              class="inline-flex items-center gap-1.5 rounded-md border border-gray-300 dark:border-gray-600 px-3 py-1 text-xs font-medium whitespace-nowrap hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              class="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium whitespace-nowrap text-gray-800 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
               title="Create a new folder under the current prefix">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
              stroke-width="1.7" stroke="currentColor" class="h-3.5 w-3.5">
@@ -63,13 +90,13 @@
     </div>
   </div>
 
-  <div class="overflow-hidden rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+  <div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-      <thead class="bg-gray-50 dark:bg-gray-900/50">
+      <thead class="bg-gray-50 dark:bg-gray-900/40">
         <tr>
           <th class="px-3 py-2 w-8">
             <input type="checkbox" id="fsv-select-all"
-                   class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                   class="rounded border-gray-300 bg-white text-gray-900 focus:ring-gray-900 dark:border-gray-400 dark:bg-gray-800 dark:text-blue-500 dark:ring-offset-gray-900 dark:focus:ring-blue-400"
                    onclick="window.fsvToggleAll(this);"
                    aria-label="Select all rows">
           </th>
@@ -89,7 +116,7 @@
           {%- else -%}
             {%- set _parent_prefix = '' -%}
           {%- endif -%}
-          <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+          <tr class="transition hover:bg-gray-50 dark:hover:bg-gray-700/40">
             <td class="px-3 py-2 w-8"></td>
             <td class="px-4 py-2 truncate max-w-md">
               <span class="inline-flex items-center gap-2">
@@ -99,9 +126,9 @@
                   <path stroke-linecap="round" stroke-linejoin="round"
                         d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
                 </svg>
-                <a class="text-blue-600 hover:underline truncate font-medium"
-                   href="{{ url_for('flask_s3_viewer.files', prefix=_parent_prefix) }}"
-                   hx-get="{{ url_for('flask_s3_viewer.files', prefix=_parent_prefix) }}"
+                <a class="truncate font-medium text-gray-700 hover:text-gray-950 dark:text-gray-200 dark:hover:text-white"
+                   href="{{ url_for('flask_s3_viewer.files', prefix=_parent_prefix, search=current_search or None) }}"
+                   hx-get="{{ url_for('flask_s3_viewer.files', prefix=_parent_prefix, search=current_search or None) }}"
                    hx-target="#file-list"
                    hx-push-url="true"
                    title="Go up to {{ _parent_prefix or '(root)' }}">..</a>
@@ -116,13 +143,13 @@
         {# Folder rows first (Finder convention). #}
         {% for p in FS3V_PREFIXES %}
           {% if p %}
-            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+            <tr class="transition hover:bg-gray-50 dark:hover:bg-gray-700/40">
               <td class="px-3 py-2 w-8">
                 <input type="checkbox"
-                       class="fsv-row-select rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                       class="fsv-row-select rounded border-gray-300 bg-white text-gray-900 focus:ring-gray-900 dark:border-gray-400 dark:bg-gray-800 dark:text-blue-500 dark:ring-offset-gray-900 dark:focus:ring-blue-400"
                        data-fsv-key="{{ p['Prefix'] }}"
                        data-fsv-type="folder"
-                       onchange="window.fsvRefreshSelection();"
+                       onclick="window.fsvSelectRow(this, event);"
                        aria-label="Select folder {{ p['Prefix'] }}">
               </td>
               <td class="px-4 py-2 truncate max-w-md">
@@ -134,9 +161,9 @@
                           d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
                   </svg>
                   {%- set folder_basename = p['Prefix'].rstrip('/').rsplit('/', 1)[-1] + '/' -%}
-                  <a class="text-blue-600 hover:underline truncate font-medium"
-                     href="{{ url_for('flask_s3_viewer.files', prefix=p['Prefix']) }}"
-                     hx-get="{{ url_for('flask_s3_viewer.files', prefix=p['Prefix']) }}"
+                  <a class="truncate font-medium text-gray-800 hover:text-gray-950 dark:text-gray-100 dark:hover:text-white"
+                     href="{{ url_for('flask_s3_viewer.files', prefix=p['Prefix'], search=current_search or None) }}"
+                     hx-get="{{ url_for('flask_s3_viewer.files', prefix=p['Prefix'], search=current_search or None) }}"
                      hx-target="#file-list"
                      hx-push-url="true"
                      title="{{ p['Prefix'] }}">{{ folder_basename }}</a>
@@ -145,9 +172,11 @@
               <td class="px-4 py-2 text-right text-gray-400">—</td>
               <td class="px-4 py-2 text-gray-400">—</td>
               <td class="px-4 py-2 text-right">
-                <button class="inline-flex items-center rounded p-1 text-gray-500 hover:text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                <button class="fsv-delete-action inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-300"
+                        onclick="return window.fsvConfirmDelete(this);"
+                        data-delete-message="Delete folder {{ p['Prefix'] }} and ALL of its contents?"
                         hx-delete="{{ url_for('flask_s3_viewer.files_delete', key=p['Prefix']) }}"
-                        hx-confirm="Delete folder '{{ p['Prefix'] }}' and ALL of its contents?"
+                        hx-disabled-elt="closest tr button, closest tr a, closest tr input"
                         hx-target="closest tr"
                         hx-swap="outerHTML swap:300ms"
                         title="Delete folder"
@@ -158,6 +187,9 @@
                           d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                   </svg>
                 </button>
+                <span class="fsv-delete-loading hidden inline-flex items-center rounded-md bg-gray-100 dark:bg-gray-700 px-2 py-1 text-xs font-medium text-gray-500 dark:text-gray-300">
+                  Deleting...
+                </span>
               </td>
             </tr>
           {% endif %}
@@ -166,13 +198,13 @@
         {# File rows. #}
         {% for c in FS3V_CONTENTS %}
           {% if c %}
-            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+            <tr class="transition hover:bg-gray-50 dark:hover:bg-gray-700/40">
               <td class="px-3 py-2 w-8">
                 <input type="checkbox"
-                       class="fsv-row-select rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                       class="fsv-row-select rounded border-gray-300 bg-white text-gray-900 focus:ring-gray-900 dark:border-gray-400 dark:bg-gray-800 dark:text-blue-500 dark:ring-offset-gray-900 dark:focus:ring-blue-400"
                        data-fsv-key="{{ c['Key'] }}"
                        data-fsv-type="file"
-                       onchange="window.fsvRefreshSelection();"
+                       onclick="window.fsvSelectRow(this, event);"
                        aria-label="Select file {{ c['Key'] }}">
               </td>
               <td class="px-4 py-2 truncate max-w-md">
@@ -185,13 +217,13 @@
                   </svg>
                   {%- set file_basename = c['Key'].rsplit('/', 1)[-1] -%}
                   {% if FS3V_OBJECT_HOSTNAME %}
-                    <a class="text-blue-600 hover:underline truncate"
+                    <a class="truncate font-medium text-gray-800 hover:text-gray-950 dark:text-gray-100 dark:hover:text-white"
                        href="{{ FS3V_OBJECT_HOSTNAME }}/{{ c['Key'] }}"
                        target="_blank"
                        rel="noopener noreferrer"
                        title="{{ c['Key'] }}">{{ file_basename }}</a>
                   {% else %}
-                    <a class="text-blue-600 hover:underline truncate"
+                    <a class="truncate font-medium text-gray-800 hover:text-gray-950 dark:text-gray-100 dark:hover:text-white"
                        href="{{ url_for('flask_s3_viewer.files_download', key=c['Key']) }}"
                        title="{{ c['Key'] }}">{{ file_basename }}</a>
                   {% endif %}
@@ -201,19 +233,21 @@
               <td class="px-4 py-2 text-gray-600 dark:text-gray-300">{{ c['LastModified'] }}</td>
               <td class="px-4 py-2 text-right">
                 <div class="inline-flex items-center gap-1">
-                  <a class="inline-flex items-center rounded p-1 text-gray-500 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  <a class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-700 dark:hover:text-gray-100"
                      href="{{ url_for('flask_s3_viewer.files_download', key=c['Key']) }}"
                      title="Download"
                      aria-label="Download">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                          stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
-                      <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                     </svg>
                   </a>
-                  <button class="inline-flex items-center rounded p-1 text-gray-500 hover:text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  <button class="fsv-delete-action inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-300"
+                          onclick="return window.fsvConfirmDelete(this);"
+                          data-delete-message="Delete {{ c['Key'] }}?"
                           hx-delete="{{ url_for('flask_s3_viewer.files_delete', key=c['Key']) }}"
-                          hx-confirm="Delete {{ c['Key'] }}?"
+                          hx-disabled-elt="closest tr button, closest tr a, closest tr input"
                           hx-target="closest tr"
                           hx-swap="outerHTML swap:300ms"
                           title="Delete"
@@ -224,6 +258,9 @@
                             d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                     </svg>
                   </button>
+                  <span class="fsv-delete-loading hidden inline-flex items-center rounded-md bg-gray-100 dark:bg-gray-700 px-2 py-1 text-xs font-medium text-gray-500 dark:text-gray-300">
+                    Deleting...
+                  </span>
                 </div>
               </td>
             </tr>
@@ -251,4 +288,3 @@
 
   {% include '_pagination.html' %}
 </div>
-
