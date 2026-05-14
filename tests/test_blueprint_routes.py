@@ -212,3 +212,29 @@ class TestObjectHostname:
         # In-process download route is used when object_hostname is not set.
         assert b'/files/media/dog.jpg' in rv.data
         assert b'https://cdn.example.com' not in rv.data
+
+
+class TestParentNavigation:
+    """Parent-folder (".." row) appears only inside a sub-prefix and links
+    one segment up, mirroring familiar file-browser semantics.
+    """
+
+    def test_no_parent_row_at_root(self, client) -> None:
+        rv = client.get(_ns_path('/files'))
+        assert rv.status_code == 200
+        assert b'Go up to' not in rv.data
+
+    def test_parent_row_links_to_root_from_one_level_deep(self, client) -> None:
+        rv = client.get(_ns_path('/files?prefix=foo/'))
+        assert rv.status_code == 200
+        # Title attribute reports the (empty) parent as "(root)" for clarity.
+        assert b'Go up to (root)' in rv.data
+
+    def test_parent_row_links_to_one_level_up_from_nested(self, client) -> None:
+        rv = client.get(_ns_path('/files?prefix=foo/bar/'))
+        assert rv.status_code == 200
+        assert b'Go up to foo/' in rv.data
+        # Flask url_for keeps the slash literal in query strings, so the
+        # parent link reads ``?prefix=foo/`` rather than the percent-encoded
+        # form.
+        assert b'prefix=foo/' in rv.data

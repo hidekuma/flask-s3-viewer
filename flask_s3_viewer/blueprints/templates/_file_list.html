@@ -80,6 +80,39 @@
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+        {# Parent navigation row — only when we're inside a sub-prefix.
+           Computes the parent by stripping the last path segment. #}
+        {%- set _stripped = current_prefix.rstrip('/') if current_prefix else '' -%}
+        {% if _stripped %}
+          {%- if '/' in _stripped -%}
+            {%- set _parent_prefix = _stripped.rsplit('/', 1)[0] + '/' -%}
+          {%- else -%}
+            {%- set _parent_prefix = '' -%}
+          {%- endif -%}
+          <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+            <td class="px-3 py-2 w-8"></td>
+            <td class="px-4 py-2 truncate max-w-md">
+              <span class="inline-flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                     stroke-width="1.5" stroke="currentColor"
+                     class="h-4 w-4 text-gray-500 flex-shrink-0">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
+                </svg>
+                <a class="text-blue-600 hover:underline truncate font-medium"
+                   href="{{ url_for('flask_s3_viewer.files', prefix=_parent_prefix) }}"
+                   hx-get="{{ url_for('flask_s3_viewer.files', prefix=_parent_prefix) }}"
+                   hx-target="#file-list"
+                   hx-push-url="true"
+                   title="Go up to {{ _parent_prefix or '(root)' }}">..</a>
+              </span>
+            </td>
+            <td class="px-4 py-2 text-right text-gray-400">—</td>
+            <td class="px-4 py-2 text-gray-400">—</td>
+            <td class="px-4 py-2"></td>
+          </tr>
+        {% endif %}
+
         {# Folder rows first (Finder convention). #}
         {% for p in FS3V_PREFIXES %}
           {% if p %}
