@@ -17,12 +17,12 @@ Browse, upload, and manage Amazon S3 buckets from any Flask application.
 - **Modern UI** — Tailwind CSS, HTMX-driven partial updates, light/dark mode, inline heroicons. Parent-folder (`..`) row and logged-in user widget in the header. No build pipeline required for end users (CSS ships pre-built).
 - **Optional auth** — Hook framework (`auth_callback` + `permission_callback` with per-action constants) plus built-in Google OAuth via the `[auth]` extra. Auth routes (`/auth/{login,callback,logout}`) live outside the namespace prefix so one redirect URI covers every viewer on the app.
 - **Smart search** — Case-insensitive substring match, Unicode-safe (Korean / Japanese / accented Latin), NFC-normalised so macOS uploads match the browser IME, recurses into sub-folders, and surfaces matching folder rows.
-- **Secure by default** — Rejects path-traversal tokens (`..`, `.`, `//`, `\`) at every prefix boundary. Cache directory escape blocked by `realpath` containment.
+- **Secure by default** — Rejects path-traversal tokens (`..`, `.`, `//`, `\`) at every prefix boundary. Cache directory escape blocked by `realpath` containment, and cache files are stored as JSON with restrictive file permissions.
 - **Flask extension pattern** — `FlaskS3Viewer(app, namespace=...)` auto-registers. Supports multiple buckets per app via `add_new_one(...)`. Works with `init_app(app)` for deferred binding.
 - **Multi-bucket** — Independent namespaces, optional per-bucket CloudFront / external `object_hostname`.
 - **Presigned uploads** — Multi-file presigned POST flow for large files; default form upload also supported.
-- **Caching** — File-system pickle cache with TTL; automatically invalidated on writes (search bypasses the cache).
-- **Tested** — 190 pytest cases, ruff + mypy clean, moto-based S3 mock.
+- **Caching** — File-system JSON cache with TTL; automatically invalidated on writes (search bypasses the cache, and authenticated listings are user-isolated).
+- **Tested** — 203 pytest cases, ruff + mypy clean, moto-based S3 mock.
 
 ## Installation
 
@@ -153,7 +153,7 @@ All `config` keys are forwarded to the underlying S3 client:
 | `session_token`  | str \| None      | None    |                                                |
 | `verify`         | bool \| str      | False   | TLS verify (or path to CA bundle).             |
 | `base_path`      | str              | `""`    | Object key prefix scope for this viewer.       |
-| `use_cache`      | bool             | False   | File-system pickle cache.                      |
+| `use_cache`      | bool             | False   | File-system JSON cache.                        |
 | `cache_dir`      | str \| None      | None    | Required when `use_cache=True`.                |
 | `ttl`            | int (seconds)    | 300     | Cache time-to-live.                            |
 | `role_arn`       | str \| None      | None    | If set, the wrapper runs STS `AssumeRole` on top of the base credentials and uses the returned temporary keys (cross-account, multi-tenant). |

@@ -34,6 +34,12 @@ class TestListing:
         rv = client.get(_ns_path('/files?prefix=../etc'))
         assert rv.status_code == 400
 
+    def test_listing_sets_security_headers(self, client) -> None:
+        rv = client.get(_ns_path('/files'))
+        assert rv.headers['X-Content-Type-Options'] == 'nosniff'
+        assert rv.headers['X-Frame-Options'] == 'DENY'
+        assert 'Content-Security-Policy' in rv.headers
+
 
 class TestMkdir:
     def test_post_mkdir_creates_empty_object(self, client, s3_bucket) -> None:

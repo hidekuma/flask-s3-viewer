@@ -110,8 +110,24 @@ class AWSS3Client(AWSSession):
         result = os.path.join(self._base_path, prefix)
         return result
 
+    def _validate_object_name(self, object_name: str) -> str:
+        if not object_name or '\\' in object_name or '\x00' in object_name:
+            raise InvalidPrefix(object_name)
+        if object_name.startswith('/'):
+            raise InvalidPrefix(object_name)
+        segments = object_name.split('/')
+        if segments and segments[-1] == '':
+            segments = segments[:-1]
+        for seg in segments:
+            if seg in ('', '.', '..'):
+                raise InvalidPrefix(object_name)
+        return object_name
+
     def get_object_name(self, object_name: str) -> str:
-        return os.path.join(self.prefixer(""), object_name)
+        object_name = self._validate_object_name(object_name)
+        if self._base_path:
+            return f'{self._base_path}/{object_name}'
+        return object_name
 
     def find_one(self, object_name: str, range: str | None = None) -> dict | None:
         """Fetch one object (optionally a byte range).
@@ -170,6 +186,7 @@ class AWSS3Client(AWSSession):
     def post_presign(self, object_name: str) -> dict:
         try:
             content_type = mimetypes.guess_type(object_name)
+            key_prefix = f'{self._base_path}/' if self._base_path else ''
             r = self._s3.generate_presigned_post(
                 self._bucket_name,
                 object_name,
@@ -178,6 +195,7 @@ class AWSS3Client(AWSSession):
                 },
                 Conditions=[
                     {"Content-Type": content_type[0]},
+                    ["starts-with", "$key", key_prefix],
                 ],
                 ExpiresIn=600,
             )
@@ -263,6 +281,7 @@ class AWSS3Client(AWSSession):
         starting_token: str | None = None,
         search: str | None = None,
         apply_cache: bool = True,
+        cache_identity: str | None = None,
     ) -> tuple[list, list, str | None]:
         prefix = self.prefixer(prefix)
 
@@ -379,7 +398,7 @@ class AWSS3Client(AWSSession):
         if self.use_cache and apply_cache and not search:
             salt = self._cache.make_hash(
                 f"""{delimiter}|{starting_token}|{
-                    search}|{max_items}|{page_size}"""
+                    search}|{max_items}|{page_size}|{cache_identity or ''}"""
             )
             cached = self._cache.get(
                 prefix,

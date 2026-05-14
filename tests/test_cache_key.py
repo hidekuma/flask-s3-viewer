@@ -113,6 +113,20 @@ class TestSetGetRoundTrip:
         cache.remove('foo')
         assert cache.get('foo') is None
 
+    def test_invalid_json_cache_entry_is_ignored_and_deleted(self, cache, tmp_path) -> None:
+        target = tmp_path / 'cache' / 'foo'
+        target.mkdir(parents=True, exist_ok=True)
+        path = target / 'default'
+        path.write_bytes(b'not-json')
+        assert cache.get('foo') is None
+        assert not path.exists()
+
+    def test_cache_file_permissions_hardened(self, cache, tmp_path) -> None:
+        cache.set('secure', {'x': 1})
+        path = tmp_path / 'cache' / 'secure' / 'default'
+        mode = path.stat().st_mode & 0o777
+        assert mode == 0o600
+
 
 class TestTrailingSlashRstrip:
     """Trailing '/' is rstrip'd so 'foo' and 'foo/' map to the same key."""

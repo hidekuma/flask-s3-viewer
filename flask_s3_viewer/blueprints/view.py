@@ -105,7 +105,34 @@ def _enforce_auth(fs3viewer: FlaskS3Viewer, action: str, key: str | None = None)
         abort(401, 'Authentication required.')
     if not fs3viewer.permission_callback(email, action, g.BUCKET_NAMESPACE, key):
         abort(403, 'Forbidden.')
+    g.FSV_AUTH_EMAIL = email
     return email
+
+
+def _normalize_object_key(
+    fs3viewer: FlaskS3Viewer,
+    key: str,
+) -> tuple[str, str]:
+    decoded = urllib.parse.unquote_plus(key)
+    return decoded, fs3viewer.get_object_name(decoded)
+
+
+def _normalize_prefix_key(
+    fs3viewer: FlaskS3Viewer,
+    prefix: str | None,
+) -> tuple[str, str]:
+    decoded = urllib.parse.unquote_plus(prefix or '')
+    return decoded, fs3viewer.prefixer(decoded)
+
+
+def _normalize_upload_filename(filename: str) -> str:
+    if not filename or '\x00' in filename:
+        raise InvalidPrefix(filename)
+    if '/' in filename or '\\' in filename:
+        raise InvalidPrefix(filename)
+    if filename in ('.', '..'):
+        raise InvalidPrefix(filename)
+    return filename
 
 
 def require(action: str) -> Any:
@@ -118,7 +145,14 @@ def require(action: str) -> Any:
         @wraps(fn)
         def wrapped(*args: Any, **kwargs: Any) -> Any:
             viewer = _get_viewer(g.BUCKET_NAMESPACE)
-            maybe_redirect = _enforce_auth(viewer, action, kwargs.get('key'))
+            key = kwargs.get('key')
+            canonical_key: str | None = None
+            if key is not None:
+                try:
+                    _decoded_key, canonical_key = _normalize_object_key(viewer, key)
+                except InvalidPrefix:
+                    abort(400, 'Invalid prefix')
+            maybe_redirect = _enforce_auth(viewer, action, canonical_key)
             # `_enforce_auth` may have returned a redirect response (Google login).
             if maybe_redirect is not None and not isinstance(maybe_redirect, str):
                 return maybe_redirect
@@ -156,8 +190,11 @@ def files_download(key: str) -> Any:
         """
         key: encoded
         """
-        key = urllib.parse.unquote_plus(key)
         fs3viewer = _get_viewer(g.BUCKET_NAMESPACE)
+        try:
+            key, _canonical_key = _normalize_object_key(fs3viewer, key)
+        except InvalidPrefix:
+            abort(400, 'Invalid prefix')
         range_header = request.headers.get('Range')
         try:
             obj = fs3viewer.find_one(key, range=range_header)
@@ -215,6 +252,7 @@ def files_delete(key: str) -> tuple[str, int]:
         """
         fs3viewer = _get_viewer(g.BUCKET_NAMESPACE)
         try:
+            key, _canonical_key = _normalize_object_key(fs3viewer, key)
             fs3viewer.remove(key)
             # HTMX flow: hx-swap removes the row, so an empty 200 body is the
             # idiomatic response. Non-HTMX callers still get the v0.x 204.
@@ -229,21 +267,25 @@ def files_delete(key: str) -> tuple[str, int]:
 
 
 @blueprint.route("/files/presign", methods=['POST'])
-@require(ACTION_PRESIGN)
 def files_presign() -> Any:
-    prefix = request.form.get('prefix', '')
-    prefix = urllib.parse.unquote_plus(prefix)
     fs3viewer = _get_viewer(g.BUCKET_NAMESPACE)
     try:
-        prefix = fs3viewer.prefixer(prefix)
+        _decoded_prefix, prefix = _normalize_prefix_key(
+            fs3viewer,
+            request.form.get('prefix', ''),
+        )
     except InvalidPrefix:
         abort(400, 'Invalid prefix')
+    _redirect = _enforce_auth(fs3viewer, ACTION_PRESIGN, prefix)
+    if _redirect is not None and not isinstance(_redirect, str):
+        return _redirect
     file_list = request.form.get("file_list")
     rtns: list[dict] = []
     if file_list:
         for f in file_list.split(','):
             try:
-                filename = os.path.join(prefix, f)
+                safe_name = _normalize_upload_filename(f)
+                filename = f'{prefix}{safe_name}'
                 if fs3viewer.is_exists(filename):
                     rtns.append({'status_code': 409})
                 elif not is_allowed(fs3viewer, filename):
@@ -251,6 +293,8 @@ def files_presign() -> Any:
                 else:
                     r = fs3viewer.post_presign(filename)
                     rtns.append(r)
+            except InvalidPrefix:
+                abort(400, 'Invalid prefix')
             except Exception:
                 rtns.append({'status_code': 500})
 
@@ -264,10 +308,6 @@ def files() -> Any:
     # files() carries two distinct actions (LIST vs UPLOAD) so it can't
     # use the @require decorator wholesale — enforce per branch.
     fs3viewer_for_auth = _get_viewer(g.BUCKET_NAMESPACE)
-    _auth_action = ACTION_UPLOAD if request.method == 'POST' else ACTION_LIST
-    _redirect = _enforce_auth(fs3viewer_for_auth, _auth_action)
-    if _redirect is not None and not isinstance(_redirect, str):
-        return _redirect
     if request.method == "POST":
         """
         prefix: encoded
@@ -275,14 +315,18 @@ def files() -> Any:
         prefixer(): 탐색 및 폴더생성시
         """
         # form
-        raw_prefix = request.form.get('prefix', '')
-        raw_prefix = urllib.parse.unquote_plus(raw_prefix)
         files_list: Iterable[FileStorage] = request.files.getlist("files[]")
         fs3viewer = _get_viewer(g.BUCKET_NAMESPACE)
         try:
-            full_prefix = fs3viewer.prefixer(raw_prefix)
+            raw_prefix, full_prefix = _normalize_prefix_key(
+                fs3viewer,
+                request.form.get('prefix', ''),
+            )
         except InvalidPrefix:
             abort(400, 'Invalid prefix')
+        _redirect = _enforce_auth(fs3viewer_for_auth, ACTION_UPLOAD, full_prefix)
+        if _redirect is not None and not isinstance(_redirect, str):
+            return _redirect
         if not files_list and full_prefix:
             if fs3viewer.is_exists(full_prefix):
                 abort(409, 'Already exists.')
@@ -297,10 +341,13 @@ def files() -> Any:
                 request.form.get('overwrite') == '1'
                 or request.headers.get('HX-Fsv-Overwrite') == '1'
             )
-            targets = [
-                os.path.join(full_prefix, f.filename or "")
-                for f in files_list
-            ]
+            targets: list[str] = []
+            for f in files_list:
+                try:
+                    safe_name = _normalize_upload_filename(f.filename or '')
+                except InvalidPrefix:
+                    abort(400, 'Invalid prefix')
+                targets.append(f'{full_prefix}{safe_name}')
             if not allow_overwrite:
                 conflicts = [t for t in targets if fs3viewer.is_exists(t)]
                 if conflicts:
@@ -313,7 +360,10 @@ def files() -> Any:
             # upload: stay on the same prefix the user was viewing.
             listing_prefix = raw_prefix
         if request.headers.get('HX-Request'):
-            prefixes, contents, next_token = fs3viewer.find(prefix=listing_prefix)
+            prefixes, contents, next_token = fs3viewer.find(
+                prefix=listing_prefix,
+                cache_identity=getattr(g, 'FSV_AUTH_EMAIL', None),
+            )
             # FS3V_TITLE/LOGO/UPLOAD_TYPE/OBJECT_HOSTNAME come from the
             # blueprint context processor — keep request-specific data
             # (listing + current_prefix) here.
@@ -332,8 +382,6 @@ def files() -> Any:
         search: decoded
         """
         # args
-        prefix = request.args.get('prefix', '')
-        prefix = urllib.parse.unquote_plus(prefix)
         starting_token: str | None = request.args.get('starting_token')
         search = request.args.get('search')
         page = int(request.args.get('page', 1)) - 1
@@ -344,18 +392,27 @@ def files() -> Any:
         max_items = fs3viewer.max_items
         max_pages = fs3viewer.max_pages
         try:
+            prefix, full_prefix = _normalize_prefix_key(
+                fs3viewer,
+                request.args.get('prefix', ''),
+            )
+            _redirect = _enforce_auth(fs3viewer_for_auth, ACTION_LIST, full_prefix)
+            if _redirect is not None and not isinstance(_redirect, str):
+                return _redirect
             if prefix:
                 prefixes, contents, next_token = fs3viewer.find(
                     prefix=prefix,
                     starting_token=starting_token,
                     max_items=max_items * max_pages,
                     search=search,
+                    cache_identity=getattr(g, 'FSV_AUTH_EMAIL', None),
                 )
             else:
                 prefixes, contents, next_token = fs3viewer.find(
                     starting_token=starting_token,
                     max_items=max_items * max_pages,
                     search=search,
+                    cache_identity=getattr(g, 'FSV_AUTH_EMAIL', None),
                 )
         except InvalidPrefix:
             abort(400, 'Invalid prefix')

@@ -25,6 +25,31 @@ __version__: str = "1.0.0a2"
 _EXTENSION_KEY: str = 'flask_s3_viewer'
 
 
+def _install_security_headers(app: Flask) -> None:
+    if app.extensions.get('flask_s3_viewer.security_headers'):
+        return
+
+    @app.after_request
+    def _apply_security_headers(response: Any) -> Any:
+        response.headers.setdefault(
+            'Content-Security-Policy',
+            "default-src 'self'; "
+            "img-src 'self' data:; "
+            "style-src 'self' 'unsafe-inline'; "
+            "script-src 'self' 'unsafe-inline'; "
+            "font-src 'self' data:; "
+            "connect-src 'self'; "
+            "frame-ancestors 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self'",
+        )
+        response.headers.setdefault('X-Content-Type-Options', 'nosniff')
+        response.headers.setdefault('X-Frame-Options', 'DENY')
+        return response
+
+    app.extensions['flask_s3_viewer.security_headers'] = True
+
+
 def _resolve_logo(logo_url: str | None, logo_path: str | None) -> str | None:
     """Return a browser-usable URL for the logo.
 
@@ -258,6 +283,7 @@ class FlaskS3Viewer(AWSS3Client):
             app.register_blueprint(auth_blueprint)
             logging.info("*** registered FlaskS3Viewer blueprint! ***")
             logging.info(app.url_map)
+        _install_security_headers(app)
 
         # When the deployer points at a custom templates directory, prepend a
         # FileSystemLoader so their files override the bundled originals via

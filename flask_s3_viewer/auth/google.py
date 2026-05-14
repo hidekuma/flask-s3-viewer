@@ -22,6 +22,7 @@ namespaces). Per-namespace allow-lists are evaluated in the
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import urlparse
 
 from flask import (
     Flask,
@@ -37,6 +38,15 @@ _AUTHLIB_MISSING_MSG = (
     "Google OAuth requires the optional 'authlib' dependency. "
     "Install with: pip install 'flask_s3_viewer[auth]'"
 )
+
+
+def _is_safe_next_url(app: Flask, next_url: str | None) -> bool:
+    if not next_url:
+        return False
+    parsed = urlparse(next_url)
+    if not parsed.netloc:
+        return parsed.path.startswith('/')
+    return parsed.netloc == request.host
 
 
 def configure_google_oauth(
@@ -77,6 +87,15 @@ def configure_google_oauth(
             "Flask app.secret_key must be set before enabling Google OAuth — "
             "it signs the session cookie that carries the logged-in email."
         )
+    if not app.config.get('SESSION_COOKIE_HTTPONLY'):
+        app.config['SESSION_COOKIE_HTTPONLY'] = True
+    if app.config.get('SESSION_COOKIE_SAMESITE') is None:
+        app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    if not app.config.get('SESSION_COOKIE_SECURE'):
+        app.logger.warning(
+            'Google OAuth is enabled without SESSION_COOKIE_SECURE=True; '
+            'set it in production so session cookies are HTTPS-only.'
+        )
 
 
 def session_auth_callback(_request: Any) -> str | None:
@@ -99,7 +118,9 @@ def login() -> Any:
     # ``next`` is virtually always present — ``_enforce_auth`` sets it to
     # ``request.url`` before redirecting here. Fall back to root only when
     # someone hits /auth/login directly.
-    next_url = request.args.get('next') or '/'
+    next_url = request.args.get('next')
+    if not _is_safe_next_url(current_app, next_url):
+        next_url = '/'
     session['fsv_login_next'] = next_url
     redirect_uri = url_for('flask_s3_viewer_auth.callback', _external=True)
     return google.authorize_redirect(redirect_uri)
@@ -119,7 +140,7 @@ def auth_callback() -> Any:
     # in case (some installs disable the inline parse).
     info = token.get('userinfo') or google.userinfo()
     email = (info or {}).get('email')
-    if not email:
+    if not email or not info.get('email_verified'):
         abort(401, 'Google did not return a verified email.')
     session['fsv_user_email'] = email
     return redirect(session.pop('fsv_login_next', '/'))
@@ -131,5 +152,8 @@ def logout() -> Any:
     re-auth at the IdP).
     """
     session.pop('fsv_user_email', None)
-    next_url = request.args.get('next') or '/'
+    next_url = request.args.get('next')
+    if not _is_safe_next_url(current_app, next_url):
+        next_url = '/'
+    assert next_url is not None
     return redirect(next_url)

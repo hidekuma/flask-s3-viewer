@@ -1,10 +1,11 @@
 import hashlib
+import json
 import logging
 import os
-import pickle
 import shutil
 import tempfile
 import time
+from datetime import date, datetime
 from typing import Any
 
 from ..errors import InvalidPrefix
@@ -26,11 +27,29 @@ class AWSCache:
         self._timeout: int = timeout
 
         if not os.path.isdir(cache_dir):
-            os.makedirs(cache_dir)
+            os.makedirs(cache_dir, mode=0o700)
+        try:
+            os.chmod(cache_dir, 0o700)
+        except OSError:
+            pass
 
     def make_hash(self, key: str) -> str:
         encoded = key.encode("utf-8")
         return hashlib.md5(encoded).hexdigest()
+
+    def _json_safe(self, value: Any) -> Any:
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            return value
+        if isinstance(value, (datetime, date)):
+            return value.isoformat()
+        if isinstance(value, dict):
+            return {
+                str(k): self._json_safe(v)
+                for k, v in value.items()
+            }
+        if isinstance(value, (list, tuple)):
+            return [self._json_safe(v) for v in value]
+        return str(value)
 
     def __make_key(
         self,
@@ -89,13 +108,23 @@ class AWSCache:
             expires_at = time.time() + self._timeout
 
         with os.fdopen(file_handler, "wb") as f:
-            # pickle protocol 3 >= python3.0
-            pickle.dump(expires_at, f, 3)
-            pickle.dump(value, f, 3)
+            payload = {
+                'expires_at': expires_at,
+                'value': self._json_safe(value),
+            }
+            f.write(json.dumps(payload).encode('utf-8'))
         ddir, dpath = self.__make_key(key, salt=salt, division=division)
         if not os.path.isdir(ddir):
-            os.makedirs(ddir)
+            os.makedirs(ddir, mode=0o700)
+        try:
+            os.chmod(ddir, 0o700)
+        except OSError:
+            pass
         shutil.move(temp_path, dpath)
+        try:
+            os.chmod(dpath, 0o600)
+        except OSError:
+            pass
 
     def get(
         self,
@@ -106,14 +135,21 @@ class AWSCache:
         try:
             _, dpath = self.__make_key(key, salt=salt, division=division)
             logging.debug(f'CACHE GET: "{key}"')
-            with open(dpath, "rb") as f:
-                expires_at = pickle.load(f)
+            with open(dpath, encoding='utf-8') as f:
+                payload = json.load(f)
+                expires_at = payload['expires_at']
                 if expires_at == 0 or expires_at >= time.time():
-                    return pickle.load(f)
+                    return payload['value']
                 else:
                     os.remove(dpath)
                     return None
         except FileNotFoundError:
+            return None
+        except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+            try:
+                os.remove(dpath)
+            except FileNotFoundError:
+                pass
             return None
 
     def remove(self, key: str, division: str | None = None) -> bool:

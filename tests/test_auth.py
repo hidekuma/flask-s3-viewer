@@ -11,6 +11,8 @@ Covers:
 """
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 from flask import Flask
 
@@ -32,19 +34,21 @@ def _make_app(s3_bucket, tmp_path, **viewer_kwargs) -> Flask:
     app = Flask(__name__)
     app.config['TESTING'] = True
     app.secret_key = 'test-secret-key'
+    config = {
+        'profile_name': None,
+        'bucket_name': bucket,
+        'region_name': 'us-east-1',
+        'access_key': 'testing',
+        'secret_key': 'testing',
+        'cache_dir': str(tmp_path / 'cache'),
+        'use_cache': True,
+        'ttl': 60,
+    }
+    config.update(viewer_kwargs.pop('config', {}))
     FlaskS3Viewer(
         app,
         namespace='fsv-auth',
-        config={
-            'profile_name': None,
-            'bucket_name': bucket,
-            'region_name': 'us-east-1',
-            'access_key': 'testing',
-            'secret_key': 'testing',
-            'cache_dir': str(tmp_path / 'cache'),
-            'use_cache': True,
-            'ttl': 60,
-        },
+        config=config,
         **viewer_kwargs,
     )
     return app
@@ -126,6 +130,15 @@ def test_email_allowlist_either_emails_or_domains():
     assert check('vip@anywhere.io', ACTION_LIST, 'ns', None) is True
     assert check('staff@example.com', ACTION_LIST, 'ns', None) is True
     assert check('stranger@nope.org', ACTION_LIST, 'ns', None) is False
+
+
+def test_email_allowlist_nfkc_normalizes_email_and_domain():
+    check = email_allowlist(
+        emails=['alice@example.com'],
+        domains=['example.com'],
+    )
+    assert check('alice@ｅxample.com', ACTION_LIST, 'ns', None) is True
+    assert check('ａｌｉｃｅ@example.com', ACTION_LIST, 'ns', None) is True
 
 
 # ---------------------------------------------------------------------------
@@ -215,6 +228,86 @@ def test_upload_path_uses_action_upload(s3_bucket, tmp_path):
     assert ACTION_UPLOAD in seen
 
 
+def test_download_permission_receives_canonical_key(s3_bucket, tmp_path):
+    seen: list[str | None] = []
+
+    def perm(_email, _action, _ns, key):
+        seen.append(key)
+        return False
+
+    app = _make_app(
+        s3_bucket, tmp_path,
+        auth_callback=lambda _req: 'a@b.com',
+        permission_callback=perm,
+        config={
+            'profile_name': None,
+            'bucket_name': s3_bucket[1],
+            'region_name': 'us-east-1',
+            'access_key': 'testing',
+            'secret_key': 'testing',
+            'cache_dir': str(tmp_path / 'cache'),
+            'use_cache': True,
+            'ttl': 60,
+            'base_path': 'team-a',
+        },
+    )
+    resp = app.test_client().get('/fsv-auth/files/report.txt')
+    assert resp.status_code == 403
+    assert seen == ['team-a/report.txt']
+
+
+def test_listing_permission_receives_canonical_prefix(s3_bucket, tmp_path):
+    seen: list[str | None] = []
+
+    def perm(_email, action, _ns, key):
+        if action == ACTION_LIST:
+            seen.append(key)
+        return False
+
+    app = _make_app(
+        s3_bucket, tmp_path,
+        auth_callback=lambda _req: 'a@b.com',
+        permission_callback=perm,
+        config={
+            'profile_name': None,
+            'bucket_name': s3_bucket[1],
+            'region_name': 'us-east-1',
+            'access_key': 'testing',
+            'secret_key': 'testing',
+            'cache_dir': str(tmp_path / 'cache'),
+            'use_cache': True,
+            'ttl': 60,
+            'base_path': 'team-a',
+        },
+    )
+    resp = app.test_client().get('/fsv-auth/files?prefix=docs/')
+    assert resp.status_code == 403
+    assert seen == ['team-a/docs/']
+
+
+def test_listing_cache_salt_varies_by_authenticated_user(s3_bucket, tmp_path):
+    app = _make_app(
+        s3_bucket, tmp_path,
+        auth_callback=lambda req: req.headers.get('X-User'),
+        permission_callback=lambda *a, **kw: True,
+    )
+    viewer = app.extensions['flask_s3_viewer']['fsv-auth']
+    original_make_hash = viewer._cache.make_hash
+    seen: list[str] = []
+
+    def capture_make_hash(key: str) -> str:
+        seen.append(key)
+        return original_make_hash(key)
+
+    viewer._cache.make_hash = capture_make_hash
+    client = app.test_client()
+    assert client.get('/fsv-auth/files', headers={'X-User': 'alice@example.com'}).status_code == 200
+    assert client.get('/fsv-auth/files', headers={'X-User': 'bob@example.com'}).status_code == 200
+    assert len(seen) >= 2
+    assert 'alice@example.com' in seen[0]
+    assert 'bob@example.com' in seen[1]
+
+
 # ---------------------------------------------------------------------------
 # Google OAuth route surface
 # ---------------------------------------------------------------------------
@@ -265,6 +358,16 @@ def test_google_login_redirects_to_google(s3_bucket, tmp_path):
         google_client_id='cid.apps.googleusercontent.com',
         google_client_secret='secret',
     )
+
+    class FakeGoogle:
+        def authorize_redirect(self, redirect_uri):
+            from flask import redirect
+
+            return redirect(
+                f'https://accounts.google.com/o/oauth2/auth?redirect_uri={redirect_uri}'
+            )
+
+    app.extensions['flask_s3_viewer.oauth'] = SimpleNamespace(google=FakeGoogle())
     client = app.test_client()
     resp = client.get('/auth/login', follow_redirects=False)
     assert resp.status_code in (301, 302)
@@ -285,6 +388,20 @@ def test_google_logout_clears_session(s3_bucket, tmp_path):
     assert resp.status_code in (301, 302)
     with client.session_transaction() as s:
         assert 'fsv_user_email' not in s
+
+
+def test_logout_rejects_external_next_redirect(s3_bucket, tmp_path):
+    app = _make_app(
+        s3_bucket, tmp_path,
+        google_client_id='cid.apps.googleusercontent.com',
+        google_client_secret='secret',
+    )
+    resp = app.test_client().get(
+        '/auth/logout?next=https://evil.example/phish',
+        follow_redirects=False,
+    )
+    assert resp.status_code in (301, 302)
+    assert resp.headers['Location'] == '/'
 
 
 def test_anonymous_get_redirects_to_login_when_google_configured(s3_bucket, tmp_path):
@@ -338,3 +455,30 @@ def test_session_auth_callback_reads_session(s3_bucket, tmp_path):
         s['fsv_user_email'] = 'logged-in@example.com'
     resp = client.get('/fsv-auth/files')
     assert resp.status_code == 200
+
+
+def test_google_oauth_sets_secure_session_cookie_defaults(s3_bucket, tmp_path):
+    app = _make_app(
+        s3_bucket, tmp_path,
+        google_client_id='cid.apps.googleusercontent.com',
+        google_client_secret='secret',
+    )
+    assert app.config['SESSION_COOKIE_HTTPONLY'] is True
+    assert app.config['SESSION_COOKIE_SAMESITE'] == 'Lax'
+
+
+def test_oauth_callback_requires_verified_email(s3_bucket, tmp_path):
+    app = _make_app(
+        s3_bucket, tmp_path,
+        google_client_id='cid.apps.googleusercontent.com',
+        google_client_secret='secret',
+    )
+
+    class FakeGoogle:
+        def authorize_access_token(self):
+            return {'userinfo': {'email': 'me@example.com', 'email_verified': False}}
+
+    app.extensions['flask_s3_viewer.oauth'] = SimpleNamespace(google=FakeGoogle())
+    client = app.test_client()
+    resp = client.get('/auth/callback')
+    assert resp.status_code == 401

@@ -21,6 +21,7 @@ nothing here is wired up):
 """
 from __future__ import annotations
 
+import unicodedata
 from collections.abc import Callable
 from typing import Any
 
@@ -70,13 +71,16 @@ def email_allowlist(emails: list[str] | set[str] | None = None,
     Either argument can be omitted; passing both is "OR" (an email
     matches if it's literally listed OR ends with ``@<allowed_domain>``).
     """
-    email_set = {e.lower() for e in (emails or [])}
-    domain_set = {d.lower().lstrip('@') for d in (domains or [])}
+    def _norm(value: str) -> str:
+        return unicodedata.normalize('NFKC', value).strip().lower()
+
+    email_set = {_norm(e) for e in (emails or [])}
+    domain_set = {_norm(d).lstrip('@') for d in (domains or [])}
 
     def check(email: str, _action: str, _namespace: str, _key: str | None) -> bool:
         if not email:
             return False
-        e = email.lower()
+        e = _norm(email)
         if e in email_set:
             return True
         if '@' in e:
