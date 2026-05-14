@@ -1,6 +1,7 @@
 import logging
 import mimetypes
 import os
+import unicodedata
 from collections.abc import Iterable, Iterator
 from typing import Any
 
@@ -301,7 +302,13 @@ class AWSS3Client(AWSSession):
                 # when delimiter='' (flat listing for delete-recursive).
                 raw_contents = [c for c in raw_contents if c.get('Size', 0) > 0]
             if search:
-                needle = search.lower()
+                # NFC normalisation matters: macOS Finder uploads
+                # decomposed Hangul (NFD: ㅅ+ㅡ+...), while the browser
+                # IME emits precomposed Hangul (NFC: 스+...). Without
+                # this step the bytes never match even though both
+                # render identically. Same risk for accented Latin
+                # (café NFC vs NFD).
+                needle = unicodedata.normalize('NFC', search).lower()
                 # Strip ``base_path`` BEFORE matching so the user sees
                 # search behave on the key they actually see in the UI.
                 # Otherwise the namespace's mount point itself leaks
@@ -324,7 +331,9 @@ class AWSS3Client(AWSSession):
                     c for c in raw_contents
                     if (c.get('Key') or '')
                     and not (c['Key'].endswith('/') and c.get('Size', 0) == 0)
-                    and needle in _visible_key(c['Key']).lower()
+                    and needle in unicodedata.normalize(
+                        'NFC', _visible_key(c['Key'])
+                    ).lower()
                 ]
                 # No CommonPrefixes come back when delimiter='', so the
                 # folder column is empty during search by design.

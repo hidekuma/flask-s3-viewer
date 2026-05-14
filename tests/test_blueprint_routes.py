@@ -248,6 +248,50 @@ class TestSearch:
         assert '한글.pdf'.encode() in rv.data
         assert b'other.pdf' not in rv.data
 
+    def test_search_matches_nfd_keys_with_nfc_query(self, s3_bucket) -> None:
+        """macOS-style uploads land in S3 as NFD (decomposed Hangul);
+        the browser IME sends NFC. Without explicit normalisation the
+        two byte sequences never compare equal even though they render
+        identically — partial-typed '스' silently returns nothing.
+        """
+        import unicodedata
+        s3_client, bucket = s3_bucket
+        nfc = '스크린샷.png'
+        nfd = unicodedata.normalize('NFD', nfc)
+        assert nfc != nfd  # paranoia: the two forms ARE different bytes
+        s3_client.put_object(Bucket=bucket, Key=nfd, Body=b'x')
+        # Search with the NFC partial that the browser IME emits.
+        rv = self._search(bucket, 'fsv-test', '스')
+        # The match itself: we should see exactly one hit. The rendered
+        # HTML keeps the original NFD key, so we look for that form.
+        body = rv.get_data(as_text=True)
+        assert rv.status_code == 200
+        assert nfd in body  # NFD because the listing renders the raw S3 key
+
+    def _search(self, bucket, namespace, q):
+        import tempfile
+        import urllib.parse
+
+        from flask import Flask
+
+        from flask_s3_viewer import FlaskS3Viewer
+        app = Flask(__name__)
+        app.config['TESTING'] = True
+        with tempfile.TemporaryDirectory() as cache:
+            FlaskS3Viewer(
+                app, namespace='nfd',
+                config={
+                    'profile_name': None, 'bucket_name': bucket,
+                    'region_name': 'us-east-1',
+                    'access_key': 'x', 'secret_key': 'x',
+                    'cache_dir': cache,
+                    'use_cache': True, 'ttl': 60,
+                },
+            )
+            return app.test_client().get(
+                '/nfd/files?search=' + urllib.parse.quote(q)
+            )
+
     def test_search_does_not_match_base_path_segment(self, s3_bucket, tmp_path) -> None:
         """Regression: when ``base_path='/test'``, typing 'test' used to
         match every object in the bucket because the comparison ran
