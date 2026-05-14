@@ -267,11 +267,18 @@ class AWSS3Client(AWSSession):
 
         def run() -> tuple[list, list, str | None]:
             nonlocal prefix, delimiter, max_items, page_size, starting_token, search
+            # When the user types a search query, switch to a flat
+            # (recursive) listing so matches inside sub-prefixes are
+            # visible — otherwise a Korean filename three folders deep
+            # would never show up. Folder rows are suppressed during
+            # search; results are matching files (with their full
+            # relative key) only.
+            effective_delimiter = '' if search else delimiter
             paginator = self._s3.get_paginator("list_objects_v2")
             page_iterator = paginator.paginate(
                 Bucket=self._bucket_name,
                 Prefix=prefix,
-                Delimiter=delimiter,
+                Delimiter=effective_delimiter,
                 PaginationConfig={
                     'MaxItems': max_items,
                     'PageSize': page_size,
@@ -288,21 +295,26 @@ class AWSS3Client(AWSSession):
             next_token = result.get('NextToken')
             raw_contents = result.get('Contents') or []
             raw_prefixes = result.get('CommonPrefixes') or []
-            if delimiter != '':
+            if effective_delimiter != '':
                 # Drop the empty "folder placeholder" objects so they
                 # don't pollute the file list. They are still returned
                 # when delimiter='' (flat listing for delete-recursive).
                 raw_contents = [c for c in raw_contents if c.get('Size', 0) > 0]
             if search:
                 needle = search.lower()
+                # Recursive listing returns every key under ``prefix``,
+                # including the zero-byte folder markers — drop those
+                # before the substring filter so they don't appear as
+                # phantom matches.
                 contents = [
                     c for c in raw_contents
-                    if needle in (c.get('Key') or '').lower()
+                    if (c.get('Key') or '')
+                    and not (c['Key'].endswith('/') and c.get('Size', 0) == 0)
+                    and needle in c['Key'].lower()
                 ]
-                prefixes = [
-                    p for p in raw_prefixes
-                    if needle in (p.get('Prefix') or '').lower()
-                ]
+                # No CommonPrefixes come back when delimiter='', so the
+                # folder column is empty during search by design.
+                prefixes: list = []
             else:
                 contents = raw_contents
                 prefixes = raw_prefixes

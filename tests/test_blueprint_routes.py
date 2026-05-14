@@ -236,6 +236,18 @@ class TestSearch:
         assert rv.status_code == 200
         assert b'README.MD' in rv.data
 
+    def test_search_recurses_into_subfolders(self, client, s3_bucket) -> None:
+        """A search query switches the listing to flat / recursive mode so
+        matches inside sub-prefixes are visible too.
+        """
+        s3_client, bucket = s3_bucket
+        s3_client.put_object(Bucket=bucket, Key='reports/2026/한글.pdf', Body=b'x')
+        s3_client.put_object(Bucket=bucket, Key='reports/2025/other.pdf', Body=b'x')
+        rv = client.get(_ns_path('/files?search=한글'))
+        assert rv.status_code == 200
+        assert '한글.pdf'.encode() in rv.data
+        assert b'other.pdf' not in rv.data
+
     def test_search_with_special_characters_does_not_crash(self, client, s3_bucket) -> None:
         """A query containing JMESPath metacharacters (backtick, quote,
         backslash) used to break the listing — now it's a plain Python
