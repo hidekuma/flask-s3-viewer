@@ -385,9 +385,10 @@
         }
       }
 
-      function showOverwritePrompt(conflicts, completedBefore, totalOverall) {
+      function showOverwritePrompt(conflicts, completedBefore, totalOverall, filesToUpload) {
         pendingOverwrite = {
           conflicts: conflicts,
+          filesToUpload: filesToUpload || conflicts,
           completedBefore: completedBefore,
           totalOverall: totalOverall,
         };
@@ -561,7 +562,7 @@
           return;
         }
         if (preflight.conflicts.length) {
-          showOverwritePrompt(preflight.conflicts, 0, files.length);
+          showOverwritePrompt(preflight.conflicts, 0, files.length, files);
           return;
         }
         showProgress('', 0, '');
@@ -601,7 +602,7 @@
           var nextOverwriteSet = {};
           pendingOverwrite.conflicts.forEach(function (file) { nextOverwriteSet[file.name] = true; });
           await uploadBatch(
-            pendingOverwrite.conflicts,
+            pendingOverwrite.filesToUpload,
             nextOverwriteSet,
             pendingOverwrite.completedBefore,
             pendingOverwrite.totalOverall

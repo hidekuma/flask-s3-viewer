@@ -204,7 +204,7 @@ class FlaskS3Viewer(AWSS3Client):
             raise NotSupportUploadType
         self.upload_type: str = upload_type
         self.__max_pages: int = 10
-        self.__max_items: int = 50
+        self.__max_items: int = 5
 
         if not config:
             config = dict()
