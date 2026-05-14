@@ -52,5 +52,5 @@ sphinxcontrib-serializinghtml==1.1.10
 tomli==2.0.1
 twine==5.1.1
 urllib3==2.2.2
-Werkzeug==3.0.3
+Werkzeug==3.0.6
 zipp==3.19.2
