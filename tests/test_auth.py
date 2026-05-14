@@ -299,6 +299,32 @@ def test_anonymous_get_redirects_to_login_when_google_configured(s3_bucket, tmp_
     assert '/auth/login' in resp.headers.get('Location', '')
 
 
+def test_header_shows_user_email_and_logout_when_logged_in(s3_bucket, tmp_path):
+    """The files header renders the user's email + a logout link
+    pointing at the namespace-less ``/auth/logout`` route.
+    """
+    app = _make_app(
+        s3_bucket, tmp_path,
+        google_client_id='cid.apps.googleusercontent.com',
+        google_client_secret='secret',
+        allowed_emails=['vip@example.com'],
+    )
+    client = app.test_client()
+    with client.session_transaction() as s:
+        s['fsv_user_email'] = 'vip@example.com'
+    body = client.get('/fsv-auth/files').get_data(as_text=True)
+    assert 'vip@example.com' in body
+    assert '/auth/logout?next=' in body
+
+
+def test_header_hides_user_widget_when_auth_disabled(s3_bucket, tmp_path):
+    """No auth wired → no user widget / logout link in the rendered page."""
+    app = _make_app(s3_bucket, tmp_path)
+    body = app.test_client().get('/fsv-auth/files').get_data(as_text=True)
+    assert 'Log out' not in body
+    assert '/auth/logout' not in body
+
+
 def test_session_auth_callback_reads_session(s3_bucket, tmp_path):
     """The default session-based callback returns whatever Google wrote earlier."""
     app = _make_app(

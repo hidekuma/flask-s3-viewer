@@ -452,9 +452,30 @@ def utility_processor() -> dict:
                 return f"{size:.1f} {unit}"
         return f"{size:.1f} PB"
 
+    # Per-namespace auth state for the header's user widget. Best-effort:
+    # ``auth_callback`` is the same path ``_enforce_auth`` uses to identify
+    # the caller, so a custom deployer integration shows the right user
+    # too (not just the Google session).
+    user_email: str | None = None
+    auth_enabled = False
+    google_configured = False
+    if hasattr(g, 'BUCKET_NAMESPACE'):
+        viewer = current_app.extensions.get(NAMESPACE, {}).get(g.BUCKET_NAMESPACE)
+        if viewer is not None:
+            auth_enabled = bool(getattr(viewer, 'auth_enabled', False))
+            google_configured = bool(getattr(viewer, 'google_client_id', None))
+            if auth_enabled:
+                try:
+                    user_email = viewer.auth_callback(request)
+                except Exception:  # pragma: no cover - deployer callback safety
+                    user_email = None
+
     return dict(
         split=split,
         unquote_plus=unquote_plus,
         list_append=list_append,
         humansize=humansize,
+        FSV_USER_EMAIL=user_email,
+        FSV_AUTH_ENABLED=auth_enabled,
+        FSV_GOOGLE_CONFIGURED=google_configured,
     )
