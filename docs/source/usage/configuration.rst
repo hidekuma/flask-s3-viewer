@@ -481,10 +481,26 @@ Things to know
 
 Searching
 `````````
-Case-insensitive substring match on the current prefix's keys and folder
-names, applied in Python after S3 returns the page. Works for any
-Unicode (Korean, Japanese, accented Latin, emoji) — the EN-only
-JMESPath limitation in earlier versions is gone.
+Case-insensitive substring match applied in Python. Notable properties:
 
-The filter scope is the **current page** of the listing, so for very
-large prefixes a search may need to page through to find later matches.
+- **Unicode-safe.** Korean, Japanese, accented Latin, and emoji all
+  match — the EN-only JMESPath limitation in earlier versions is gone.
+- **NFC-normalised.** macOS Finder uploads land in S3 as
+  NFD-decomposed Hangul while the browser IME emits NFC; both sides
+  are normalised before comparison so the bytes line up.
+- **Recursive.** When the search box is non-empty the listing
+  switches to a flat (``delimiter=''``) S3 call scoped to the current
+  prefix, so a matching filename three folders deep is visible
+  without manual drill-in.
+- **Folder rows are synthesized.** Any sub-prefix whose own segment
+  contains the query appears as a clickable folder, alongside the
+  matching files.
+- **``base_path`` is excluded from the comparison.** The namespace
+  mount point itself doesn't bleed into every match.
+- **Cache-bypassed.** Search results are not persisted to the disk
+  cache, so a code-level change in matching semantics never gets
+  served stale from an old deployment.
+
+Matching is bounded by ``max_items × max_pages`` per request (default
+1000 keys). For very large prefixes a query may need to be combined
+with a narrower prefix to surface deeper matches.
