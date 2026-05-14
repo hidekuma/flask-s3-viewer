@@ -1,4 +1,4 @@
-![logo](https://raw.githubusercontent.com/hidekuma/flask-s3-viewer/master/i/logo.png)
+![logo](https://raw.githubusercontent.com/hidekuma/flask-s3-viewer/main/i/logo.png)
 
 # Flask S3 Viewer
 
