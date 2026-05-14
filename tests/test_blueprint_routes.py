@@ -292,6 +292,23 @@ class TestSearch:
                 '/nfd/files?search=' + urllib.parse.quote(q)
             )
 
+    def test_search_finds_folders_whose_name_matches(self, client, s3_bucket) -> None:
+        """A folder whose name contains the query shows up as a folder
+        row in the search result, alongside any matching files.
+        """
+        s3_client, bucket = s3_bucket
+        # Folder 'reports/' has a child file; the folder name itself
+        # contains the query 'rep'.
+        s3_client.put_object(Bucket=bucket, Key='reports/Q1.pdf', Body=b'x')
+        # An unrelated file at root to confirm it isn't included.
+        s3_client.put_object(Bucket=bucket, Key='untouched.txt', Body=b'x')
+        rv = client.get(_ns_path('/files?search=rep'))
+        assert rv.status_code == 200
+        # Folder row links into the matching folder.
+        assert b'href="/fsv-test/files?prefix=reports/"' in rv.data
+        # Files outside the match are absent.
+        assert b'untouched.txt' not in rv.data
+
     def test_search_does_not_match_base_path_segment(self, s3_bucket, tmp_path) -> None:
         """Regression: when ``base_path='/test'``, typing 'test' used to
         match every object in the bucket because the comparison ran
