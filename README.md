@@ -253,6 +253,44 @@ FlaskS3Viewer(
 
 The five action constants are `ACTION_LIST`, `ACTION_DOWNLOAD`, `ACTION_UPLOAD`, `ACTION_DELETE`, `ACTION_PRESIGN`.
 
+### RBAC bucket switcher
+
+For multi-bucket apps, keep hard authorization in `permission_callback` and use
+`visible_namespaces_callback(email, registry)` to control which buckets appear
+in the header switcher:
+
+```python
+RBAC = {
+    "alice@example.com": {"assets", "private"},
+    "bob@example.com": {"assets"},
+}
+
+def visible_buckets(email, registry):
+    return RBAC.get(email, set())
+
+def can_they(email, action, namespace, key):
+    return namespace in RBAC.get(email, set())
+
+viewer = FlaskS3Viewer(
+    app,
+    namespace="assets",
+    title="Assets",
+    auth_callback=who_is_asking,
+    permission_callback=can_they,
+    visible_namespaces_callback=visible_buckets,
+    config={...},
+)
+
+viewer.add_new_one(
+    namespace="private",
+    title="Private",
+    config={...},
+)
+```
+
+The switcher only hides inaccessible namespaces from the UI. Direct URL access
+is still checked by `permission_callback`, so RBAC remains server-side.
+
 ### Layer 2: built-in Google OAuth (optional `[auth]` extra)
 
 ```bash

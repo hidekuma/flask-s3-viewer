@@ -122,6 +122,7 @@ class TestCliScaffold:
         '_file_list.html',
         '_pagination.html',
         '_upload_form.html',
+        '_error_panel.html',
         'error.html',
     )
 

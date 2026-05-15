@@ -89,6 +89,60 @@
         if (prefixInput) prefixInput.value = (livePrefix && livePrefix.value) || '';
         if (searchInput) searchInput.value = (liveSearch && liveSearch.value) || '';
       };
+      window.fsvToast = function (message, title) {
+        var host = document.getElementById('fsv-toast-host');
+        if (!host) {
+          host = document.createElement('div');
+          host.id = 'fsv-toast-host';
+          host.setAttribute('aria-live', 'polite');
+          host.setAttribute('aria-atomic', 'true');
+          host.style.position = 'fixed';
+          host.style.top = '1rem';
+          host.style.right = '1rem';
+          host.style.left = 'auto';
+          host.style.bottom = 'auto';
+          host.style.zIndex = '9999';
+          host.style.display = 'flex';
+          host.style.flexDirection = 'column';
+          host.style.gap = '0.5rem';
+          host.style.width = 'min(24rem, calc(100vw - 2rem))';
+          host.style.pointerEvents = 'none';
+          document.body.appendChild(host);
+        }
+        var toast = document.createElement('div');
+        toast.className = 'pointer-events-auto rounded-lg border border-red-200 bg-white p-4 shadow-lg ring-1 ring-black/5';
+        toast.style.pointerEvents = 'auto';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-0.25rem)';
+        toast.style.transition = 'opacity 180ms ease, transform 180ms ease';
+        toast.innerHTML = '<div class="flex gap-3">'
+          + '<div class="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-red-50 text-red-600">!</div>'
+          + '<div class="min-w-0"><p class="text-sm font-semibold text-gray-900"></p>'
+          + '<p class="mt-1 text-sm leading-5 text-gray-600"></p></div></div>';
+        toast.querySelector('p').textContent = title || 'Request failed';
+        toast.querySelectorAll('p')[1].textContent = message || 'Something went wrong.';
+        host.appendChild(toast);
+        window.requestAnimationFrame(function () {
+          toast.style.opacity = '1';
+          toast.style.transform = 'translateY(0)';
+        });
+        setTimeout(function () {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(-0.25rem)';
+          setTimeout(function () { toast.remove(); }, 200);
+        }, 4200);
+        return true;
+      };
+      window.fsvShowServerError = function (html, status) {
+        if (!html) return false;
+        var tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        var heading = tmp.querySelector('h1');
+        var detail = tmp.querySelector('p');
+        var title = heading ? heading.textContent.trim() : (status ? String(status) : 'Request failed');
+        var message = detail ? detail.textContent.trim() : html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+        return window.fsvToast(message || title, title);
+      };
 
       window.fsvConfirmDelete = function (trigger) {
         var message = trigger && trigger.getAttribute ? trigger.getAttribute('data-delete-message') : '';
@@ -128,6 +182,10 @@
             var loading = row.querySelector('.fsv-delete-loading');
             if (action) action.classList.remove('hidden');
             if (loading) loading.classList.add('hidden');
+          }
+          var xhr = e.detail && e.detail.xhr;
+          if (xhr && xhr.responseText) {
+            window.fsvShowServerError(xhr.responseText, xhr.status);
           }
         });
         document.body.addEventListener('htmx:sendError', function (e) {
@@ -183,14 +241,21 @@
             method: 'DELETE',
             headers: { 'HX-Request': 'true' },
             credentials: 'same-origin',
-          }).then(function (r) { return { item: item, ok: r.ok, status: r.status }; })
+          }).then(function (r) {
+            return r.text().then(function (body) {
+              return { item: item, ok: r.ok, status: r.status, body: body };
+            });
+          })
             .catch(function (err) { return { item: item, ok: false, error: String(err) }; });
         });
         Promise.all(requests).then(function (results) {
           var failed = results.filter(function (r) { return !r.ok; });
           if (failed.length) {
-            window.alert(failed.length + ' delete(s) failed (status '
-              + failed.map(function (f) { return f.status || '?'; }).join(',') + ').');
+            if (!window.fsvShowServerError(failed[0].body || '', failed[0].status)) {
+              window.alert(failed.length + ' delete(s) failed (status '
+                + failed.map(function (f) { return f.status || '?'; }).join(',') + ').');
+            }
+            return;
           }
           if (window.htmx) {
             var hiddenPrefix = fileList.querySelector('input[name="prefix"]');

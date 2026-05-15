@@ -669,10 +669,10 @@
               });
               return;
             }
-            resolve({ ok: false, status: xhr.status, conflicts: [] });
+            resolve({ ok: false, status: xhr.status, responseText: xhr.responseText, conflicts: [] });
           });
           xhr.addEventListener('error', function () {
-            resolve({ ok: false, status: 0, conflicts: [] });
+            resolve({ ok: false, status: 0, responseText: '', conflicts: [] });
           });
           xhr.send(fd);
         });
@@ -742,6 +742,10 @@
             conflicts.push(file);
             continue;
           }
+          if (result.responseText && window.fsvShowServerError && window.fsvShowServerError(result.responseText, result.status)) {
+            flashDone(false, 'Failed on ' + file.name + (result.status ? ' (' + result.status + ')' : ''));
+            return;
+          }
           flashDone(false, 'Failed on ' + file.name + (result.status ? ' (' + result.status + ')' : ''));
           return;
         }
@@ -772,6 +776,10 @@
         hideProgress();
         var preflight = await checkUploadConflicts(files);
         if (!preflight.ok) {
+          if (preflight.responseText && window.fsvShowServerError && window.fsvShowServerError(preflight.responseText, preflight.status)) {
+            flashDone(false, 'Failed before upload' + (preflight.status ? ' (' + preflight.status + ')' : ''));
+            return;
+          }
           flashDone(false, 'Failed before upload' + (preflight.status ? ' (' + preflight.status + ')' : ''));
           return;
         }

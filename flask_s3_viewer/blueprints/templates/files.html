@@ -27,6 +27,41 @@
         <h1 class="min-w-fit truncate text-base font-semibold text-gray-900 dark:text-gray-100">{{ FS3V_TITLE | default("Flask S3 Viewer") }}</h1>
         </a>
       <div class="flex flex-wrap items-center gap-2">
+        {% if FSV_VISIBLE_NAMESPACES|length > 1 %}
+        {%- set current_bucket = (FSV_VISIBLE_NAMESPACES | selectattr('namespace', 'equalto', FSV_CURRENT_NAMESPACE) | list | first) -%}
+        <div class="relative">
+          <button type="button"
+                  class="flex h-10 items-center gap-2 rounded-md border border-gray-200 bg-white px-3 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+                  aria-label="Open bucket switcher"
+                  aria-haspopup="menu"
+                  onclick="(function(btn){var menu=document.getElementById('fsv-bucket-menu');if(!menu)return;var hidden=menu.classList.toggle('hidden');btn.setAttribute('aria-expanded',(!hidden).toString());})(this);">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                 stroke-width="1.7" stroke="currentColor" class="h-4 w-4 text-gray-500">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M20.25 7.5 12 12.75 3.75 7.5M20.25 7.5 12 2.25 3.75 7.5M20.25 7.5v9L12 21.75m0-9v9m0-9-8.25-5.25m0 0v9L12 21.75" />
+            </svg>
+            <span class="max-w-40 truncate">{{ current_bucket.title if current_bucket else FSV_CURRENT_NAMESPACE }}</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                 stroke-width="1.8" stroke="currentColor" class="h-3.5 w-3.5 text-gray-500">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+          <div id="fsv-bucket-menu"
+               role="menu"
+               class="hidden absolute right-0 top-full z-40 mt-2 w-64 origin-top-right overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
+            {% for bucket in FSV_VISIBLE_NAMESPACES %}
+              <a href="{{ url_for('flask_s3_viewer.files', BUCKET_NAMESPACE=bucket.namespace) }}"
+                 role="menuitem"
+                 class="flex items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                <span class="min-w-0 truncate">{{ bucket.title }}</span>
+                {% if bucket.namespace == FSV_CURRENT_NAMESPACE %}
+                  <span class="text-xs text-gray-400">Current</span>
+                {% endif %}
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
         {% if FSV_AUTH_ENABLED and FSV_USER_EMAIL %}
         <div class="relative">
           <button type="button"

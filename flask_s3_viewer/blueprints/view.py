@@ -21,6 +21,7 @@ from flask import (
     url_for,
 )
 from werkzeug.datastructures import FileStorage
+from werkzeug.exceptions import HTTPException
 
 from .. import APP_TEMPLATE_FOLDER, FlaskS3Viewer
 from ..auth import (
@@ -52,6 +53,18 @@ auth_blueprint = Blueprint(
     __name__,
     url_prefix='/auth',
 )
+
+
+@blueprint.app_errorhandler(HTTPException)
+def handle_http_exception(e: HTTPException) -> Any:
+    if request.blueprint != NAMESPACE or not hasattr(g, 'BUCKET_NAMESPACE'):
+        return e
+    template = '_error_panel.html' if request.headers.get('HX-Request') else 'error.html'
+    return render_template(
+        template,
+        FS3V_MESSAGE=e.description,
+        FS3V_CODE=e.code,
+    ), e.code
 
 
 def _any_oauth_configured() -> bool:
@@ -613,6 +626,26 @@ def utility_processor() -> dict:
             user_avatar = session_avatar_url()
         except Exception:  # pragma: no cover - optional auth helper safety
             user_avatar = None
+    visible_namespaces: list[dict[str, str]] = []
+    current_namespace = getattr(g, 'BUCKET_NAMESPACE', None)
+    registry = current_app.extensions.get(NAMESPACE, {})
+    if current_namespace and registry:
+        active_viewer = registry.get(current_namespace)
+        allowed_namespaces: set[str] | None = None
+        callback = getattr(active_viewer, 'visible_namespaces_callback', None)
+        if callback:
+            try:
+                allowed = callback(user_email, registry)
+                allowed_namespaces = {str(ns) for ns in allowed}
+            except Exception:  # pragma: no cover - deployer callback safety
+                allowed_namespaces = set()
+        for namespace, viewer in registry.items():
+            if allowed_namespaces is not None and namespace not in allowed_namespaces:
+                continue
+            visible_namespaces.append({
+                'namespace': namespace,
+                'title': getattr(viewer, 'title', None) or namespace,
+            })
 
     return dict(
         split=split,
@@ -628,4 +661,6 @@ def utility_processor() -> dict:
         FSV_USER_AVATAR=user_avatar,
         FSV_AUTH_ENABLED=auth_enabled,
         FSV_GOOGLE_CONFIGURED=google_configured,
+        FSV_CURRENT_NAMESPACE=current_namespace,
+        FSV_VISIBLE_NAMESPACES=visible_namespaces,
     )

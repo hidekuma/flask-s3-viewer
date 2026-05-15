@@ -120,6 +120,7 @@ class FlaskS3Viewer(AWSS3Client):
         template_folder: str | None = None,
         auth_callback: Any = None,
         permission_callback: Any = None,
+        visible_namespaces_callback: Any = None,
         google_client_id: str | None = None,
         google_client_secret: str | None = None,
         allowed_emails: list[str] | set[str] | None = None,
@@ -150,6 +151,10 @@ class FlaskS3Viewer(AWSS3Client):
             ``_upload_form.html``, ``error.html``). Files in this folder are
             preferred by Jinja over the bundled originals. Scaffold a
             ready-to-edit starting point with ``flask_s3_viewer -p ./out``.
+        :param callable visible_namespaces_callback: Optional
+            ``callback(email, registry) -> iterable[str]`` used to hide
+            namespaces the current user should not see in the bucket switcher.
+            Security still comes from ``permission_callback``.
         :param dict config: Bucket configs
         """
         if template_namespace is not None:
@@ -191,6 +196,7 @@ class FlaskS3Viewer(AWSS3Client):
                 domains=list(allowed_domains or []),
             )
         self.permission_callback = permission_callback or allow_all_permissions
+        self.visible_namespaces_callback = visible_namespaces_callback
         # Bookkeeping: enable enforcement only when the caller passed at
         # least one auth-related option. `auth_callback` may have been
         # rewritten above (None → session_auth_callback when Google is
@@ -198,6 +204,7 @@ class FlaskS3Viewer(AWSS3Client):
         self.auth_enabled: bool = bool(
             auth_callback is not None
             or permission_callback is not None
+            or visible_namespaces_callback is not None
             or google_client_id
             or allowed_emails
             or allowed_domains
@@ -367,6 +374,13 @@ class FlaskS3Viewer(AWSS3Client):
         allowed_extensions: set[str] | None = None,
         template_namespace: str | None = None,
         upload_type: str = "default",
+        title: str | None = None,
+        logo_url: str | None = None,
+        logo_path: str | None = None,
+        template_folder: str | None = None,
+        auth_callback: Any = None,
+        permission_callback: Any = None,
+        visible_namespaces_callback: Any = None,
         config: dict | None = None,
     ) -> "FlaskS3Viewer":
         """
@@ -377,6 +391,13 @@ class FlaskS3Viewer(AWSS3Client):
         :param set allowed_extensions: e.g. {'jpg', 'png'}
         :param str template_namespace: DEPRECATED — see :meth:`__init__`.
         :param str upload_type: Upload type
+        :param str title: Heading + browser title text for this namespace.
+        :param str logo_url: Optional custom logo URL.
+        :param str logo_path: Optional local logo path.
+        :param str template_folder: Optional template override folder.
+        :param callable auth_callback: Optional auth callback override.
+        :param callable permission_callback: Optional permission callback override.
+        :param callable visible_namespaces_callback: Optional bucket switcher visibility callback.
         :param dict config: Bucket configs
 
         Return:
@@ -394,5 +415,12 @@ class FlaskS3Viewer(AWSS3Client):
             allowed_extensions=allowed_extensions,
             template_namespace=template_namespace,
             upload_type=upload_type,
+            title=title,
+            logo_url=logo_url,
+            logo_path=logo_path,
+            template_folder=template_folder,
+            auth_callback=auth_callback or self.auth_callback,
+            permission_callback=permission_callback or self.permission_callback,
+            visible_namespaces_callback=visible_namespaces_callback or self.visible_namespaces_callback,
             config=config,
         )

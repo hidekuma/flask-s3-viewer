@@ -96,6 +96,61 @@ def test_any_auth_opt_in_enables_enforcement(s3_bucket, tmp_path, kwargs):
     assert viewer.auth_enabled is True
 
 
+def test_visible_namespaces_callback_drives_bucket_switcher(s3_bucket, tmp_path):
+    s3_client, bucket = s3_bucket
+    s3_client.create_bucket(Bucket='fsv-auth-private')
+
+    allowed_by_email = {
+        'alice@example.com': {'fsv-auth', 'private'},
+        'bob@example.com': {'fsv-auth'},
+    }
+
+    def auth_callback(request):
+        return request.headers.get('X-User')
+
+    def visible_namespaces(email, _registry):
+        return allowed_by_email.get(email, set())
+
+    app = _make_app(
+        s3_bucket,
+        tmp_path,
+        title='Public Bucket',
+        auth_callback=auth_callback,
+        permission_callback=lambda email, _action, namespace, _key: namespace in allowed_by_email.get(email, set()),
+        visible_namespaces_callback=visible_namespaces,
+    )
+    app.extensions['flask_s3_viewer']['fsv-auth'].add_new_one(
+        namespace='private',
+        title='Private Bucket',
+        auth_callback=auth_callback,
+        permission_callback=lambda email, _action, namespace, _key: namespace in allowed_by_email.get(email, set()),
+        visible_namespaces_callback=visible_namespaces,
+        config={
+            'profile_name': None,
+            'bucket_name': 'fsv-auth-private',
+            'region_name': 'us-east-1',
+            'access_key': 'testing',
+            'secret_key': 'testing',
+            'cache_dir': str(tmp_path / 'private-cache'),
+            'use_cache': True,
+            'ttl': 60,
+        },
+    )
+
+    client = app.test_client()
+    alice = client.get('/fsv-auth/files', headers={'X-User': 'alice@example.com'})
+    bob = client.get('/fsv-auth/files', headers={'X-User': 'bob@example.com'})
+    forbidden = client.get('/private/files', headers={'X-User': 'bob@example.com'})
+
+    assert alice.status_code == 200
+    assert b'Public Bucket' in alice.data
+    assert b'Private Bucket' in alice.data
+    assert bob.status_code == 200
+    assert b'Public Bucket' in bob.data
+    assert b'Private Bucket' not in bob.data
+    assert forbidden.status_code == 403
+
+
 # ---------------------------------------------------------------------------
 # email_allowlist builder
 # ---------------------------------------------------------------------------
@@ -165,6 +220,23 @@ def test_listing_returns_403_when_permission_denied(s3_bucket, tmp_path):
     )
     resp = app.test_client().get('/fsv-auth/files')
     assert resp.status_code == 403
+
+
+def test_htmx_permission_denied_returns_error_fragment_for_toast(s3_bucket, tmp_path):
+    app = _make_app(
+        s3_bucket, tmp_path,
+        auth_callback=lambda _req: 'stranger@example.com',
+        permission_callback=lambda *_args: False,
+    )
+
+    resp = app.test_client().post(
+        '/fsv-auth/files',
+        headers={'HX-Request': 'true'},
+    )
+
+    assert resp.status_code == 403
+    assert b'Forbidden' in resp.data
+    assert b'<html' not in resp.data
 
 
 def test_listing_returns_200_when_permitted(s3_bucket, tmp_path):
