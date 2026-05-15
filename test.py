@@ -59,7 +59,7 @@ ALLOWED_DOMAINS: list[str] = [
 # ---------------------------------------------------------------------------
 RBAC_POLICY: dict[str, dict[str, dict[str, set[str]]]] = {
     # Replace these with your real Google account emails.
-    "user.ocm": {
+    "test@test.com": {
         "flask-s3-viewer": {
             "list": {""},
             "upload": {"test/aaaa/"},
