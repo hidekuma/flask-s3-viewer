@@ -164,4 +164,4 @@ python -c "from flask import Flask; from flask_s3_viewer import FlaskS3Viewer; \
 ## Getting help
 
 - Open an issue: https://github.com/hidekuma/flask-s3-viewer/issues
-- Stable release: `1.0.0`
+- Stable release: `1.0.1`

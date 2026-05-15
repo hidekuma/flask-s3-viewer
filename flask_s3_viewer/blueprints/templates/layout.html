@@ -110,19 +110,23 @@
           document.body.appendChild(host);
         }
         var toast = document.createElement('div');
-        toast.className = 'pointer-events-auto overflow-hidden rounded-2xl border border-red-100 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.12)] ring-1 ring-red-100/80';
+        toast.className = 'pointer-events-auto relative overflow-hidden rounded-2xl border border-red-100 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.12)] ring-1 ring-red-100/80';
         toast.style.pointerEvents = 'auto';
         toast.style.opacity = '0';
         toast.style.transform = 'translateY(-0.25rem)';
         toast.style.transition = 'opacity 180ms ease, transform 180ms ease';
         toast.innerHTML = '<div class="h-1.5 bg-gradient-to-r from-red-500 via-rose-400 to-orange-300"></div>'
+          + '<button type="button" aria-label="Dismiss notification" style="position:absolute;top:12px;right:12px;z-index:1;" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900/10">'
+          + '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor" class="h-4 w-4">'
+          + '<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />'
+          + '</svg></button>'
           + '<div class="flex gap-4 px-4 py-4">'
           + '<div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600 ring-1 ring-red-100">'
           + '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" class="h-5 w-5">'
           + '<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />'
           + '</svg></div>'
           + '<div class="min-w-0 flex-1">'
-          + '<div class="flex flex-wrap items-center gap-2">'
+          + '<div class="flex flex-wrap items-center gap-2 pr-8">'
           + '<span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold tracking-[0.12em] text-red-700 ring-1 ring-inset ring-red-100"></span>'
           + '<span class="text-[11px] font-medium uppercase tracking-[0.14em] text-gray-400">Request blocked</span>'
           + '</div>'
@@ -133,15 +137,18 @@
         toast.querySelector('p').textContent = title || 'Request failed';
         toast.querySelectorAll('p')[1].textContent = message || 'Something went wrong.';
         host.appendChild(toast);
+        var dismiss = function () {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(-0.25rem)';
+          setTimeout(function () { toast.remove(); }, 200);
+        };
+        var closeButton = toast.querySelector('button');
+        if (closeButton) closeButton.addEventListener('click', dismiss);
         window.requestAnimationFrame(function () {
           toast.style.opacity = '1';
           toast.style.transform = 'translateY(0)';
         });
-        setTimeout(function () {
-          toast.style.opacity = '0';
-          toast.style.transform = 'translateY(-0.25rem)';
-          setTimeout(function () { toast.remove(); }, 200);
-        }, 4200);
+        setTimeout(dismiss, 2800);
         return true;
       };
       window.fsvShowServerError = function (html, status) {
