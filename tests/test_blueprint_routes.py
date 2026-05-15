@@ -58,6 +58,39 @@ class TestListing:
         assert b'page=2' in rv.data
         assert rv.data.count(b'data-fsv-type="file"') == max_items
 
+    def test_listing_formats_modified_with_configured_timezone(self, s3_bucket, tmp_path) -> None:
+        from flask import Flask
+
+        from flask_s3_viewer import FlaskS3Viewer
+
+        s3_client, bucket = s3_bucket
+        s3_client.put_object(Bucket=bucket, Key='time.txt', Body=b'x')
+
+        app = Flask(__name__)
+        app.config['TESTING'] = True
+        FlaskS3Viewer(
+            app,
+            namespace='tz',
+            config={
+                'profile_name': None,
+                'bucket_name': bucket,
+                'region_name': 'us-east-1',
+                'access_key': 'testing',
+                'secret_key': 'testing',
+                'cache_dir': str(tmp_path / 'tz-cache'),
+                'use_cache': True,
+                'ttl': 60,
+                'timezone': 'Asia/Seoul',
+            },
+        )
+
+        rv = app.test_client().get('/tz/files')
+
+        assert rv.status_code == 200
+        assert b'time.txt' in rv.data
+        assert b'KST' in rv.data
+        assert b'+00:00' not in rv.data
+
 
 class TestMkdir:
     def test_post_mkdir_creates_empty_object(self, client, s3_bucket) -> None:

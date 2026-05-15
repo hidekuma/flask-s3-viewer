@@ -4,6 +4,7 @@ import mimetypes
 import warnings
 from collections import namedtuple
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from flask import Flask
 
@@ -92,6 +93,7 @@ class FlaskS3Viewer(AWSS3Client):
         cache_dir
         ttl
         use_cache
+        timezone
         verify
         base_path
         role_arn
@@ -224,6 +226,7 @@ class FlaskS3Viewer(AWSS3Client):
         config.setdefault("cache_dir", None)
         config.setdefault("ttl", 300)
         config.setdefault("use_cache", None)
+        config.setdefault("timezone", None)
         config.setdefault("verify", None)
         config.setdefault("base_path", "")
         # STS AssumeRole + MFA — all None by default so boto3's standard
@@ -235,6 +238,12 @@ class FlaskS3Viewer(AWSS3Client):
         config.setdefault("mfa_serial", None)
         config.setdefault("token_code", None)
         config.setdefault("token_code_callback", None)
+        self.display_timezone: ZoneInfo | None = None
+        if config.get("timezone"):
+            try:
+                self.display_timezone = ZoneInfo(config["timezone"])
+            except ZoneInfoNotFoundError as e:
+                raise ValueError(f"Unknown timezone: {config['timezone']}") from e
         super().__init__(**config)
 
         self.FLASK_S3_VIEWER_BUCKET_CONFIGS[namespace] = self.FLASK_S3_VIEWER_BUCKET(**config)

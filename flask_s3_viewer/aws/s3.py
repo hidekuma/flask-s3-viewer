@@ -36,6 +36,7 @@ class AWSS3Client(AWSSession):
         cache_dir: str | None = None,
         ttl: int = 300,
         use_cache: bool = False,
+        timezone: str | None = None,
         verify: bool | str | None = False,
         base_path: str = '',
         role_arn: str | None = None,

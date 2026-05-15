@@ -230,7 +230,7 @@
                 </span>
               </td>
               <td class="px-4 py-2 text-right tabular-nums text-gray-600 dark:text-gray-300">{{ humansize(c['Size']) }}</td>
-              <td class="px-4 py-2 text-gray-600 dark:text-gray-300">{{ c['LastModified'] }}</td>
+              <td class="px-4 py-2 text-gray-600 dark:text-gray-300">{{ format_datetime(c['LastModified']) }}</td>
               <td class="px-4 py-2 text-right">
                 <div class="inline-flex items-center gap-1">
                   <a class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-700 dark:hover:text-gray-100"

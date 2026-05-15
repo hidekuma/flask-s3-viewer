@@ -3,6 +3,7 @@ import unicodedata
 import urllib
 import urllib.parse
 from collections.abc import Iterable
+from datetime import timezone
 from functools import wraps
 from typing import Any
 from urllib.parse import quote as url_quote
@@ -566,6 +567,19 @@ def utility_processor() -> dict:
                 return f"{size:.1f} {unit}"
         return f"{size:.1f} PB"
 
+    def format_datetime(value: Any) -> str:
+        if value is None:
+            return ''
+        target_timezone = None
+        if hasattr(g, 'BUCKET_NAMESPACE'):
+            viewer = current_app.extensions.get(NAMESPACE, {}).get(g.BUCKET_NAMESPACE)
+            target_timezone = getattr(viewer, 'display_timezone', None)
+        if not target_timezone or not hasattr(value, 'astimezone'):
+            return str(value)
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(target_timezone).strftime('%Y-%m-%d %H:%M:%S %Z')
+
     # Per-namespace state for the header — branding + auth widget.
     # Both used to be re-passed by each individual ``render_template``
     # call, which made it easy to forget (e.g. the listing GET handler
@@ -605,6 +619,7 @@ def utility_processor() -> dict:
         unquote_plus=unquote_plus,
         list_append=list_append,
         humansize=humansize,
+        format_datetime=format_datetime,
         FS3V_TITLE=title,
         FS3V_LOGO_URL=logo_url,
         FS3V_UPLOAD_TYPE=upload_type,

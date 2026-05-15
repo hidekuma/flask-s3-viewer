@@ -156,6 +156,7 @@ All `config` keys are forwarded to the underlying S3 client:
 | `use_cache`      | bool             | False   | File-system JSON cache.                        |
 | `cache_dir`      | str \| None      | None    | Required when `use_cache=True`.                |
 | `ttl`            | int (seconds)    | 300     | Cache time-to-live.                            |
+| `timezone`       | str \| None      | None    | IANA timezone for Modified display, e.g. `Asia/Seoul`. If None, boto3's original timestamp string is shown. |
 | `role_arn`       | str \| None      | None    | If set, the wrapper runs STS `AssumeRole` on top of the base credentials and uses the returned temporary keys (cross-account, multi-tenant). |
 | `role_session_name` | str \| None   | `"flask-s3-viewer"` | Identifier for the assumed session.    |
 | `external_id`    | str \| None      | None    | Forwarded to STS for cross-account roles that require it. |
