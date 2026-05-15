@@ -110,15 +110,26 @@
           document.body.appendChild(host);
         }
         var toast = document.createElement('div');
-        toast.className = 'pointer-events-auto rounded-lg border border-red-200 bg-white p-4 shadow-lg ring-1 ring-black/5';
+        toast.className = 'pointer-events-auto overflow-hidden rounded-2xl border border-red-100 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.12)] ring-1 ring-red-100/80';
         toast.style.pointerEvents = 'auto';
         toast.style.opacity = '0';
         toast.style.transform = 'translateY(-0.25rem)';
         toast.style.transition = 'opacity 180ms ease, transform 180ms ease';
-        toast.innerHTML = '<div class="flex gap-3">'
-          + '<div class="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-red-50 text-red-600">!</div>'
-          + '<div class="min-w-0"><p class="text-sm font-semibold text-gray-900"></p>'
-          + '<p class="mt-1 text-sm leading-5 text-gray-600"></p></div></div>';
+        toast.innerHTML = '<div class="h-1.5 bg-gradient-to-r from-red-500 via-rose-400 to-orange-300"></div>'
+          + '<div class="flex gap-4 px-4 py-4">'
+          + '<div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600 ring-1 ring-red-100">'
+          + '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" class="h-5 w-5">'
+          + '<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />'
+          + '</svg></div>'
+          + '<div class="min-w-0 flex-1">'
+          + '<div class="flex flex-wrap items-center gap-2">'
+          + '<span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold tracking-[0.12em] text-red-700 ring-1 ring-inset ring-red-100"></span>'
+          + '<span class="text-[11px] font-medium uppercase tracking-[0.14em] text-gray-400">Request blocked</span>'
+          + '</div>'
+          + '<p class="mt-2 text-base font-semibold tracking-tight text-gray-950"></p>'
+          + '<p class="mt-1.5 text-sm leading-6 text-gray-600"></p>'
+          + '</div></div>';
+        toast.querySelector('span').textContent = title || 'ERROR';
         toast.querySelector('p').textContent = title || 'Request failed';
         toast.querySelectorAll('p')[1].textContent = message || 'Something went wrong.';
         host.appendChild(toast);

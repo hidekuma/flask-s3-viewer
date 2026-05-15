@@ -605,6 +605,7 @@ def utility_processor() -> dict:
     logo_url: str | None = None
     upload_type: str | None = None
     object_hostname: str | None = None
+    object_base_path: str | None = None
     if hasattr(g, 'BUCKET_NAMESPACE'):
         viewer = current_app.extensions.get(NAMESPACE, {}).get(g.BUCKET_NAMESPACE)
         if viewer is not None:
@@ -612,6 +613,7 @@ def utility_processor() -> dict:
             logo_url = getattr(viewer, 'logo_url', None)
             upload_type = getattr(viewer, 'upload_type', None)
             object_hostname = getattr(viewer, 'object_hostname', None)
+            object_base_path = getattr(viewer, '_base_path', None)
             auth_enabled = bool(getattr(viewer, 'auth_enabled', False))
             google_configured = bool(getattr(viewer, 'google_client_id', None))
             if auth_enabled:
@@ -657,6 +659,7 @@ def utility_processor() -> dict:
         FS3V_LOGO_URL=logo_url,
         FS3V_UPLOAD_TYPE=upload_type,
         FS3V_OBJECT_HOSTNAME=object_hostname,
+        FS3V_OBJECT_BASE_PATH=object_base_path,
         FSV_USER_EMAIL=user_email,
         FSV_USER_AVATAR=user_avatar,
         FSV_AUTH_ENABLED=auth_enabled,

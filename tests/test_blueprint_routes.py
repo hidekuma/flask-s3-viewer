@@ -290,6 +290,34 @@ class TestObjectHostname:
         # Anchor should target a new tab (rel/target attributes present).
         assert b'rel="noopener noreferrer"' in rv.data
 
+    def test_listing_uses_object_hostname_with_base_path(self, s3_bucket, tmp_path) -> None:
+        from flask import Flask
+
+        from flask_s3_viewer import FlaskS3Viewer
+
+        s3_client, bucket = s3_bucket
+        s3_client.put_object(Bucket=bucket, Key='scoped/media/cat.jpg', Body=b'jpg')
+        app = Flask(__name__)
+        FlaskS3Viewer(
+            app,
+            namespace='bp-host',
+            object_hostname='https://cdn.example.com',
+            config={
+                'profile_name': None,
+                'bucket_name': bucket,
+                'region_name': 'ap-northeast-2',
+                'access_key': 'testing',
+                'secret_key': 'testing',
+                'cache_dir': str(tmp_path / 'cache-host'),
+                'use_cache': True,
+                'ttl': 60,
+                'base_path': 'scoped',
+            },
+        )
+        rv = app.test_client().get('/bp-host/files?prefix=media/')
+        assert rv.status_code == 200
+        assert b'https://cdn.example.com/scoped/media/cat.jpg' in rv.data
+
     def test_listing_falls_back_to_download_route_without_hostname(self, client, s3_bucket) -> None:
         s3_client, bucket = s3_bucket
         s3_client.put_object(Bucket=bucket, Key='media/dog.jpg', Body=b'jpg')

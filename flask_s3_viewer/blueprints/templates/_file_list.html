@@ -217,8 +217,9 @@
                   </svg>
                   {%- set file_basename = c['Key'].rsplit('/', 1)[-1] -%}
                   {% if FS3V_OBJECT_HOSTNAME %}
+                    {%- set object_prefix = FS3V_OBJECT_BASE_PATH ~ '/' if FS3V_OBJECT_BASE_PATH else '' -%}
                     <a class="truncate font-medium text-gray-800 hover:text-gray-950 dark:text-gray-100 dark:hover:text-white"
-                       href="{{ FS3V_OBJECT_HOSTNAME }}/{{ c['Key'] }}"
+                       href="{{ FS3V_OBJECT_HOSTNAME }}/{{ object_prefix }}{{ c['Key'] }}"
                        target="_blank"
                        rel="noopener noreferrer"
                        title="{{ c['Key'] }}">{{ file_basename }}</a>
