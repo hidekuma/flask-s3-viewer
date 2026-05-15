@@ -280,13 +280,14 @@ def files_presign() -> Any:
     if _redirect is not None and not isinstance(_redirect, str):
         return _redirect
     file_list = request.form.get("file_list")
+    allow_overwrite = request.form.get('overwrite') == '1'
     rtns: list[dict] = []
     if file_list:
         for f in file_list.split(','):
             try:
                 safe_name = _normalize_upload_filename(f)
                 filename = f'{prefix}{safe_name}'
-                if fs3viewer.is_exists(filename):
+                if fs3viewer.is_exists(filename) and not allow_overwrite:
                     rtns.append({'status_code': 409})
                 elif not is_allowed(fs3viewer, filename):
                     rtns.append({'status_code': 403})

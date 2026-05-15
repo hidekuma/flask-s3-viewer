@@ -39,6 +39,7 @@ class TestListing:
         assert rv.headers['X-Content-Type-Options'] == 'nosniff'
         assert rv.headers['X-Frame-Options'] == 'DENY'
         assert 'Content-Security-Policy' in rv.headers
+        assert "connect-src 'self' https:" in rv.headers['Content-Security-Policy']
 
     def test_listing_does_not_emit_htmx_js_eval_attrs(self, client) -> None:
         rv = client.get(_ns_path('/files'))
@@ -119,6 +120,35 @@ class TestDelete:
         resp = s3_client.list_objects_v2(Bucket=bucket, Prefix='del/')
         keys = [o['Key'] for o in resp.get('Contents', [])]
         assert 'del/bye.txt' not in keys
+
+    def test_delete_folder_removes_marker_and_children(self, client, s3_bucket) -> None:
+        s3_client, bucket = s3_bucket
+        s3_client.put_object(Bucket=bucket, Key='folder/', Body=b'')
+        s3_client.put_object(Bucket=bucket, Key='folder/a.txt', Body=b'a')
+        s3_client.put_object(Bucket=bucket, Key='folder/empty-child/', Body=b'')
+        s3_client.put_object(Bucket=bucket, Key='folder/nested/b.txt', Body=b'b')
+
+        rv = client.delete(_ns_path('/files/folder/'))
+
+        assert rv.status_code == 204
+        resp = s3_client.list_objects_v2(Bucket=bucket, Prefix='folder/')
+        assert resp.get('Contents') is None
+
+    def test_delete_folder_invalidates_parent_listing_cache(self, client, s3_bucket) -> None:
+        s3_client, bucket = s3_bucket
+        s3_client.put_object(Bucket=bucket, Key='cached-folder/', Body=b'')
+        s3_client.put_object(Bucket=bucket, Key='cached-folder/a.txt', Body=b'a')
+
+        first = client.get(_ns_path('/files'), headers={'HX-Request': 'true'})
+        assert first.status_code == 200
+        assert b'cached-folder/' in first.data
+
+        rv = client.delete(_ns_path('/files/cached-folder/'))
+        assert rv.status_code == 204
+
+        second = client.get(_ns_path('/files'), headers={'HX-Request': 'true'})
+        assert second.status_code == 200
+        assert b'cached-folder/' not in second.data
 
     def test_delete_invalid_prefix_returns_400(self, client) -> None:
         # A3: ``..%2Fetc/`` decodes to '../etc/' which triggers the trailing-/
@@ -280,6 +310,19 @@ class TestSearch:
         assert '한글.pdf'.encode() in rv.data
         assert '한글-깊음.pdf'.encode() not in rv.data
 
+    def test_search_within_prefix_does_not_match_current_folder_name(self, client, s3_bucket) -> None:
+        s3_client, bucket = s3_bucket
+        s3_client.put_object(Bucket=bucket, Key='root/aaaa/photo.png', Body=b'x')
+        s3_client.put_object(Bucket=bucket, Key='root/aaaa/report.pdf', Body=b'x')
+        s3_client.put_object(Bucket=bucket, Key='root/aaaa/alpha.txt', Body=b'x')
+
+        rv = client.get(_ns_path('/files?prefix=root/aaaa/&search=a'))
+
+        assert rv.status_code == 200
+        assert b'alpha.txt' in rv.data
+        assert b'photo.png' not in rv.data
+        assert b'report.pdf' not in rv.data
+
     def test_search_matches_nfd_keys_with_nfc_query(self, s3_bucket) -> None:
         """macOS-style uploads land in S3 as NFD (decomposed Hangul);
         the browser IME sends NFC. Without explicit normalisation the
@@ -379,6 +422,39 @@ class TestSearch:
         rv2 = app.test_client().get('/bp/files?search=report')
         assert rv2.status_code == 200
         assert b'report.pdf' in rv2.data
+
+    def test_search_within_base_path_prefix_does_not_match_current_folder_name(self, s3_bucket, tmp_path) -> None:
+        import boto3
+        from flask import Flask
+
+        from flask_s3_viewer import FlaskS3Viewer
+
+        _, bucket = s3_bucket
+        c = boto3.client('s3', region_name='us-east-1')
+        c.put_object(Bucket=bucket, Key='root/aaaa/1.png', Body=b'x')
+        c.put_object(Bucket=bucket, Key='root/aaaa/10.png', Body=b'x')
+        c.put_object(Bucket=bucket, Key='root/aaaa/alpha.png', Body=b'x')
+
+        app = Flask(__name__)
+        app.config['TESTING'] = True
+        FlaskS3Viewer(
+            app, namespace='rooted',
+            config={
+                'profile_name': None, 'bucket_name': bucket,
+                'region_name': 'us-east-1',
+                'access_key': 'x', 'secret_key': 'x',
+                'cache_dir': str(tmp_path / 'rooted-cache'),
+                'use_cache': True, 'ttl': 60,
+                'base_path': 'root',
+            },
+        )
+
+        rv = app.test_client().get('/rooted/files?prefix=aaaa/&search=aaa')
+
+        assert rv.status_code == 200
+        assert b'1.png' not in rv.data
+        assert b'10.png' not in rv.data
+        assert b'alpha.png' not in rv.data
 
     def test_search_folder_navigation_preserves_query(self, client, s3_bucket) -> None:
         s3_client, bucket = s3_bucket

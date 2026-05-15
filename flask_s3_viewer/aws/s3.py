@@ -308,10 +308,11 @@ class AWSS3Client(AWSSession):
             next_token = result.get('NextToken')
             raw_contents = result.get('Contents') or []
             raw_prefixes = result.get('CommonPrefixes') or []
-            # Drop the empty "folder placeholder" objects so they
-            # don't pollute the file list. They are still returned
-            # when delimiter='' (flat listing for delete-recursive).
-            raw_contents = [c for c in raw_contents if c.get('Size', 0) > 0]
+            # Drop empty "folder placeholder" objects from visible listings,
+            # but keep them in flat recursive listings so folder deletion can
+            # remove nested empty directory markers too.
+            if delimiter:
+                raw_contents = [c for c in raw_contents if c.get('Size', 0) > 0]
             if search:
                 # NFC normalisation matters: macOS Finder uploads
                 # decomposed Hangul (NFD: ㅅ+ㅡ+...), while the browser
@@ -328,11 +329,22 @@ class AWSS3Client(AWSSession):
                 base_strip = (
                     self._base_path + '/' if self._base_path else ''
                 )
+                visible_prefix = (
+                    prefix[len(base_strip):]
+                    if base_strip and prefix.startswith(base_strip)
+                    else prefix
+                )
 
                 def _visible_key(k: str) -> str:
                     if base_strip and k.startswith(base_strip):
                         return k[len(base_strip):]
                     return k
+
+                def _relative_key(k: str) -> str:
+                    key = _visible_key(k)
+                    if visible_prefix and key.startswith(visible_prefix):
+                        return key[len(visible_prefix):]
+                    return key
 
                 def _norm(s: str) -> str:
                     return unicodedata.normalize('NFC', s).lower()
@@ -343,7 +355,7 @@ class AWSS3Client(AWSSession):
                 contents = [
                     c for c in raw_contents
                     if (c.get('Key') or '')
-                    and needle in _norm(_visible_key(c['Key']))
+                    and needle in _norm(_relative_key(c['Key']))
                 ]
                 # Folder hits come from the current listing's direct
                 # child prefixes only; match against the visible folder

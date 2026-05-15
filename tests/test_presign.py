@@ -112,6 +112,19 @@ class TestPresignEndpoint:
         body = rv.get_json()
         assert body == [{'status_code': 409}]
 
+    def test_existing_file_with_overwrite_returns_presign(self, presign_client, presign_s3_bucket):
+        client, bucket = presign_s3_bucket
+        client.put_object(Bucket=bucket, Key='taken.txt', Body=b'existing')
+        rv = presign_client.post(
+            '/fsv-presign/files/presign',
+            data={'prefix': '', 'file_list': 'taken.txt', 'overwrite': '1'},
+        )
+        assert rv.status_code == 200
+        body = rv.get_json()
+        assert len(body) == 1
+        assert 'status_code' not in body[0]
+        assert body[0]['fields'].get('key') == 'taken.txt'
+
     def test_disallowed_extension_returns_403_slot(self, presign_client):
         """``allowed_extensions`` blocks the slot with a 403 marker."""
         rv = presign_client.post(
@@ -208,7 +221,10 @@ class TestPresignTemplate:
         rv = presign_client.get('/fsv-presign/files')
         body = rv.data.decode('utf-8')
         assert 'FLASK_S3_VIEWER_CORE.readyFileHandling' in body
-        assert 'FLASK_S3_VIEWER_CORE.uploadFiles' in body
+        assert 'FLASK_S3_VIEWER_CORE.putAll' in body
+        assert 'FLASK_S3_VIEWER_CORE.fetchPresigns' in body
+        assert 'FLASK_S3_VIEWER_CORE.onProgress' in body
+        assert 'fsvPresignShowOverwrite' in body
 
     def test_htmx_partial_does_not_resend_upload_form(self, presign_client):
         """HTMX partial swaps replace only ``#file-list``; the upload form
