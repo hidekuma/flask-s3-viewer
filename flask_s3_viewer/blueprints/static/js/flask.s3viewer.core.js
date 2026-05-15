@@ -61,9 +61,21 @@ var FLASK_S3_VIEWER_CORE = (function () {
     xhr.onload = function () {
       var slots = [];
       try { slots = JSON.parse(xhr.responseText) || []; } catch (e) { /* keep [] */ }
-      cb(slots);
+      if (xhr.status >= 200 && xhr.status < 300) {
+        cb(slots, null);
+        return;
+      }
+      cb([], {
+        status: xhr.status,
+        responseText: xhr.responseText,
+      });
     };
-    xhr.onerror = function () { cb([]); };
+    xhr.onerror = function () {
+      cb([], {
+        status: 0,
+        responseText: '',
+      });
+    };
     xhr.send(fd);
   }
 
@@ -73,22 +85,22 @@ var FLASK_S3_VIEWER_CORE = (function () {
     var files = Array.prototype.slice.call(input.files);
     if (typeof FLASK_S3_VIEWER_UPLOAD_TYPE !== 'undefined' &&
         FLASK_S3_VIEWER_UPLOAD_TYPE === 'presign') {
-      fetchPresigns(files, function (slots) {
+      fetchPresigns(files, function (slots, error) {
         presigns = slots;
-        if (typeof cb === 'function') cb(event, files, slots);
+        if (typeof cb === 'function') cb(event, files, slots, error);
       });
     } else if (typeof cb === 'function') {
-      cb(event, files, null);
+      cb(event, files, null, null);
     }
   }
 
-  function emitProgress(pct) {
+  function emitProgress(pct, failures) {
     if (typeof progressCallback === 'function') {
       progressCallback({
         percent: Math.round(pct),
         done: done,
         total: pending,
-        failures: [],
+        failures: failures || [],
       });
     }
     setProgress(pct);
@@ -130,20 +142,20 @@ var FLASK_S3_VIEWER_CORE = (function () {
       }
     });
     if (pending === 0) {
-      emitProgress(100);
+      emitProgress(0, failures);
       if (typeof cb === 'function') cb(null, { failures: failures, ok: 0 });
       return;
     }
-    emitProgress(0);
+    emitProgress(0, failures);
     files.forEach(function (file, i) {
       var slot = slots[i] || {};
       if (slot.status_code) return;
       putOne(file, slot, function (status) {
         done += 1;
         if (status !== null) failures.push({ name: file.name, status: status });
-        emitProgress(totalBytes ? (loadedBytes / totalBytes) * 100 : 100);
+        emitProgress(totalBytes ? (loadedBytes / totalBytes) * 100 : 100, failures);
         if (done === pending) {
-          emitProgress(100);
+          emitProgress(100, failures);
           if (typeof cb === 'function') {
             cb(null, { failures: failures, ok: pending - failures.length });
           }
@@ -158,7 +170,7 @@ var FLASK_S3_VIEWER_CORE = (function () {
     if (!input || !input.files || !input.files.length) return;
     var files = Array.prototype.slice.call(input.files);
     if (!presigns.length || presigns.length !== files.length) {
-      fetchPresigns(files, function (slots) {
+      fetchPresigns(files, function (slots, error) {
         presigns = slots;
         putAll(files, slots, cb);
       });

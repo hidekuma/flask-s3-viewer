@@ -222,7 +222,7 @@
         var total = detail && typeof detail.total === 'number' ? detail.total : fsvPresignUploadableCount(fsvPresignSlots);
         meta.textContent = total > 0 ? done + ' / ' + total + ' • ' + pct + '%' : pct + '%';
       }
-      if (pct === 100) {
+      if (pct === 100 && (!detail || !detail.failures || detail.failures.length === 0)) {
         setTimeout(function () {
           if (loading) loading.style.display = 'none';
           window.location.reload();
@@ -262,7 +262,20 @@
       if (loading) loading.style.display = 'none';
       fsvPresignHideOverwrite();
     }
-    function fsvPresignReady(e, files, presigns) {
+    function fsvPresignReady(e, files, presigns, error) {
+      if (error) {
+        var status = error.status || 403;
+        var body = error.responseText || '';
+        if (window.fsvShowServerError) {
+          window.fsvShowServerError(body, status);
+        } else {
+          window.alert('Upload failed (' + status + ')');
+        }
+        fsvPresignFiles = [];
+        fsvPresignSlots = [];
+        document.getElementById('file_chip').style.display = 'none';
+        return;
+      }
       var n = (files && files.length) || 0;
       fsvPresignFiles = Array.prototype.slice.call(files || []);
       fsvPresignSlots = presigns || [];
@@ -273,7 +286,22 @@
       document.getElementById('file_chip').style.display = 'block';
     }
     function fsvPresignDone(e, results) {
-      // core.js's progress hidden onchange reloads on 100%. No-op here.
+      if (!results || !results.failures || !results.failures.length) return;
+      var first = results.failures[0] || {};
+      var failedCount = results.failures.length;
+      var title = 'Upload failed';
+      var message = failedCount + ' file' + (failedCount === 1 ? '' : 's') + ' could not be uploaded.';
+      if (first.status) {
+        message += ' First error: ' + first.status + '.';
+      }
+      if (first.name) {
+        message += ' ' + first.name + '.';
+      }
+      if (window.fsvShowServerError) {
+        window.fsvShowServerError(message, first.status || 403);
+      } else {
+        window.alert(title + ': ' + message);
+      }
     }
     // Keep the presign-mode prefix in sync with the live #file-list prefix
     // when HTMX navigates between folders, since fs3viewer_prefix lives
@@ -291,7 +319,16 @@
       FLASK_S3_VIEWER_CORE.preventDefaults(e);
       if (!fsvPresignPendingOverwrite) return;
       fsvPresignSetOverwriteActions(false);
-      FLASK_S3_VIEWER_CORE.fetchPresigns(fsvPresignPendingOverwrite.files, function (slots) {
+      FLASK_S3_VIEWER_CORE.fetchPresigns(fsvPresignPendingOverwrite.files, function (slots, error) {
+        if (error) {
+          fsvPresignHideOverwrite();
+          if (window.fsvShowServerError) {
+            window.fsvShowServerError(error.responseText || '', error.status || 403);
+          } else {
+            window.alert('Upload failed (' + (error.status || 403) + ')');
+          }
+          return;
+        }
         fsvPresignSlots = slots || [];
         fsvPresignHideOverwrite();
         fsvPresignProgress('0', { done: 0, total: fsvPresignUploadableCount(fsvPresignSlots) });
