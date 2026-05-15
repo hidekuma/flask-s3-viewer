@@ -1,7 +1,7 @@
 import logging
 import os
 
-from flask import Flask, session
+from flask import Flask, request, session
 
 from flask_s3_viewer import FlaskS3Viewer
 from flask_s3_viewer.aws.ref import Region
@@ -36,7 +36,6 @@ app.secret_key = os.environ.get("FSV_SECRET_KEY", "local-dev-secret-key-change-m
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 
-
 # Either explicit emails, or whole domains, or both. Leave both empty during
 # the first round-trip if you just want to verify the OAuth dance — every
 # logged-in Google user will pass, and you can tighten later.
@@ -47,21 +46,87 @@ ALLOWED_DOMAINS: list[str] = [
     # "mycompany.com",
 ]
 
+# ---------------------------------------------------------------------------
+# RBAC example
+#
+# The UI bucket switcher uses `visible_namespaces_callback`, but hard
+# authorization still lives in `permission_callback`. This example scopes
+# access by namespace *and* prefix, so the same bucket can expose different
+# folders to different users.
+#
+# Note: this is a route-level gate. If you need the root listing itself to hide
+# every disallowed object, add row-level filtering in the listing query too.
+# ---------------------------------------------------------------------------
+RBAC_POLICY: dict[str, dict[str, dict[str, set[str]]]] = {
+    # Replace these with your real Google account emails.
+    "user.ocm": {
+        "flask-s3-viewer": {
+            "list": {""},
+            "upload": {"test/aaaa/"},
+            "presign": {"test/aaaa/"},
+            "download": {"test/aaaa/"},
+            "delete": {"test/aaaa/"},
+        },
+        "private": {
+            "list": {""},
+            "upload": {""},
+            "presign": {""},
+            "download": {""},
+            "delete": {""},
+        },
+    },
+    # "viewer@example.com": {
+    #     "flask-s3-viewer": {
+    #         "list": {"root/shared/"},
+    #         "download": {"root/shared/"},
+    #     },
+    # },
+}
+
+
+def current_user_email(req: request) -> str | None:
+    return session.get("fsv_user_email")
+
+
+def _path_allowed(key: str | None, allowed_prefixes: set[str]) -> bool:
+    if key is None:
+        return False
+    if not allowed_prefixes:
+        return False
+    return any(key == prefix or key.startswith(prefix) for prefix in allowed_prefixes)
+
+
+def can_access(email: str | None, action: str, namespace: str, key: str | None) -> bool:
+    if not email:
+        return False
+    namespace_policy = RBAC_POLICY.get(email, {}).get(namespace, {})
+    return _path_allowed(key, namespace_policy.get(action, set()))
+
+
+def visible_buckets(email: str | None, registry: dict) -> set[str]:
+    if not email:
+        return set()
+    # Returning only registered namespaces keeps stale policy entries out of
+    # the switcher if a bucket is temporarily disabled.
+    return set(RBAC_POLICY.get(email, {})).intersection(registry.keys())
+
+
 # FlaskS3Viewer Init
-FS3V_NAMESPACE = "flask-s3-viewer"
 s3viewer = FlaskS3Viewer(
     app,  # Flask app
-    namespace=FS3V_NAMESPACE,  # namespace be unique
-    title="Piccoma BOX",
-    # upload_type="presign",
-    object_hostname="http://flask-s3-viewer.com",  # file's hostname
+    namespace="flask-s3-viewer",  # namespace be unique
+    title="Asset Hub",
+    logo_path="./logo.svg",
+    upload_type="presign",
+    object_hostname="https://fsv-test-0513.s3.ap-northeast-1.amazonaws.com",  # file's hostname
     # ---- Google OAuth (optional) ----
     # Comment out the four kwargs below to fall back to the legacy
     # anonymous experience.
     google_client_id=GOOGLE_CLIENT_ID or None,
     google_client_secret=GOOGLE_CLIENT_SECRET or None,
-    allowed_emails=ALLOWED_EMAILS or None,
-    allowed_domains=ALLOWED_DOMAINS or None,
+    auth_callback=current_user_email,
+    permission_callback=can_access,
+    visible_namespaces_callback=visible_buckets,
     config={  # Bucket configs and else
         "profile_name": "fsv-test",
         "access_key": None,
@@ -70,8 +135,30 @@ s3viewer = FlaskS3Viewer(
         "endpoint_url": None,
         "bucket_name": "fsv-test-0513",
         "cache_dir": "/tmp/flask_s3_viewer",
-        "use_cache": True,
+        "use_cache": False,
         "base_path": "/test",
+        "timezone": "Asia/Tokyo",
+        "ttl": 86400,
+    },
+)
+
+s3viewer.add_new_one(
+    namespace="private",
+    title="Storage Console",
+    logo_path="./logo.svg",
+    upload_type="presign",
+    object_hostname="https://fsv-test-0513.s3.ap-northeast-1.amazonaws.com",
+    config={
+        "profile_name": "fsv-test",
+        "access_key": None,
+        "secret_key": None,
+        "region_name": Region.TOKYO.value,
+        "endpoint_url": None,
+        "bucket_name": "fsv-test-0513",
+        "cache_dir": "/tmp/flask_s3_viewer_private",
+        "use_cache": False,
+        "base_path": "/private",
+        "timezone": "Asia/Tokyo",
         "ttl": 86400,
     },
 )
@@ -85,6 +172,9 @@ def whoami() -> dict:
         "session_keys": list(session.keys()),
         "auth_enabled": s3viewer.auth_enabled,
         "google_configured": bool(s3viewer.google_client_id),
+        "visible_buckets": sorted(
+            visible_buckets(session.get("fsv_user_email"), app.extensions["flask_s3_viewer"])
+        ),
     }
 
 
@@ -111,7 +201,7 @@ def whoami() -> dict:
 # The legacy `s3viewer.register()` call is no longer needed and has been removed.
 
 
-@app.route("/index")
+@app.route("/")
 def index():
     return "Your app index page"
 
