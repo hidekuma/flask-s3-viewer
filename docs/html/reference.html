@@ -4,8 +4,8 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reference &mdash; Flask-S3-Viewer 0.3.1 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+  <title>Reference &mdash; Flask-S3-Viewer 1.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
 
   
@@ -16,7 +16,7 @@
   
         <script src="_static/jquery.js?v=5d32c60e"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=4621528c"></script>
+        <script src="_static/documentation_options.js?v=292eb321"></script>
         <script src="_static/doctools.js?v=9a2dae69"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -55,15 +55,16 @@
 <li class="toctree-l3"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET_CONFIGS"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET_CONFIGS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.__annotations__"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.__annotations__</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.__init__"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer._install_template_override"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer._install_template_override()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.add_new_one"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.add_new_one()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.get_boto_client"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.get_boto_client()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.get_boto_session"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.get_boto_session()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.get_instance"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.get_instance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.init_app"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.init_app()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.max_items"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.max_items</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.max_pages"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.max_pages</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.register"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.register()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.template_namespace"><code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer.template_namespace</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -132,31 +133,242 @@
 <h2>Cores<a class="headerlink" href="#cores" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flask_s3_viewer.</span></span><span class="sig-name descname"><span class="pre">FlaskS3Viewer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flask_s3_viewer.</span></span><span class="sig-name descname"><span class="pre">FlaskS3Viewer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Flask</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_hostname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_extensions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upload_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logo_url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logo_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">auth_callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">permission_callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">visible_namespaces_callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">google_client_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">google_client_secret</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_emails</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_domains</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">AWSS3Client</span></code></p>
-<dl class="py attribute">
+<dl class="simple">
+<dt>v1.0 breaking change:</dt><dd><ul class="simple">
+<li><p>Singleton 메타클래스 제거.</p></li>
+<li><p>동일 namespace 재초기화 시 ValueError raise.</p></li>
+<li><p>blueprint는 첫 init_app 호출에서 자동 등록되며 <a href="#id1"><span class="problematic" id="id2">`</span></a>register()`는 제거됨.</p></li>
+<li><p><cite>get_instance</cite>/<cite>get_boto_client</cite>/<a href="#id3"><span class="problematic" id="id4">`</span></a>get_boto_session`은 staticmethod(app, namespace).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py class">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET">
-<span class="sig-name descname"><span class="pre">FLASK_S3_VIEWER_BUCKET</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET" title="Link to this definition"></a></dt>
-<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">FlaskS3ViewerBucketConfig</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FLASK_S3_VIEWER_BUCKET</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">profile_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">region_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endpoint_url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">secret_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">access_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session_token</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ttl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timezone</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">role_arn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">role_session_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">external_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration_seconds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mfa_serial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">token_code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">token_code_callback</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.__getnewargs__">
+<span class="sig-name descname"><span class="pre">__getnewargs__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.__getnewargs__" title="Link to this definition"></a></dt>
+<dd><p>Return self as a plain tuple.  Used by copy and pickle.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.__match_args__">
+<span class="sig-name descname"><span class="pre">__match_args__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('profile_name',</span> <span class="pre">'region_name',</span> <span class="pre">'endpoint_url',</span> <span class="pre">'bucket_name',</span> <span class="pre">'secret_key',</span> <span class="pre">'access_key',</span> <span class="pre">'session_token',</span> <span class="pre">'cache_dir',</span> <span class="pre">'ttl',</span> <span class="pre">'use_cache',</span> <span class="pre">'timezone',</span> <span class="pre">'verify',</span> <span class="pre">'base_path',</span> <span class="pre">'role_arn',</span> <span class="pre">'role_session_name',</span> <span class="pre">'external_id',</span> <span class="pre">'duration_seconds',</span> <span class="pre">'mfa_serial',</span> <span class="pre">'token_code',</span> <span class="pre">'token_code_callback')</span></em><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.__match_args__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.__new__">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__new__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">region_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endpoint_url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">secret_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">access_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session_token</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ttl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timezone</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">role_arn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">role_session_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">external_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration_seconds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mfa_serial</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">token_code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">token_code_callback</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.__new__" title="Link to this definition"></a></dt>
+<dd><p>Create new instance of FLASK_S3_VIEWER_BUCKET(profile_name, region_name, endpoint_url, bucket_name, secret_key, access_key, session_token, cache_dir, ttl, use_cache, timezone, verify, base_path, role_arn, role_session_name, external_id, duration_seconds, mfa_serial, token_code, token_code_callback)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.__repr__">
+<span class="sig-name descname"><span class="pre">__repr__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.__repr__" title="Link to this definition"></a></dt>
+<dd><p>Return a nicely formatted representation string</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.__slots__">
+<span class="sig-name descname"><span class="pre">__slots__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></em><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.__slots__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET._asdict">
+<span class="sig-name descname"><span class="pre">_asdict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET._asdict" title="Link to this definition"></a></dt>
+<dd><p>Return a new dict which maps field names to their values.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET._field_defaults">
+<span class="sig-name descname"><span class="pre">_field_defaults</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET._field_defaults" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET._fields">
+<span class="sig-name descname"><span class="pre">_fields</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('profile_name',</span> <span class="pre">'region_name',</span> <span class="pre">'endpoint_url',</span> <span class="pre">'bucket_name',</span> <span class="pre">'secret_key',</span> <span class="pre">'access_key',</span> <span class="pre">'session_token',</span> <span class="pre">'cache_dir',</span> <span class="pre">'ttl',</span> <span class="pre">'use_cache',</span> <span class="pre">'timezone',</span> <span class="pre">'verify',</span> <span class="pre">'base_path',</span> <span class="pre">'role_arn',</span> <span class="pre">'role_session_name',</span> <span class="pre">'external_id',</span> <span class="pre">'duration_seconds',</span> <span class="pre">'mfa_serial',</span> <span class="pre">'token_code',</span> <span class="pre">'token_code_callback')</span></em><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET._fields" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET._make">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_make</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterable</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET._make" title="Link to this definition"></a></dt>
+<dd><p>Make a new FLASK_S3_VIEWER_BUCKET object from a sequence or iterable</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET._replace">
+<span class="sig-name descname"><span class="pre">_replace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET._replace" title="Link to this definition"></a></dt>
+<dd><p>Return a new FLASK_S3_VIEWER_BUCKET object replacing specified fields with new values</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.access_key">
+<span class="sig-name descname"><span class="pre">access_key</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.access_key" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 5</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.base_path">
+<span class="sig-name descname"><span class="pre">base_path</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.base_path" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 12</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.bucket_name">
+<span class="sig-name descname"><span class="pre">bucket_name</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.bucket_name" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.cache_dir">
+<span class="sig-name descname"><span class="pre">cache_dir</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.cache_dir" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 7</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.duration_seconds">
+<span class="sig-name descname"><span class="pre">duration_seconds</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.duration_seconds" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 16</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.endpoint_url">
+<span class="sig-name descname"><span class="pre">endpoint_url</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.endpoint_url" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.external_id">
+<span class="sig-name descname"><span class="pre">external_id</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.external_id" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 15</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.mfa_serial">
+<span class="sig-name descname"><span class="pre">mfa_serial</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.mfa_serial" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 17</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.profile_name">
+<span class="sig-name descname"><span class="pre">profile_name</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.profile_name" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.region_name">
+<span class="sig-name descname"><span class="pre">region_name</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.region_name" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.role_arn">
+<span class="sig-name descname"><span class="pre">role_arn</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.role_arn" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 13</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.role_session_name">
+<span class="sig-name descname"><span class="pre">role_session_name</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.role_session_name" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 14</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.secret_key">
+<span class="sig-name descname"><span class="pre">secret_key</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.secret_key" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 4</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.session_token">
+<span class="sig-name descname"><span class="pre">session_token</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.session_token" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 6</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.timezone">
+<span class="sig-name descname"><span class="pre">timezone</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.timezone" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 10</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.token_code">
+<span class="sig-name descname"><span class="pre">token_code</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.token_code" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 18</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.token_code_callback">
+<span class="sig-name descname"><span class="pre">token_code_callback</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.token_code_callback" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 19</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.ttl">
+<span class="sig-name descname"><span class="pre">ttl</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.ttl" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 8</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.use_cache">
+<span class="sig-name descname"><span class="pre">use_cache</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.use_cache" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 9</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.verify">
+<span class="sig-name descname"><span class="pre">verify</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET.verify" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 11</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET_CONFIGS">
-<span class="sig-name descname"><span class="pre">FLASK_S3_VIEWER_BUCKET_CONFIGS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET_CONFIGS" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">FLASK_S3_VIEWER_BUCKET_CONFIGS</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.FLASK_S3_VIEWER_BUCKET_CONFIGS" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.__annotations__">
+<span class="sig-name descname"><span class="pre">__annotations__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'FLASK_S3_VIEWER_BUCKET_CONFIGS':</span> <span class="pre">&lt;class</span> <span class="pre">'dict'&gt;,</span> <span class="pre">'__max_items':</span> <span class="pre">'int',</span> <span class="pre">'__max_pages':</span> <span class="pre">'int',</span> <span class="pre">'_base_path':</span> <span class="pre">'str',</span> <span class="pre">'_bucket_name':</span> <span class="pre">'str</span> <span class="pre">|</span> <span class="pre">None',</span> <span class="pre">'_cache':</span> <span class="pre">'AWSCache',</span> <span class="pre">'_s3':</span> <span class="pre">'Any',</span> <span class="pre">'_session':</span> <span class="pre">'Session',</span> <span class="pre">'allowed_extensions':</span> <span class="pre">'set[str]</span> <span class="pre">|</span> <span class="pre">None',</span> <span class="pre">'app':</span> <span class="pre">'Flask</span> <span class="pre">|</span> <span class="pre">None',</span> <span class="pre">'auth_enabled':</span> <span class="pre">'bool',</span> <span class="pre">'display_timezone':</span> <span class="pre">'ZoneInfo</span> <span class="pre">|</span> <span class="pre">None',</span> <span class="pre">'google_client_id':</span> <span class="pre">'str</span> <span class="pre">|</span> <span class="pre">None',</span> <span class="pre">'google_client_secret':</span> <span class="pre">'str</span> <span class="pre">|</span> <span class="pre">None',</span> <span class="pre">'logo_url':</span> <span class="pre">'str</span> <span class="pre">|</span> <span class="pre">None',</span> <span class="pre">'namespace':</span> <span class="pre">'str</span> <span class="pre">|</span> <span class="pre">None',</span> <span class="pre">'object_hostname':</span> <span class="pre">'str</span> <span class="pre">|</span> <span class="pre">None',</span> <span class="pre">'profile_name':</span> <span class="pre">'str</span> <span class="pre">|</span> <span class="pre">None',</span> <span class="pre">'region_name':</span> <span class="pre">'str</span> <span class="pre">|</span> <span class="pre">None',</span> <span class="pre">'runnable':</span> <span class="pre">'bool',</span> <span class="pre">'template_folder':</span> <span class="pre">'str</span> <span class="pre">|</span> <span class="pre">None',</span> <span class="pre">'title':</span> <span class="pre">'str',</span> <span class="pre">'upload_type':</span> <span class="pre">'str',</span> <span class="pre">'use_cache':</span> <span class="pre">'bool'}</span></em><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.__annotations__" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_hostname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_extensions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'base'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upload_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Flask</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_hostname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_extensions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upload_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logo_url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logo_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">auth_callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">permission_callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">visible_namespaces_callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">google_client_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">google_client_secret</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_emails</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_domains</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.__init__" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>app</strong> (<em>Flask.app</em>) – Required</p></li>
-<li><p><strong>namespace</strong> (<em>str</em>) – Unique namespace of Flask S3Viewer</p></li>
+<li><p><strong>app</strong> (<em>Flask.app</em>) – Flask application (Optional, v1.0+). If provided,
+extension is auto-registered. Otherwise call <a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.init_app" title="flask_s3_viewer.FlaskS3Viewer.init_app"><code class="xref py py-meth docutils literal notranslate"><span class="pre">init_app()</span></code></a> later.</p></li>
+<li><p><strong>namespace</strong> (<em>str</em>) – Unique namespace of Flask S3Viewer (Required)</p></li>
 <li><p><strong>object_hostname</strong> (<em>url</em>) – Hostname, e.g. Cloudfront endpoint</p></li>
 <li><p><strong>allowed_extensions</strong> (<em>set</em>) – e.g. {‘jpg’, ‘png’}</p></li>
-<li><p><strong>template_namespace</strong> (<em>str</em>) – Template name</p></li>
+<li><p><strong>template_namespace</strong> (<em>str</em>) – DEPRECATED — templates were unified in
+v1.0. Passing this argument emits a <code class="xref py py-class docutils literal notranslate"><span class="pre">DeprecationWarning</span></code>
+and the value is ignored.</p></li>
 <li><p><strong>upload_type</strong> (<em>str</em>) – Upload type</p></li>
+<li><p><strong>title</strong> (<em>str</em>) – Heading + browser title text. Defaults to
+<code class="docutils literal notranslate"><span class="pre">&quot;Flask</span> <span class="pre">S3</span> <span class="pre">Viewer&quot;</span></code>.</p></li>
+<li><p><strong>logo_url</strong> (<em>str</em>) – URL of a custom logo image (absolute URL, Flask
+<code class="docutils literal notranslate"><span class="pre">url_for</span></code> result, or any browser-resolvable path).</p></li>
+<li><p><strong>logo_path</strong> (<em>str</em>) – Local filesystem path to a logo image. It is
+read once and inlined as a <code class="docutils literal notranslate"><span class="pre">data:</span></code> URI — convenient when you
+don’t want to expose the file via a separate static route.
+<code class="docutils literal notranslate"><span class="pre">logo_path</span></code> takes precedence over <code class="docutils literal notranslate"><span class="pre">logo_url</span></code>.</p></li>
+<li><p><strong>template_folder</strong> (<em>str</em>) – Optional path to a directory containing
+overrides for any of the bundled templates (<code class="docutils literal notranslate"><span class="pre">layout.html</span></code>,
+<code class="docutils literal notranslate"><span class="pre">files.html</span></code>, <code class="docutils literal notranslate"><span class="pre">_file_list.html</span></code>, <code class="docutils literal notranslate"><span class="pre">_pagination.html</span></code>,
+<code class="docutils literal notranslate"><span class="pre">_upload_form.html</span></code>, <code class="docutils literal notranslate"><span class="pre">error.html</span></code>). Files in this folder are
+preferred by Jinja over the bundled originals. Scaffold a
+ready-to-edit starting point with <code class="docutils literal notranslate"><span class="pre">flask_s3_viewer</span> <span class="pre">-p</span> <span class="pre">./out</span></code>.</p></li>
+<li><p><strong>visible_namespaces_callback</strong> (<em>callable</em>) – Optional
+<code class="docutils literal notranslate"><span class="pre">callback(email,</span> <span class="pre">registry)</span> <span class="pre">-&gt;</span> <span class="pre">iterable[str]</span></code> used to hide
+namespaces the current user should not see in the bucket switcher.
+Security still comes from <code class="docutils literal notranslate"><span class="pre">permission_callback</span></code>.</p></li>
 <li><p><strong>config</strong> (<em>dict</em>) – Bucket configs</p></li>
 </ul>
 </dd>
@@ -164,17 +376,32 @@
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer._install_template_override">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_install_template_override</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Flask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer._install_template_override" title="Link to this definition"></a></dt>
+<dd><p>Prepend <code class="docutils literal notranslate"><span class="pre">folder</span></code> to the app’s Jinja loader so its templates win.</p>
+<p>Uses Flask’s <code class="docutils literal notranslate"><span class="pre">ChoiceLoader</span></code> + <code class="docutils literal notranslate"><span class="pre">FileSystemLoader</span></code> pattern so other
+blueprints’ template resolution is untouched.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.add_new_one">
-<span class="sig-name descname"><span class="pre">add_new_one</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_hostname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_extensions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'base'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upload_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.add_new_one" title="Link to this definition"></a></dt>
-<dd><p>Initialize another bucket</p>
+<span class="sig-name descname"><span class="pre">add_new_one</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_hostname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_extensions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upload_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logo_url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logo_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">auth_callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">permission_callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">visible_namespaces_callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer" title="flask_s3_viewer.FlaskS3Viewer"><span class="pre">FlaskS3Viewer</span></a></span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.add_new_one" title="Link to this definition"></a></dt>
+<dd><p>Initialize another bucket bound to the same Flask app.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>namespace</strong> (<em>str</em>) – Unique namespace of Flask S3Viewer</p></li>
 <li><p><strong>object_hostname</strong> (<em>url</em>) – Hostname, e.g. Cloudfront endpoint</p></li>
 <li><p><strong>allowed_extensions</strong> (<em>set</em>) – e.g. {‘jpg’, ‘png’}</p></li>
-<li><p><strong>template_namespace</strong> (<em>str</em>) – Template name</p></li>
+<li><p><strong>template_namespace</strong> (<em>str</em>) – DEPRECATED — see <a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer.__init__" title="flask_s3_viewer.FlaskS3Viewer.__init__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__init__()</span></code></a>.</p></li>
 <li><p><strong>upload_type</strong> (<em>str</em>) – Upload type</p></li>
+<li><p><strong>title</strong> (<em>str</em>) – Heading + browser title text for this namespace.</p></li>
+<li><p><strong>logo_url</strong> (<em>str</em>) – Optional custom logo URL.</p></li>
+<li><p><strong>logo_path</strong> (<em>str</em>) – Optional local logo path.</p></li>
+<li><p><strong>template_folder</strong> (<em>str</em>) – Optional template override folder.</p></li>
+<li><p><strong>auth_callback</strong> (<em>callable</em>) – Optional auth callback override.</p></li>
+<li><p><strong>permission_callback</strong> (<em>callable</em>) – Optional permission callback override.</p></li>
+<li><p><strong>visible_namespaces_callback</strong> (<em>callable</em>) – Optional bucket switcher visibility callback.</p></li>
 <li><p><strong>config</strong> (<em>dict</em>) – Bucket configs</p></li>
 </ul>
 </dd>
@@ -187,77 +414,47 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.get_boto_client">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_boto_client</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.get_boto_client" title="Link to this definition"></a></dt>
-<dd><p>Return a Boto3’s S3 client.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>namespace</strong> (<em>str</em>) – namespace</p>
-</dd>
-</dl>
-<dl class="simple">
-<dt>Return:</dt><dd><p>boto3’s S3 client.</p>
-</dd>
-</dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_boto_client</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Flask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.get_boto_client" title="Link to this definition"></a></dt>
+<dd><p>Return the underlying boto3 S3 client for the given app + namespace.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.get_boto_session">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_boto_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.get_boto_session" title="Link to this definition"></a></dt>
-<dd><p>Return a Boto3’s Sesson.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>namespace</strong> (<em>str</em>) – namespace</p>
-</dd>
-</dl>
-<dl class="simple">
-<dt>Return:</dt><dd><p>boto3’s Session.</p>
-</dd>
-</dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_boto_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Flask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.get_boto_session" title="Link to this definition"></a></dt>
+<dd><p>Return the underlying boto3 Session for the given app + namespace.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.get_instance">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_instance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer" title="flask_s3_viewer.FlaskS3Viewer"><span class="pre">FlaskS3Viewer</span></a></span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.get_instance" title="Link to this definition"></a></dt>
-<dd><p>Return a Flask S3Viewer instance.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>namespace</strong> (<em>str</em>) – namespace</p>
-</dd>
-</dl>
-<dl class="simple">
-<dt>Return:</dt><dd><p><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer" title="flask_s3_viewer.FlaskS3Viewer"><code class="xref py py-class docutils literal notranslate"><span class="pre">FlaskS3Viewer</span></code></a></p>
-</dd>
-</dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_instance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Flask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#flask_s3_viewer.FlaskS3Viewer" title="flask_s3_viewer.FlaskS3Viewer"><span class="pre">FlaskS3Viewer</span></a></span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.get_instance" title="Link to this definition"></a></dt>
+<dd><p>Return a Flask S3Viewer instance for the given app + namespace.</p>
+<p>v1.0 breaking: previously <code class="docutils literal notranslate"><span class="pre">get_instance(namespace)</span></code> returned the
+global Singleton entry. It now requires an explicit <code class="docutils literal notranslate"><span class="pre">app</span></code> argument
+(or use <code class="docutils literal notranslate"><span class="pre">current_app.extensions['flask_s3_viewer'][namespace]</span></code> from
+within a request).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.init_app">
+<span class="sig-name descname"><span class="pre">init_app</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Flask</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.init_app" title="Link to this definition"></a></dt>
+<dd><p>Register this FlaskS3Viewer instance to a Flask application.</p>
+<ul class="simple">
+<li><p>Stores the instance in <code class="docutils literal notranslate"><span class="pre">app.extensions['flask_s3_viewer'][namespace]</span></code>.</p></li>
+<li><p>Registers the blueprint once per app (first init_app call).</p></li>
+<li><p>Raises <code class="xref py py-class docutils literal notranslate"><span class="pre">ValueError</span></code> if the namespace is already registered for
+the given app (this is the v1.0 breaking change replacing Singleton’s
+silent reuse semantics).</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.max_items">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">max_items</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.max_items" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">max_items</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.max_items" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.max_pages">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">max_pages</span></span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.max_pages" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.register">
-<span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template_folder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.register" title="Link to this definition"></a></dt>
-<dd><p>Register FlaskS3Viewer to Flask’s blueprint.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>template_folder</strong> (<em>path</em>) – FIXME</p>
-</dd>
-</dl>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p><cite>template_folder</cite> is Not ready yet. DON’T USE THIS PARAM.</p>
-</div>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="flask_s3_viewer.FlaskS3Viewer.template_namespace">
-<span class="sig-name descname"><span class="pre">template_namespace</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'flask_s3_viewer'</span></em><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.template_namespace" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">max_pages</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#flask_s3_viewer.FlaskS3Viewer.max_pages" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -267,7 +464,7 @@
 <h2>Region<a class="headerlink" href="#region" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="flask_s3_viewer.aws.ref.Region">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flask_s3_viewer.aws.ref.</span></span><span class="sig-name descname"><span class="pre">Region</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flask_s3_viewer.aws.ref.</span></span><span class="sig-name descname"><span class="pre">Region</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names=&lt;not</span> <span class="pre">given&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start=1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary=None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flask_s3_viewer.aws.ref.Region" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
 <p>AWS Service Regions</p>
 <dl class="simple">
