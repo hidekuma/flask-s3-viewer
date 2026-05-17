@@ -12,14 +12,19 @@ You can `download FlaskS3Viewer executable`_ and `binary distributions from PyPI
 Support versions
 ----------------------------------------
 
-======= ====== ========
+Since v1.0, FlaskS3Viewer targets a modern Flask 3 / boto3 1.34 baseline.
+
+======= ====== ============
 Type    Name   Version
-======= ====== ========
-Runtime Python >=3.7
-Library boto3  >=1.12.2
-Library click  >=7.1.1
-Library Flask  >=1.1.1
-======= ====== ========
+======= ====== ============
+Runtime Python >=3.10
+Library boto3  >=1.34.0
+Library Flask  >=3.0,<4
+======= ====== ============
+
+The optional Google OAuth integration requires the ``[auth]`` extra::
+
+    pip install "flask_s3_viewer[auth]"   # adds Authlib >=1.3.1
 
 Using pip
 ---------

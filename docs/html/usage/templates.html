@@ -54,7 +54,10 @@
 <li class="toctree-l1"><a class="reference internal" href="configuration.html#user-guides">User Guides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../reference.html"> Reference</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#"> Templates</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#get-template-source">Get template source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#scaffold-the-templates">Scaffold the templates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#wire-the-override">Wire the override</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#inject-css-js-without-forking">Inject CSS / JS without forking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#branding-without-overriding-templates">Branding without overriding templates</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../license.html"> License</a></li>
@@ -87,53 +90,94 @@
              
   <section id="templates">
 <h1>Templates<a class="headerlink" href="#templates" title="Link to this heading"></a></h1>
-<p>Flask S3Viewer provides CLI to help customize templates.</p>
-<section id="get-template-source">
-<h2>Get template source<a class="headerlink" href="#get-template-source" title="Link to this heading"></a></h2>
-<p>You can customize the template with CLI tool.</p>
+<p>Since v1.0, Flask S3 Viewer ships a single unified UI built with
+<strong>Tailwind CSS + HTMX</strong>, with light/dark mode and inline heroicons.
+The legacy <code class="docutils literal notranslate"><span class="pre">base/</span></code> and <code class="docutils literal notranslate"><span class="pre">mdl/</span></code> template bundles are removed and the
+<code class="docutils literal notranslate"><span class="pre">template_namespace</span></code> constructor argument is deprecated — passing it
+emits <code class="xref py py-class docutils literal notranslate"><span class="pre">DeprecationWarning</span></code> and is otherwise ignored.</p>
+<p>Use the CLI to scaffold a copy of the bundled templates into your own
+repository, edit them, then point the viewer at the scaffolded
+directory via <code class="docutils literal notranslate"><span class="pre">template_folder=</span></code>.</p>
+<section id="scaffold-the-templates">
+<h2>Scaffold the templates<a class="headerlink" href="#scaffold-the-templates" title="Link to this heading"></a></h2>
 <p>See help.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># You can see the details</span>
-flask_s3_viewer<span class="w"> </span>-h
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>flask_s3_viewer<span class="w"> </span>-h
 <span class="o">===================</span><span class="w"> </span>Flask<span class="w"> </span>S3Viewer<span class="w"> </span>Command<span class="w"> </span>Line<span class="w"> </span><span class="nv">Tool</span><span class="w"> </span><span class="o">====================</span>
 
 optional<span class="w"> </span>arguments:
 <span class="w">  </span>-h,<span class="w"> </span>--help<span class="w">            </span>show<span class="w"> </span>this<span class="w"> </span><span class="nb">help</span><span class="w"> </span>message<span class="w"> </span>and<span class="w"> </span><span class="nb">exit</span>
 <span class="w">  </span>-p<span class="w"> </span>PATH,<span class="w"> </span>--path<span class="w"> </span>PATH<span class="w">  </span>Enter<span class="w"> </span>the<span class="w"> </span>directory<span class="w"> </span>path<span class="w"> </span>where<span class="w"> </span>the<span class="w"> </span>template<span class="w"> </span>will<span class="w"> </span>be
-<span class="w">                        </span>located
-<span class="w">  </span>-t<span class="w"> </span><span class="o">{</span>base,mdl<span class="o">}</span>,<span class="w"> </span>--template<span class="w"> </span><span class="o">{</span>base,mdl<span class="o">}</span>
-<span class="w">                        </span>Enter<span class="w"> </span>the<span class="w"> </span>name<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>template<span class="w"> </span>to<span class="w"> </span>import.<span class="w"> </span><span class="o">(</span>mdl<span class="w"> </span>means
-<span class="w">                        </span>material-design-lite<span class="w"> </span>and<span class="w"> </span>base<span class="w"> </span>means<span class="w"> </span>not<span class="w"> </span>designed
-<span class="w">                        </span>template<span class="o">)</span>.
+<span class="w">                        </span>located.
+<span class="w">  </span>--with-static<span class="w">         </span>Also<span class="w"> </span>copy<span class="w"> </span>the<span class="w"> </span>bundled<span class="w"> </span>static<span class="w"> </span>assets<span class="w"> </span><span class="o">(</span>CSS<span class="w"> </span>/<span class="w"> </span>HTMX<span class="w"> </span>/
+<span class="w">                        </span>core.js<span class="o">)</span><span class="w"> </span>alongside<span class="w"> </span>the<span class="w"> </span>templates.
 </pre></div>
 </div>
-<p>Get the template to your repository.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get a Material-design-lite template</span>
-flask_s3_viewer<span class="w"> </span>--path<span class="w"> </span>templates/mdl<span class="w"> </span>--template<span class="w"> </span>mdl
-
-<span class="c1"># Get a base template (not designed at all)</span>
-flask_s3_viewer<span class="w"> </span>-p<span class="w"> </span>templates/base<span class="w"> </span>-t<span class="w"> </span>base
+<p>Copy just the Jinja templates (most common):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>flask_s3_viewer<span class="w"> </span>-p<span class="w"> </span>./fsv-templates
 </pre></div>
 </div>
-<p>When you run the command, you can see the
-<code class="docutils literal notranslate"><span class="pre">{repository}/{path}/{template}</span></code> has been created on your
-repository. then rerun the Flask application.</p>
-<p>And you can also change template directory if you want.</p>
-<p>For examples, Get Material-design-lite template to <code class="docutils literal notranslate"><span class="pre">templates/customized</span></code> directory on your root path.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>flask_s3_viewer<span class="w"> </span>-p<span class="w"> </span>templates/customized<span class="w"> </span>-t<span class="w"> </span>mdl
+<p>Or fork the whole UI bundle (templates + <code class="docutils literal notranslate"><span class="pre">static/css/app.css</span></code> + HTMX +
+<code class="docutils literal notranslate"><span class="pre">core.js</span></code>) when you need to restyle from scratch:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>flask_s3_viewer<span class="w"> </span>-p<span class="w"> </span>./fsv-templates<span class="w"> </span>--with-static
 </pre></div>
 </div>
-<p>Then change template_namespace. it will be routed to defined directory (<code class="docutils literal notranslate"><span class="pre">templates/customized</span></code>).</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">s3viewer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>FlaskS3Viewer<span class="o">(</span>
-<span class="w">    </span>...
-<span class="w">    </span><span class="nv">template_namespace</span><span class="o">=</span><span class="s1">&#39;customized&#39;</span>,
-<span class="w">    </span>...
-<span class="o">)</span>
+<p>After scaffolding, the directory contains:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">layout.html</span></code> — page chrome, theme toggle, brand widget, <code class="docutils literal notranslate"><span class="pre">extra_head</span></code> block</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">files.html</span></code> — full listing page</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">_file_list.html</span></code> — HTMX partial swapped on navigation / search / pagination</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">_pagination.html</span></code> — pager partial</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">_upload_form.html</span></code> — upload UI partial</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">error.html</span></code> / <code class="docutils literal notranslate"><span class="pre">_error_panel.html</span></code> — error states</p></li>
+</ul>
+</section>
+<section id="wire-the-override">
+<h2>Wire the override<a class="headerlink" href="#wire-the-override" title="Link to this heading"></a></h2>
+<p>Point the viewer at the scaffolded directory:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="n">FlaskS3Viewer</span><span class="p">(</span>
+<span class="linenos">2</span>    <span class="n">app</span><span class="p">,</span>
+<span class="linenos">3</span>    <span class="n">namespace</span><span class="o">=</span><span class="s1">&#39;my-bucket&#39;</span><span class="p">,</span>
+<span class="linenos">4</span>    <span class="n">template_folder</span><span class="o">=</span><span class="s1">&#39;./fsv-templates&#39;</span><span class="p">,</span>
+<span class="linenos">5</span>    <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="o">...</span><span class="p">},</span>
+<span class="linenos">6</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>The template folder of Flask S3Viewer is fixed as <code class="docutils literal notranslate"><span class="pre">templates</span></code>. so if you change <code class="docutils literal notranslate"><span class="pre">template_namespace</span></code>, It will be routed <strong>{repository}/templates/{defined template_namespace_by_you}</strong>.</p>
+<p>Behind the scenes the extension prepends a <code class="docutils literal notranslate"><span class="pre">FileSystemLoader</span></code> to the
+Flask app’s Jinja loader via <code class="docutils literal notranslate"><span class="pre">ChoiceLoader</span></code>, so any template you
+didn’t override still resolves against the bundled defaults and other
+blueprints’ templates remain unaffected.</p>
+</section>
+<section id="inject-css-js-without-forking">
+<h2>Inject CSS / JS without forking<a class="headerlink" href="#inject-css-js-without-forking" title="Link to this heading"></a></h2>
+<p>For the common case where you only need to add a stylesheet, script, or
+meta tag, extend <code class="docutils literal notranslate"><span class="pre">layout.html</span></code> and use the <code class="docutils literal notranslate"><span class="pre">extra_head</span></code> block — no
+<code class="docutils literal notranslate"><span class="pre">template_folder=</span></code> needed if you place this template on Flask’s
+existing search path:</p>
+<div class="highlight-jinja notranslate"><div class="highlight"><pre><span></span><span class="cp">{%</span> <span class="k">extends</span> <span class="s2">&quot;flask_s3_viewer/layout.html&quot;</span> <span class="cp">%}</span>
+<span class="cp">{%</span> <span class="k">block</span> <span class="nv">extra_head</span> <span class="cp">%}</span>
+<span class="x">  &lt;link rel=&quot;stylesheet&quot; href=&quot;</span><span class="cp">{{</span> <span class="nv">url_for</span><span class="o">(</span><span class="s1">&#39;static&#39;</span><span class="o">,</span> <span class="nv">filename</span><span class="o">=</span><span class="s1">&#39;custom.css&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="x">&quot;&gt;</span>
+<span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
+</pre></div>
 </div>
+</section>
+<section id="branding-without-overriding-templates">
+<h2>Branding without overriding templates<a class="headerlink" href="#branding-without-overriding-templates" title="Link to this heading"></a></h2>
+<p>If you only want a custom title and logo, prefer the constructor
+options over a template override:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="n">FlaskS3Viewer</span><span class="p">(</span>
+<span class="linenos">2</span>    <span class="n">app</span><span class="p">,</span>
+<span class="linenos">3</span>    <span class="n">namespace</span><span class="o">=</span><span class="s1">&#39;my-bucket&#39;</span><span class="p">,</span>
+<span class="linenos">4</span>    <span class="n">title</span><span class="o">=</span><span class="s1">&#39;ACME File Vault&#39;</span><span class="p">,</span>
+<span class="linenos">5</span>    <span class="n">logo_path</span><span class="o">=</span><span class="s1">&#39;/opt/acme/assets/logo.svg&#39;</span><span class="p">,</span>     <span class="c1"># local file, auto-inlined as data: URI</span>
+<span class="linenos">6</span>    <span class="c1"># logo_url=&#39;https://cdn.acme.io/logo.svg&#39;, # alternatively, any URL</span>
+<span class="linenos">7</span>    <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="o">...</span><span class="p">},</span>
+<span class="linenos">8</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">logo_path</span></code> reads the file once at construction time and embeds it as
+a <code class="docutils literal notranslate"><span class="pre">data:</span></code> URI, so you don’t need to expose it via a separate static
+route. <code class="docutils literal notranslate"><span class="pre">logo_url</span></code> accepts any browser-resolvable URL. <code class="docutils literal notranslate"><span class="pre">logo_path</span></code>
+takes precedence over <code class="docutils literal notranslate"><span class="pre">logo_url</span></code> when both are provided.</p>
 </section>
 </section>
 

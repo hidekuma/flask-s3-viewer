@@ -91,6 +91,7 @@
 <p>You can <a class="reference external" href="https://github.com/hidekuma/flask-s3-viewer/releases">download FlaskS3Viewer executable</a> and <a class="reference external" href="https://pypi.org/project/flask-s3-viewer/">binary distributions from PyPI</a></p>
 <section id="support-versions">
 <h2>Support versions<a class="headerlink" href="#support-versions" title="Link to this heading"></a></h2>
+<p>Since v1.0, FlaskS3Viewer targets a modern Flask 3 / boto3 1.34 baseline.</p>
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>Type</p></th>
@@ -101,22 +102,22 @@
 <tbody>
 <tr class="row-even"><td><p>Runtime</p></td>
 <td><p>Python</p></td>
-<td><p>&gt;=3.7</p></td>
+<td><p>&gt;=3.10</p></td>
 </tr>
 <tr class="row-odd"><td><p>Library</p></td>
 <td><p>boto3</p></td>
-<td><p>&gt;=1.12.2</p></td>
+<td><p>&gt;=1.34.0</p></td>
 </tr>
 <tr class="row-even"><td><p>Library</p></td>
-<td><p>click</p></td>
-<td><p>&gt;=7.1.1</p></td>
-</tr>
-<tr class="row-odd"><td><p>Library</p></td>
 <td><p>Flask</p></td>
-<td><p>&gt;=1.1.1</p></td>
+<td><p>&gt;=3.0,&lt;4</p></td>
 </tr>
 </tbody>
 </table>
+<p>The optional Google OAuth integration requires the <code class="docutils literal notranslate"><span class="pre">[auth]</span></code> extra:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="s2">&quot;flask_s3_viewer[auth]&quot;</span>   <span class="c1"># adds Authlib &gt;=1.3.1</span>
+</pre></div>
+</div>
 </section>
 <section id="using-pip">
 <h2>Using pip<a class="headerlink" href="#using-pip" title="Link to this heading"></a></h2>

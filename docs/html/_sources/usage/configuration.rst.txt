@@ -132,8 +132,8 @@ You can mount a specific path in the bucket to the browser.
         object_hostname='http://anotherbucket.com',
         config={
             'profile_name': 'PROFILE_NAME',
-            'bucket_name': 'S3_BUCKET_NAME'
-            'base_path': 'path/to/your/folder'
+            'bucket_name': 'S3_BUCKET_NAME',
+            'base_path': 'path/to/your/folder',
         }
     )
 
