@@ -458,6 +458,20 @@ attacker-controllable fields (key, email, User-Agent, exception
 message) are escaped as ``\\xNN`` before the record is built, so a
 crafted request cannot smuggle a fake row into the log stream.
 
+**Multi-file requests emit one row per file.** An upload of three files
+produces three ``action=upload`` records — each ``key`` is the
+per-object S3 target the request would write (``<prefix><safe_name>``).
+``presign`` follows the same rule: one row per ``file_list`` entry,
+each with its own ``status_code`` (200 ok / 409 conflict / 403
+disallowed / 500 error). The "no files iterated" cases (mkdir-only
+upload, empty ``file_list`` presign, invalid prefix, denied auth) still
+emit a single aggregate row keyed by the prefix. Note: when a
+multi-file upload aborts with ``403`` (disallowed extension) or returns
+``409`` (duplicate / overwrite conflict) the HTTP response is a single
+status but the audit stream carries one row per violating file —
+``response status != row count`` by design. Plan for the row volume:
+uploading 100 files in one request produces 100 audit records.
+
 **Plain file handler example:**
 
 .. code-block:: python

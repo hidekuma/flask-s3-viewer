@@ -488,6 +488,19 @@ user=alice@example.com result=ok status=200
 attacker-controllable fields (key, email, User-Agent, exception
 message) are escaped as <code class="docutils literal notranslate"><span class="pre">\\xNN</span></code> before the record is built, so a
 crafted request cannot smuggle a fake row into the log stream.</p>
+<p><strong>Multi-file requests emit one row per file.</strong> An upload of three files
+produces three <code class="docutils literal notranslate"><span class="pre">action=upload</span></code> records — each <code class="docutils literal notranslate"><span class="pre">key</span></code> is the
+per-object S3 target the request would write (<code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;&lt;safe_name&gt;</span></code>).
+<code class="docutils literal notranslate"><span class="pre">presign</span></code> follows the same rule: one row per <code class="docutils literal notranslate"><span class="pre">file_list</span></code> entry,
+each with its own <code class="docutils literal notranslate"><span class="pre">status_code</span></code> (200 ok / 409 conflict / 403
+disallowed / 500 error). The “no files iterated” cases (mkdir-only
+upload, empty <code class="docutils literal notranslate"><span class="pre">file_list</span></code> presign, invalid prefix, denied auth) still
+emit a single aggregate row keyed by the prefix. Note: when a
+multi-file upload aborts with <code class="docutils literal notranslate"><span class="pre">403</span></code> (disallowed extension) or returns
+<code class="docutils literal notranslate"><span class="pre">409</span></code> (duplicate / overwrite conflict) the HTTP response is a single
+status but the audit stream carries one row per violating file —
+<code class="docutils literal notranslate"><span class="pre">response</span> <span class="pre">status</span> <span class="pre">!=</span> <span class="pre">row</span> <span class="pre">count</span></code> by design. Plan for the row volume:
+uploading 100 files in one request produces 100 audit records.</p>
 <p><strong>Plain file handler example:</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="linenos">2</span>

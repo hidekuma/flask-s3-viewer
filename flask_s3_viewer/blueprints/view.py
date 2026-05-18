@@ -171,6 +171,33 @@ def _normalize_upload_filename(filename: str) -> str:
     return filename
 
 
+def _audit_emit_file(
+    action: str,
+    key: str | None,
+    status_code: int,
+    result: str,
+    exc: BaseException | None = None,
+) -> None:
+    """Emit a single audit record for one file inside a multi-file request.
+
+    Captures the request-scoped invariants (namespace, authenticated user)
+    from ``g`` so callers only pass the per-file varying bits. Setting
+    ``g.FSV_AUDIT_EMITTED`` here is part of the contract — once any file
+    line has fired, the request-level finally fallback must NOT emit a
+    duplicate aggregate row.
+    """
+    audit_emit(
+        action=action,
+        namespace=getattr(g, 'BUCKET_NAMESPACE', None),
+        key=key,
+        user=getattr(g, 'FSV_AUTH_EMAIL', None) or 'anonymous',
+        result=result,
+        status_code=status_code,
+        exc=exc,
+    )
+    g.FSV_AUDIT_EMITTED = True
+
+
 def _status_from_response(rv: Any) -> int:
     """Best-effort extraction of an HTTP status from a Flask view return.
 
@@ -398,21 +425,26 @@ def files_presign() -> Any:
         rtns: list[dict] = []
         if file_list:
             for f in file_list.split(','):
+                filename: str | None = None
                 try:
                     safe_name = _normalize_upload_filename(f)
                     filename = f'{prefix}{safe_name}'
                     if fs3viewer.is_exists(filename) and not allow_overwrite:
                         rtns.append({'status_code': 409})
+                        _audit_emit_file(ACTION_PRESIGN, filename, 409, 'error')
                     elif not is_allowed(fs3viewer, filename):
                         rtns.append({'status_code': 403})
+                        _audit_emit_file(ACTION_PRESIGN, filename, 403, 'error')
                     else:
                         r = fs3viewer.post_presign(filename)
                         rtns.append(r)
+                        _audit_emit_file(ACTION_PRESIGN, filename, 200, 'ok')
                 except InvalidPrefix:
                     response_code = 400
                     abort(400, 'Invalid prefix')
-                except Exception:
+                except Exception as e:
                     rtns.append({'status_code': 500})
+                    _audit_emit_file(ACTION_PRESIGN, filename, 500, 'error', exc=e)
 
         fs3viewer.purge(prefix)
         response_code = 200
@@ -426,6 +458,9 @@ def files_presign() -> Any:
         audit_exc = e
         raise
     finally:
+        # Per-file paths inside the rtns loop set the sentinel through
+        # ``_audit_emit_file``; this block only fires when no file was
+        # iterated (empty file_list, invalid prefix abort, denied auth).
         if not getattr(g, 'FSV_AUDIT_EMITTED', False):
             audit_emit(
                 action=ACTION_PRESIGN,
@@ -538,25 +573,46 @@ def files() -> Any:
                         response_code = 400
                         abort(400, 'Invalid prefix')
                     targets.append(f'{full_prefix}{safe_name}')
+                # Decide the per-file success status_code BEFORE the upload
+                # loop runs — HTMX partials return 200, plain POST returns
+                # 201. Emitting per-file means we need this value while still
+                # inside the loop (before the response is rendered).
+                success_status = 200 if request.headers.get('HX-Request') else 201
                 # A single multi-file request must not silently upload two
                 # different payloads to the same target key. Browsers often strip
                 # directory names, so duplicate basenames can collide here.
                 duplicate_targets = sorted({t for t in targets if targets.count(t) > 1})
                 if duplicate_targets:
                     response_code = 409
+                    for dup in duplicate_targets:
+                        _audit_emit_file(ACTION_UPLOAD, dup, 409, 'error')
                     return jsonify({'conflicts': duplicate_targets}), 409
                 disallowed_targets = [t for t in targets if not is_allowed(fs3viewer, t)]
                 if disallowed_targets:
                     response_code = 403
+                    for bad in disallowed_targets:
+                        _audit_emit_file(ACTION_UPLOAD, bad, 403, 'error')
                     abort(403, 'Not allowd file extension')
                 if not allow_overwrite:
                     conflicts = [t for t in targets if fs3viewer.is_exists(t)]
                     if conflicts:
                         response_code = 409
+                        for conflict in conflicts:
+                            _audit_emit_file(ACTION_UPLOAD, conflict, 409, 'error')
                         return jsonify({'conflicts': conflicts}), 409
                 for f, target in zip(files_list, targets, strict=True):
                     f.filename = target
-                    fs3viewer.add_one(f, f.filename)
+                    try:
+                        fs3viewer.add_one(f, f.filename)
+                    except Exception as e:
+                        # Already-uploaded files have their ok rows; this
+                        # file gets an error row; remaining files are left
+                        # un-emitted (atomic "where did the request stop?"
+                        # trace). The helper sets the sentinel so the outer
+                        # finally fallback stays silent.
+                        _audit_emit_file(ACTION_UPLOAD, target, 500, 'error', exc=e)
+                        raise
+                    _audit_emit_file(ACTION_UPLOAD, target, success_status, 'ok')
                 # upload: stay on the same prefix the user was viewing.
                 listing_prefix = raw_prefix
             if request.headers.get('HX-Request'):
@@ -663,6 +719,11 @@ def files() -> Any:
         audit_exc = e
         raise
     finally:
+        # Per-file paths (POST upload loop / duplicate / disallowed /
+        # conflict) set the sentinel through ``_audit_emit_file``. This
+        # block only fires for the "no file iterated" cases — GET list,
+        # mkdir-only, invalid prefix, and the auth-denied short-circuit
+        # which also sets the sentinel itself.
         if not getattr(g, 'FSV_AUDIT_EMITTED', False):
             audit_emit(
                 action=action,

@@ -432,3 +432,303 @@ class TestRedirectNoEmit:
             f'redirect path must not emit audit records, got: '
             f'{[(r.action, r.result, r.status_code) for r in audit_records]}'
         )
+
+
+# ---------------------------------------------------------------------------
+# Per-file emit — multi-file upload/presign requests emit one row per file
+# instead of one aggregate row per request.
+# ---------------------------------------------------------------------------
+
+class TestPerFileEmit:
+    def test_upload_three_files_non_htmx_emits_three_records(
+        self, s3_bucket, tmp_path, audit_records,
+    ) -> None:
+        app = _make_app(s3_bucket, tmp_path)
+        data = {
+            'files[]': [
+                (io.BytesIO(b'one'), 'a.txt'),
+                (io.BytesIO(b'two'), 'b.txt'),
+                (io.BytesIO(b'three'), 'c.txt'),
+            ],
+        }
+        resp = app.test_client().post(
+            _ns_path('/files'),
+            data=data,
+            content_type='multipart/form-data',
+        )
+        assert resp.status_code == 201
+        upload = _records_for(audit_records, 'upload')
+        assert len(upload) == 3
+        keys = [r.key for r in upload]
+        assert keys == ['a.txt', 'b.txt', 'c.txt']
+        for r in upload:
+            assert r.result == 'ok'
+            assert r.status_code == 201
+
+    def test_upload_three_files_htmx_emits_three_records_with_200(
+        self, s3_bucket, tmp_path, audit_records,
+    ) -> None:
+        app = _make_app(s3_bucket, tmp_path)
+        data = {
+            'files[]': [
+                (io.BytesIO(b'one'), 'h1.txt'),
+                (io.BytesIO(b'two'), 'h2.txt'),
+                (io.BytesIO(b'three'), 'h3.txt'),
+            ],
+        }
+        resp = app.test_client().post(
+            _ns_path('/files'),
+            data=data,
+            content_type='multipart/form-data',
+            headers={'HX-Request': 'true'},
+        )
+        assert resp.status_code == 200
+        upload = _records_for(audit_records, 'upload')
+        assert len(upload) == 3
+        for r in upload:
+            assert r.result == 'ok'
+            assert r.status_code == 200
+
+    def test_mkdir_only_emits_single_record(
+        self, s3_bucket, tmp_path, audit_records,
+    ) -> None:
+        app = _make_app(s3_bucket, tmp_path)
+        resp = app.test_client().post(
+            _ns_path('/files'),
+            data={'prefix': 'newdir/'},
+            content_type='multipart/form-data',
+        )
+        assert resp.status_code == 201
+        upload = _records_for(audit_records, 'upload')
+        assert len(upload) == 1
+        # mkdir uses the prefix as the audit key.
+        assert upload[0].key == 'newdir/'
+        assert upload[0].status_code == 201
+        assert upload[0].result == 'ok'
+
+    def test_duplicate_basename_emits_one_per_duplicate(
+        self, s3_bucket, tmp_path, audit_records,
+    ) -> None:
+        app = _make_app(s3_bucket, tmp_path)
+        # Two payloads sharing the same target key → duplicate detection
+        # fires before add_one, atomic fail with one row per duplicate.
+        data = {
+            'files[]': [
+                (io.BytesIO(b'first'), 'dup.txt'),
+                (io.BytesIO(b'second'), 'dup.txt'),
+            ],
+        }
+        resp = app.test_client().post(
+            _ns_path('/files'),
+            data=data,
+            content_type='multipart/form-data',
+        )
+        assert resp.status_code == 409
+        upload = _records_for(audit_records, 'upload')
+        # duplicate_targets is a sorted set: 1 entry for the one collision key.
+        assert len(upload) == 1
+        assert upload[0].status_code == 409
+        assert upload[0].result == 'error'
+        assert upload[0].key == 'dup.txt'
+
+    def test_disallowed_extension_emits_per_violation(
+        self, s3_bucket, tmp_path, audit_records,
+    ) -> None:
+        app = _make_app(
+            s3_bucket, tmp_path,
+            allowed_extensions={'txt'},
+        )
+        data = {
+            'files[]': [
+                (io.BytesIO(b'bin'), 'a.exe'),
+                (io.BytesIO(b'bin'), 'b.dll'),
+            ],
+        }
+        resp = app.test_client().post(
+            _ns_path('/files'),
+            data=data,
+            content_type='multipart/form-data',
+        )
+        assert resp.status_code == 403
+        upload = _records_for(audit_records, 'upload')
+        # Both violations emit, even though the response is one abort(403).
+        assert len(upload) == 2
+        for r in upload:
+            assert r.status_code == 403
+            assert r.result == 'error'
+        keys = {r.key for r in upload}
+        assert keys == {'a.exe', 'b.dll'}
+
+    def test_overwrite_conflict_emits_per_conflict(
+        self, s3_bucket, tmp_path, audit_records,
+    ) -> None:
+        s3_client, bucket = s3_bucket
+        s3_client.put_object(Bucket=bucket, Key='exists1.txt', Body=b'a')
+        s3_client.put_object(Bucket=bucket, Key='exists2.txt', Body=b'b')
+        app = _make_app(s3_bucket, tmp_path)
+        data = {
+            'files[]': [
+                (io.BytesIO(b'new1'), 'exists1.txt'),
+                (io.BytesIO(b'new2'), 'exists2.txt'),
+            ],
+        }
+        resp = app.test_client().post(
+            _ns_path('/files'),
+            data=data,
+            content_type='multipart/form-data',
+        )
+        assert resp.status_code == 409
+        upload = _records_for(audit_records, 'upload')
+        assert len(upload) == 2
+        for r in upload:
+            assert r.status_code == 409
+            assert r.result == 'error'
+        keys = {r.key for r in upload}
+        assert keys == {'exists1.txt', 'exists2.txt'}
+
+    def test_partial_failure_emits_success_then_error(
+        self, s3_bucket, tmp_path, audit_records, monkeypatch,
+    ) -> None:
+        """When add_one raises mid-loop, already-uploaded files keep their
+        ok rows, the failing file gets an error row, and remaining files
+        are NOT emitted (atomic 'where did we stop' trace)."""
+        app = _make_app(s3_bucket, tmp_path)
+        # Flask's TESTING=True implies PROPAGATE_EXCEPTIONS=True, which
+        # re-raises unexpected exceptions out of the test client. Disable
+        # propagation explicitly so we see the 500 response while still
+        # capturing the per-file audit rows the view function emitted.
+        app.config['PROPAGATE_EXCEPTIONS'] = False
+
+        viewer = app.extensions['flask_s3_viewer']['fsv-audit']
+        original_add_one = viewer.add_one
+        call_count = {'n': 0}
+
+        def flaky_add_one(file_storage, *args, **kwargs):
+            call_count['n'] += 1
+            if call_count['n'] == 2:
+                raise RuntimeError('boom')
+            return original_add_one(file_storage, *args, **kwargs)
+
+        monkeypatch.setattr(viewer, 'add_one', flaky_add_one)
+
+        data = {
+            'files[]': [
+                (io.BytesIO(b'one'), 'p1.txt'),
+                (io.BytesIO(b'two'), 'p2.txt'),
+                (io.BytesIO(b'three'), 'p3.txt'),
+            ],
+        }
+        resp = app.test_client().post(
+            _ns_path('/files'),
+            data=data,
+            content_type='multipart/form-data',
+        )
+        assert resp.status_code == 500
+        upload = _records_for(audit_records, 'upload')
+        # 1 ok + 1 error = 2 rows. Third file is never reached → no row.
+        assert len(upload) == 2
+        assert upload[0].result == 'ok'
+        assert upload[0].status_code == 201
+        assert upload[0].key == 'p1.txt'
+        assert upload[1].result == 'error'
+        assert upload[1].status_code == 500
+        assert upload[1].key == 'p2.txt'
+        assert 'RuntimeError' in getattr(upload[1], 'error', '')
+
+    def test_presign_mixed_five_files_emits_five_records(
+        self, s3_bucket, tmp_path, audit_records,
+    ) -> None:
+        s3_client, bucket = s3_bucket
+        # Pre-create one object so it triggers a 409 conflict in presign.
+        s3_client.put_object(Bucket=bucket, Key='clash.txt', Body=b'x')
+        app = _make_app(
+            s3_bucket, tmp_path,
+            allowed_extensions={'txt'},
+        )
+        # 3 ok + 1 conflict + 1 forbidden (extension)
+        resp = app.test_client().post(
+            _ns_path('/files/presign'),
+            data={
+                'prefix': '',
+                'file_list': 'a.txt,b.txt,c.txt,clash.txt,bad.exe',
+            },
+        )
+        assert resp.status_code == 200
+        presigns = _records_for(audit_records, 'presign')
+        assert len(presigns) == 5
+        by_key = {r.key: r for r in presigns}
+        assert by_key['a.txt'].status_code == 200
+        assert by_key['a.txt'].result == 'ok'
+        assert by_key['b.txt'].status_code == 200
+        assert by_key['c.txt'].status_code == 200
+        assert by_key['clash.txt'].status_code == 409
+        assert by_key['clash.txt'].result == 'error'
+        assert by_key['bad.exe'].status_code == 403
+        assert by_key['bad.exe'].result == 'error'
+
+    def test_denied_short_circuits_per_file_loop(
+        self, s3_bucket, tmp_path, audit_records,
+    ) -> None:
+        """When auth denies an upload, exactly 1 denied row is emitted and
+        the per-file loop never runs (no duplicate or zero rows)."""
+        app = _make_app(
+            s3_bucket, tmp_path,
+            auth_callback=lambda _req: 'noaccess@example.com',
+            permission_callback=lambda *a, **kw: False,
+        )
+        data = {
+            'files[]': [
+                (io.BytesIO(b'x'), 'a.txt'),
+                (io.BytesIO(b'y'), 'b.txt'),
+            ],
+        }
+        resp = app.test_client().post(
+            _ns_path('/files'),
+            data=data,
+            content_type='multipart/form-data',
+        )
+        assert resp.status_code == 403
+        upload = _records_for(audit_records, 'upload')
+        assert len(upload) == 1
+        assert upload[0].result == 'denied'
+        assert upload[0].status_code == 403
+        assert upload[0].user == 'noaccess@example.com'
+
+    def test_anonymous_user_field_on_multi_file_upload(
+        self, s3_bucket, tmp_path, audit_records,
+    ) -> None:
+        """Per-file emits inherit the request-scoped user; with no auth
+        callback every row records 'anonymous'."""
+        app = _make_app(s3_bucket, tmp_path)
+        data = {
+            'files[]': [
+                (io.BytesIO(b'1'), 'anon1.txt'),
+                (io.BytesIO(b'2'), 'anon2.txt'),
+            ],
+        }
+        resp = app.test_client().post(
+            _ns_path('/files'),
+            data=data,
+            content_type='multipart/form-data',
+        )
+        assert resp.status_code == 201
+        upload = _records_for(audit_records, 'upload')
+        assert len(upload) == 2
+        for r in upload:
+            assert r.user == 'anonymous'
+
+    def test_presign_empty_file_list_falls_back_to_single_row(
+        self, s3_bucket, tmp_path, audit_records,
+    ) -> None:
+        """No files iterated → finally fallback emits a single prefix row."""
+        app = _make_app(s3_bucket, tmp_path)
+        resp = app.test_client().post(
+            _ns_path('/files/presign'),
+            data={'prefix': 'empty/', 'file_list': ''},
+        )
+        assert resp.status_code == 200
+        presigns = _records_for(audit_records, 'presign')
+        assert len(presigns) == 1
+        assert presigns[0].key == 'empty/'
+        assert presigns[0].status_code == 200
+        assert presigns[0].result == 'ok'

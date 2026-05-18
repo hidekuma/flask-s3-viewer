@@ -152,6 +152,14 @@ unaffected — the module loggers default to <code class="docutils literal notra
 <li><p><code class="docutils literal notranslate"><span class="pre">app.url_map</span></code> registration dump was demoted from INFO to DEBUG so
 registering many namespaces (or large blueprints) no longer floods
 INFO logs at app startup.</p></li>
+<li><p>Audit logger now emits one row per uploaded / presigned file instead
+of one aggregate row per request. Each row’s <code class="docutils literal notranslate"><span class="pre">key</span></code> is the canonical
+per-object S3 target (<code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;&lt;safe_name&gt;</span></code>); duplicate-basename and
+overwrite-conflict rejections emit one <code class="docutils literal notranslate"><span class="pre">error</span></code> row per violating
+file. The “no files iterated” cases (mkdir-only upload, empty
+<code class="docutils literal notranslate"><span class="pre">file_list</span></code> presign, invalid prefix, denied auth) still emit a
+single prefix-keyed row. The <code class="docutils literal notranslate"><span class="pre">emit()</span></code> public signature is unchanged;
+only the per-request emit count grew (1 → N).</p></li>
 </ul>
 <p><strong>Fixed</strong></p>
 <ul class="simple">
