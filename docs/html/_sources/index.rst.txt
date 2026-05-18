@@ -28,22 +28,10 @@ Flask S3 Viewer is a powerful extension that makes it easy to browse S3 in any F
     License <license>
     Changelog <changelog>
 
-Indices and tables
-------------------
-* :ref:`modindex`
-
-.. * :ref:`genindex`
-
-.. * :ref:`search`
-
 Useful links
 ------------
     * `Flask S3Viewer @ Github`_
     * `Flask S3Viewer @ PyPi`_
-
-Show video on youtube:
-
-|flask-s3-viewer-video|
 
 
 .. |PyPI version| image:: https://badge.fury.io/py/flask-s3-viewer.svg
@@ -54,7 +42,5 @@ Show video on youtube:
    :target: https://www.python.org/
 .. |License| image:: https://img.shields.io/badge/license-MIT-green.svg
    :target: https://github.com/hidekuma/flask-s3-viewer/blob/main/LICENSE
-.. |flask-s3-viewer-video| image:: http://img.youtube.com/vi/MPFo1scGlws/0.jpg
-   :target: https://youtu.be/MPFo1scGlws?t=0s
 .. _Flask S3Viewer @ Github: https://github.com/hidekuma/flask-s3-viewer
 .. _Flask S3Viewer @ PyPi: https://pypi.org/project/flask-s3-viewer
