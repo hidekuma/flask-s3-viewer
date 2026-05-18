@@ -10,6 +10,8 @@ from typing import Any
 
 from ..errors import InvalidPrefix
 
+logger = logging.getLogger(__name__)
+
 
 class AWSCache:
     SUFFIX: str = ".__flask_s3_viewer_cache"
@@ -98,7 +100,7 @@ class AWSCache:
         salt: str | None = None,
         division: str | None = None,
     ) -> None:
-        logging.debug(f'CACHE SET: "{key}"')
+        logger.debug('CACHE SET: "%s"', key)
         file_handler, temp_path = tempfile.mkstemp(
             suffix=self.SUFFIX,
         )
@@ -134,7 +136,7 @@ class AWSCache:
     ) -> Any | None:
         try:
             _, dpath = self.__make_key(key, salt=salt, division=division)
-            logging.debug(f'CACHE GET: "{key}"')
+            logger.debug('CACHE GET: "%s"', key)
             with open(dpath, encoding='utf-8') as f:
                 payload = json.load(f)
                 expires_at = payload['expires_at']
@@ -154,7 +156,7 @@ class AWSCache:
 
     def remove(self, key: str, division: str | None = None) -> bool:
         try:
-            logging.debug(f'CACHE REMOVED: "{key}"')
+            logger.debug('CACHE REMOVED: "%s"', key)
             ddir, _ = self.__make_key(key, division=division)
             if os.path.isdir(ddir):
                 shutil.rmtree(ddir)

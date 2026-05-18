@@ -13,6 +13,8 @@ from ..errors import InvalidPrefix, InvalidRangeError
 from .cache import AWSCache
 from .session import AWSSession
 
+logger = logging.getLogger(__name__)
+
 
 class AWSS3Client(AWSSession):
     """
@@ -149,19 +151,22 @@ class AWSS3Client(AWSSession):
             code = e.response.get('Error', {}).get('Code', '')
             if range and code in ('InvalidRange', 'InvalidArgument'):
                 raise InvalidRangeError(range) from e
-            logging.error(e)
+            logger.error(e)
             return None
 
     def purge(self, object_name: str) -> None:
         if self.use_cache:
-            logging.debug('PURGE:', object_name)
+            # Previously called with a comma-separated extra arg which stdlib
+            # logging silently dropped — now uses %-formatting so the key is
+            # actually visible at DEBUG level.
+            logger.debug('PURGE: %s', object_name)
             self._cache.remove(
                 os.path.dirname(object_name[:-1]),
                 division=self._bucket_name,
             )
 
     def mkdir(self, object_name: str) -> bool:
-        logging.debug('MKDIR:', object_name)
+        logger.debug('MKDIR: %s', object_name)
         try:
             put_source = {
                 'Bucket': self._bucket_name,
@@ -179,7 +184,7 @@ class AWSS3Client(AWSSession):
         except ClientError as e:
             # AllAccessDisabled error == bucket not found
             # NoSuchKey or InvalidRequest error == (dest bucket/obj == src bucket/obj)
-            logging.error(e)
+            logger.error(e)
             return False
 
         return True
@@ -202,11 +207,11 @@ class AWSS3Client(AWSSession):
             )
             return r
         except ClientError as e:
-            logging.error(e)
+            logger.error(e)
             raise
 
     def add_one(self, f: Any, object_name: str) -> None:
-        logging.debug('UP_OBJECT:', object_name)
+        logger.debug('UP_OBJECT: %s', object_name)
         try:
             GB = 1024 ** 3
             config = TransferConfig(
@@ -229,7 +234,7 @@ class AWSS3Client(AWSSession):
                     division=self._bucket_name,
                 )
         except ClientError as e:
-            logging.error(e)
+            logger.error(e)
             raise
 
     def remove_one(self, object_name: str) -> None:
@@ -240,7 +245,7 @@ class AWSS3Client(AWSSession):
                 Key=object_name,
             )
         except ClientError as e:
-            logging.error(e)
+            logger.error(e)
             raise
         else:
             if self.use_cache:
@@ -270,7 +275,7 @@ class AWSS3Client(AWSSession):
                         self._cache.remove(prefix, division=self._bucket_name)
 
         except ClientError as e:
-            logging.error(e)
+            logger.error(e)
             raise
 
     def find(
@@ -391,7 +396,7 @@ class AWSS3Client(AWSSession):
                 division=self._bucket_name,
             )
             if not cached:
-                logging.debug('NOT CACHED.')
+                logger.debug('NOT CACHED.')
                 data = run()
                 self._cache.set(
                     prefix,
@@ -437,7 +442,7 @@ class AWSS3Client(AWSSession):
                             Key=folder_key,
                         )
                     except ClientError as e:
-                        logging.error(e)
+                        logger.error(e)
 
                     if self.use_cache:
                         self._cache.remove(
@@ -480,7 +485,7 @@ class AWSS3Client(AWSSession):
             with open(file_name, 'wb') as f:
                 self._s3.download_fileobj(self._bucket_name, object_name, f)
         except ClientError as e:
-            logging.error(e)
+            logger.error(e)
             raise
 
     def is_exists(self, object_name: str | None = None) -> bool:

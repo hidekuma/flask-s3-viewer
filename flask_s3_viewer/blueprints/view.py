@@ -24,6 +24,7 @@ from werkzeug.datastructures import FileStorage
 from werkzeug.exceptions import HTTPException
 
 from .. import APP_TEMPLATE_FOLDER, FlaskS3Viewer
+from ..audit import emit as audit_emit
 from ..auth import (
     ACTION_DELETE,
     ACTION_DOWNLOAD,
@@ -110,14 +111,35 @@ def _enforce_auth(fs3viewer: FlaskS3Viewer, action: str, key: str | None = None)
     if not email:
         # When Google OAuth is configured, send the user through the
         # login flow instead of a bare 401 — that's what a browser
-        # client (the dominant case) needs.
+        # client (the dominant case) needs. Redirect is intentionally
+        # not audited; the follow-up request after login carries the
+        # identity and produces the canonical record.
         if request.method == 'GET' and fs3viewer.google_client_id:
             return redirect(url_for(
                 'flask_s3_viewer_auth.login',
                 next=request.url,
             ))
+        # emit BEFORE abort — flask's abort() raises and short-circuits.
+        audit_emit(
+            action=action,
+            namespace=getattr(g, 'BUCKET_NAMESPACE', None),
+            key=key,
+            user='anonymous',
+            result='denied',
+            status_code=401,
+        )
+        g.FSV_AUDIT_EMITTED = True
         abort(401, 'Authentication required.')
     if not fs3viewer.permission_callback(email, action, g.BUCKET_NAMESPACE, key):
+        audit_emit(
+            action=action,
+            namespace=getattr(g, 'BUCKET_NAMESPACE', None),
+            key=key,
+            user=email,
+            result='denied',
+            status_code=403,
+        )
+        g.FSV_AUDIT_EMITTED = True
         abort(403, 'Forbidden.')
     g.FSV_AUTH_EMAIL = email
     return email
@@ -149,11 +171,30 @@ def _normalize_upload_filename(filename: str) -> str:
     return filename
 
 
+def _status_from_response(rv: Any) -> int:
+    """Best-effort extraction of an HTTP status from a Flask view return.
+
+    Flask view functions return either a ``Response``, a string, a dict,
+    or a tuple ``(body, status[, headers])``. We only need the integer
+    code for the audit record — non-integer or absent codes default to
+    ``200`` (Flask's own default).
+    """
+    if isinstance(rv, tuple) and len(rv) >= 2 and isinstance(rv[1], int):
+        return rv[1]
+    status = getattr(rv, 'status_code', None)
+    if isinstance(status, int):
+        return status
+    return 200
+
+
 def require(action: str) -> Any:
     """Decorator: enforce ``_enforce_auth`` before running the route.
 
     The decorated handler receives the regular Flask URL kwargs unchanged.
     ``action`` is one of the ACTION_* constants from ``flask_s3_viewer.auth``.
+    Wraps the handler in a try/except so every terminal outcome (success,
+    HTTPException raised by ``abort``, unexpected exception) produces
+    exactly one audit record.
     """
     def deco(fn: Any) -> Any:
         @wraps(fn)
@@ -165,12 +206,61 @@ def require(action: str) -> Any:
                 try:
                     _decoded_key, canonical_key = _normalize_object_key(viewer, key)
                 except InvalidPrefix:
+                    audit_emit(
+                        action=action,
+                        namespace=getattr(g, 'BUCKET_NAMESPACE', None),
+                        key=key,
+                        user=getattr(g, 'FSV_AUTH_EMAIL', None) or 'anonymous',
+                        result='error',
+                        status_code=400,
+                    )
+                    g.FSV_AUDIT_EMITTED = True
                     abort(400, 'Invalid prefix')
             maybe_redirect = _enforce_auth(viewer, action, canonical_key)
             # `_enforce_auth` may have returned a redirect response (Google login).
             if maybe_redirect is not None and not isinstance(maybe_redirect, str):
                 return maybe_redirect
-            return fn(*args, **kwargs)
+            try:
+                rv = fn(*args, **kwargs)
+            except HTTPException as e:
+                if not getattr(g, 'FSV_AUDIT_EMITTED', False):
+                    audit_emit(
+                        action=action,
+                        namespace=getattr(g, 'BUCKET_NAMESPACE', None),
+                        key=canonical_key,
+                        user=getattr(g, 'FSV_AUTH_EMAIL', None) or 'anonymous',
+                        result='error' if (e.code or 500) >= 400 else 'ok',
+                        status_code=e.code or 500,
+                        exc=e,
+                    )
+                    g.FSV_AUDIT_EMITTED = True
+                raise
+            except Exception as e:
+                if not getattr(g, 'FSV_AUDIT_EMITTED', False):
+                    audit_emit(
+                        action=action,
+                        namespace=getattr(g, 'BUCKET_NAMESPACE', None),
+                        key=canonical_key,
+                        user=getattr(g, 'FSV_AUTH_EMAIL', None) or 'anonymous',
+                        result='error',
+                        status_code=500,
+                        exc=e,
+                    )
+                    g.FSV_AUDIT_EMITTED = True
+                raise
+            else:
+                if not getattr(g, 'FSV_AUDIT_EMITTED', False):
+                    code = _status_from_response(rv)
+                    audit_emit(
+                        action=action,
+                        namespace=getattr(g, 'BUCKET_NAMESPACE', None),
+                        key=canonical_key,
+                        user=getattr(g, 'FSV_AUTH_EMAIL', None) or 'anonymous',
+                        result='ok' if code < 400 else 'error',
+                        status_code=code,
+                    )
+                    g.FSV_AUDIT_EMITTED = True
+            return rv
         return wrapped
     return deco
 
@@ -282,40 +372,71 @@ def files_delete(key: str) -> tuple[str, int]:
 
 @blueprint.route("/files/presign", methods=['POST'])
 def files_presign() -> Any:
+    # No @require decorator — auth is enforced manually after we have
+    # the canonical prefix in hand, so the audit/permission record sees
+    # the same key the S3 layer will use.
     fs3viewer = _get_viewer(g.BUCKET_NAMESPACE)
+    prefix: str | None = None
+    response_code = 500
+    audit_exc: BaseException | None = None
     try:
-        _decoded_prefix, prefix = _normalize_prefix_key(
-            fs3viewer,
-            request.form.get('prefix', ''),
-        )
-    except InvalidPrefix:
-        abort(400, 'Invalid prefix')
-    _redirect = _enforce_auth(fs3viewer, ACTION_PRESIGN, prefix)
-    if _redirect is not None and not isinstance(_redirect, str):
-        return _redirect
-    file_list = request.form.get("file_list")
-    allow_overwrite = request.form.get('overwrite') == '1'
-    rtns: list[dict] = []
-    if file_list:
-        for f in file_list.split(','):
-            try:
-                safe_name = _normalize_upload_filename(f)
-                filename = f'{prefix}{safe_name}'
-                if fs3viewer.is_exists(filename) and not allow_overwrite:
-                    rtns.append({'status_code': 409})
-                elif not is_allowed(fs3viewer, filename):
-                    rtns.append({'status_code': 403})
-                else:
-                    r = fs3viewer.post_presign(filename)
-                    rtns.append(r)
-            except InvalidPrefix:
-                abort(400, 'Invalid prefix')
-            except Exception:
-                rtns.append({'status_code': 500})
+        try:
+            _decoded_prefix, prefix = _normalize_prefix_key(
+                fs3viewer,
+                request.form.get('prefix', ''),
+            )
+        except InvalidPrefix:
+            response_code = 400
+            abort(400, 'Invalid prefix')
+        _redirect = _enforce_auth(fs3viewer, ACTION_PRESIGN, prefix)
+        if _redirect is not None and not isinstance(_redirect, str):
+            # Redirect: skip audit (deliberate — see _enforce_auth doc).
+            g.FSV_AUDIT_EMITTED = True
+            return _redirect
+        file_list = request.form.get("file_list")
+        allow_overwrite = request.form.get('overwrite') == '1'
+        rtns: list[dict] = []
+        if file_list:
+            for f in file_list.split(','):
+                try:
+                    safe_name = _normalize_upload_filename(f)
+                    filename = f'{prefix}{safe_name}'
+                    if fs3viewer.is_exists(filename) and not allow_overwrite:
+                        rtns.append({'status_code': 409})
+                    elif not is_allowed(fs3viewer, filename):
+                        rtns.append({'status_code': 403})
+                    else:
+                        r = fs3viewer.post_presign(filename)
+                        rtns.append(r)
+                except InvalidPrefix:
+                    response_code = 400
+                    abort(400, 'Invalid prefix')
+                except Exception:
+                    rtns.append({'status_code': 500})
 
-    fs3viewer.purge(prefix)
-
-    return jsonify(rtns), 200
+        fs3viewer.purge(prefix)
+        response_code = 200
+        return jsonify(rtns), 200
+    except HTTPException as e:
+        response_code = e.code or 500
+        audit_exc = e
+        raise
+    except Exception as e:
+        response_code = 500
+        audit_exc = e
+        raise
+    finally:
+        if not getattr(g, 'FSV_AUDIT_EMITTED', False):
+            audit_emit(
+                action=ACTION_PRESIGN,
+                namespace=getattr(g, 'BUCKET_NAMESPACE', None),
+                key=prefix,
+                user=getattr(g, 'FSV_AUTH_EMAIL', None) or 'anonymous',
+                result='ok' if response_code < 400 else 'error',
+                status_code=response_code,
+                exc=audit_exc,
+            )
+            g.FSV_AUDIT_EMITTED = True
 
 
 @blueprint.route("/files/conflicts", methods=['POST'])
@@ -363,155 +484,196 @@ def files_conflicts() -> Any:
 @blueprint.route("/files", methods=['GET', 'POST'])
 def files() -> Any:
     # files() carries two distinct actions (LIST vs UPLOAD) so it can't
-    # use the @require decorator wholesale — enforce per branch.
+    # use the @require decorator wholesale — enforce per branch and
+    # emit one audit record per request in the finally block.
     fs3viewer_for_auth = _get_viewer(g.BUCKET_NAMESPACE)
-    if request.method == "POST":
-        """
-        prefix: encoded
-        files[].f.filename: decoded
-        prefixer(): 탐색 및 폴더생성시
-        """
-        # form
-        files_list: Iterable[FileStorage] = request.files.getlist("files[]")
-        fs3viewer = _get_viewer(g.BUCKET_NAMESPACE)
-        try:
-            raw_prefix, full_prefix = _normalize_prefix_key(
-                fs3viewer,
-                request.form.get('prefix', ''),
+    action = ACTION_UPLOAD if request.method == "POST" else ACTION_LIST
+    audit_key: str | None = None
+    response_code = 500
+    audit_exc: BaseException | None = None
+    try:
+        if request.method == "POST":
+            """
+            prefix: encoded
+            files[].f.filename: decoded
+            prefixer(): 탐색 및 폴더생성시
+            """
+            # form
+            files_list: Iterable[FileStorage] = request.files.getlist("files[]")
+            fs3viewer = _get_viewer(g.BUCKET_NAMESPACE)
+            try:
+                raw_prefix, full_prefix = _normalize_prefix_key(
+                    fs3viewer,
+                    request.form.get('prefix', ''),
+                )
+            except InvalidPrefix:
+                response_code = 400
+                abort(400, 'Invalid prefix')
+            audit_key = full_prefix
+            _redirect = _enforce_auth(fs3viewer_for_auth, ACTION_UPLOAD, full_prefix)
+            if _redirect is not None and not isinstance(_redirect, str):
+                g.FSV_AUDIT_EMITTED = True
+                return _redirect
+            if not files_list and full_prefix:
+                if fs3viewer.is_exists(full_prefix):
+                    response_code = 409
+                    abort(409, 'Already exists.')
+                if not fs3viewer.mkdir(full_prefix):
+                    response_code = 500
+                    abort(500)
+                # mkdir: stay in the parent prefix (don't navigate into the new folder).
+                parent = os.path.dirname(raw_prefix.rstrip('/'))
+                listing_prefix = parent + '/' if parent else ''
+            else:
+                # Detect duplicates and ask the client to confirm overwrite once.
+                allow_overwrite = (
+                    request.form.get('overwrite') == '1'
+                    or request.headers.get('HX-Fsv-Overwrite') == '1'
+                )
+                targets: list[str] = []
+                for f in files_list:
+                    try:
+                        safe_name = _normalize_upload_filename(f.filename or '')
+                    except InvalidPrefix:
+                        response_code = 400
+                        abort(400, 'Invalid prefix')
+                    targets.append(f'{full_prefix}{safe_name}')
+                # A single multi-file request must not silently upload two
+                # different payloads to the same target key. Browsers often strip
+                # directory names, so duplicate basenames can collide here.
+                duplicate_targets = sorted({t for t in targets if targets.count(t) > 1})
+                if duplicate_targets:
+                    response_code = 409
+                    return jsonify({'conflicts': duplicate_targets}), 409
+                disallowed_targets = [t for t in targets if not is_allowed(fs3viewer, t)]
+                if disallowed_targets:
+                    response_code = 403
+                    abort(403, 'Not allowd file extension')
+                if not allow_overwrite:
+                    conflicts = [t for t in targets if fs3viewer.is_exists(t)]
+                    if conflicts:
+                        response_code = 409
+                        return jsonify({'conflicts': conflicts}), 409
+                for f, target in zip(files_list, targets, strict=True):
+                    f.filename = target
+                    fs3viewer.add_one(f, f.filename)
+                # upload: stay on the same prefix the user was viewing.
+                listing_prefix = raw_prefix
+            if request.headers.get('HX-Request'):
+                current_search = request.form.get('search', '')
+                prefixes, contents, next_token = fs3viewer.find(
+                    prefix=listing_prefix,
+                    search=current_search or None,
+                    cache_identity=getattr(g, 'FSV_AUTH_EMAIL', None),
+                )
+                # FS3V_TITLE/LOGO/UPLOAD_TYPE/OBJECT_HOSTNAME come from the
+                # blueprint context processor — keep request-specific data
+                # (listing + current_prefix) here.
+                response_code = 200
+                return render_template(
+                    '_file_list.html',
+                    FS3V_CONTENTS=contents,
+                    FS3V_PREFIXES=prefixes,
+                    FS3V_NEXT_TOKEN=next_token,
+                    current_prefix=listing_prefix,
+                    current_search=current_search,
+                ), 200
+            response_code = 201
+            return {}, 201
+
+        elif request.method == "GET":
+            """
+            prefix: encoded
+            search: decoded
+            """
+            # args
+            starting_token: str | None = request.args.get('starting_token')
+            search = request.args.get('search')
+            requested_page = int(request.args.get('page', 1))
+            if not starting_token or starting_token == 'None':
+                starting_token = None
+
+            fs3viewer = _get_viewer(g.BUCKET_NAMESPACE)
+            max_items = fs3viewer.max_items
+            max_pages = fs3viewer.max_pages
+            try:
+                prefix, full_prefix = _normalize_prefix_key(
+                    fs3viewer,
+                    request.args.get('prefix', ''),
+                )
+                audit_key = full_prefix
+                _redirect = _enforce_auth(fs3viewer_for_auth, ACTION_LIST, full_prefix)
+                if _redirect is not None and not isinstance(_redirect, str):
+                    g.FSV_AUDIT_EMITTED = True
+                    return _redirect
+                if prefix:
+                    prefixes, contents, next_token = fs3viewer.find(
+                        prefix=prefix,
+                        starting_token=starting_token,
+                        max_items=max_items * max_pages,
+                        search=search,
+                        cache_identity=getattr(g, 'FSV_AUTH_EMAIL', None),
+                    )
+                else:
+                    prefixes, contents, next_token = fs3viewer.find(
+                        starting_token=starting_token,
+                        max_items=max_items * max_pages,
+                        search=search,
+                        cache_identity=getattr(g, 'FSV_AUTH_EMAIL', None),
+                    )
+            except InvalidPrefix:
+                response_code = 400
+                abort(400, 'Invalid prefix')
+            content_pages = [
+                contents[i:i + max_items] for i in range(
+                    0,
+                    len(contents),
+                    max_items,
+                )
+            ]
+            total_pages = len(content_pages)
+            current_page = 1 if total_pages == 0 else min(max(requested_page, 1), total_pages)
+
+            # HTMX partial swap returns only the inner #file-list fragment;
+            # full-page navigation returns the layout-wrapped page.
+            template = (
+                '_file_list.html'
+                if request.headers.get('HX-Request')
+                else 'files.html'
             )
-        except InvalidPrefix:
-            abort(400, 'Invalid prefix')
-        _redirect = _enforce_auth(fs3viewer_for_auth, ACTION_UPLOAD, full_prefix)
-        if _redirect is not None and not isinstance(_redirect, str):
-            return _redirect
-        if not files_list and full_prefix:
-            if fs3viewer.is_exists(full_prefix):
-                abort(409, 'Already exists.')
-            if not fs3viewer.mkdir(full_prefix):
-                abort(500)
-            # mkdir: stay in the parent prefix (don't navigate into the new folder).
-            parent = os.path.dirname(raw_prefix.rstrip('/'))
-            listing_prefix = parent + '/' if parent else ''
-        else:
-            # Detect duplicates and ask the client to confirm overwrite once.
-            allow_overwrite = (
-                request.form.get('overwrite') == '1'
-                or request.headers.get('HX-Fsv-Overwrite') == '1'
-            )
-            targets: list[str] = []
-            for f in files_list:
-                try:
-                    safe_name = _normalize_upload_filename(f.filename or '')
-                except InvalidPrefix:
-                    abort(400, 'Invalid prefix')
-                targets.append(f'{full_prefix}{safe_name}')
-            # A single multi-file request must not silently upload two
-            # different payloads to the same target key. Browsers often strip
-            # directory names, so duplicate basenames can collide here.
-            duplicate_targets = sorted({t for t in targets if targets.count(t) > 1})
-            if duplicate_targets:
-                return jsonify({'conflicts': duplicate_targets}), 409
-            disallowed_targets = [t for t in targets if not is_allowed(fs3viewer, t)]
-            if disallowed_targets:
-                abort(403, 'Not allowd file extension')
-            if not allow_overwrite:
-                conflicts = [t for t in targets if fs3viewer.is_exists(t)]
-                if conflicts:
-                    return jsonify({'conflicts': conflicts}), 409
-            for f, target in zip(files_list, targets, strict=True):
-                f.filename = target
-                fs3viewer.add_one(f, f.filename)
-            # upload: stay on the same prefix the user was viewing.
-            listing_prefix = raw_prefix
-        if request.headers.get('HX-Request'):
-            current_search = request.form.get('search', '')
-            prefixes, contents, next_token = fs3viewer.find(
-                prefix=listing_prefix,
-                search=current_search or None,
-                cache_identity=getattr(g, 'FSV_AUTH_EMAIL', None),
-            )
-            # FS3V_TITLE/LOGO/UPLOAD_TYPE/OBJECT_HOSTNAME come from the
-            # blueprint context processor — keep request-specific data
-            # (listing + current_prefix) here.
+            # Branding / upload_type / object_hostname / auth widget data are
+            # injected by the blueprint context processor.
+            response_code = 200
             return render_template(
-                '_file_list.html',
-                FS3V_CONTENTS=contents,
+                template,
+                FS3V_CONTENTS=content_pages[current_page - 1] if content_pages else [],
                 FS3V_PREFIXES=prefixes,
                 FS3V_NEXT_TOKEN=next_token,
-                current_prefix=listing_prefix,
-                current_search=current_search,
-            ), 200
-        return {}, 201
-
-    elif request.method == "GET":
-        """
-        prefix: encoded
-        search: decoded
-        """
-        # args
-        starting_token: str | None = request.args.get('starting_token')
-        search = request.args.get('search')
-        requested_page = int(request.args.get('page', 1))
-        if not starting_token or starting_token == 'None':
-            starting_token = None
-
-        fs3viewer = _get_viewer(g.BUCKET_NAMESPACE)
-        max_items = fs3viewer.max_items
-        max_pages = fs3viewer.max_pages
-        try:
-            prefix, full_prefix = _normalize_prefix_key(
-                fs3viewer,
-                request.args.get('prefix', ''),
+                current_prefix=prefix,
+                current_search=search or '',
+                current_page=current_page,
+                total_pages=total_pages,
             )
-            _redirect = _enforce_auth(fs3viewer_for_auth, ACTION_LIST, full_prefix)
-            if _redirect is not None and not isinstance(_redirect, str):
-                return _redirect
-            if prefix:
-                prefixes, contents, next_token = fs3viewer.find(
-                    prefix=prefix,
-                    starting_token=starting_token,
-                    max_items=max_items * max_pages,
-                    search=search,
-                    cache_identity=getattr(g, 'FSV_AUTH_EMAIL', None),
-                )
-            else:
-                prefixes, contents, next_token = fs3viewer.find(
-                    starting_token=starting_token,
-                    max_items=max_items * max_pages,
-                    search=search,
-                    cache_identity=getattr(g, 'FSV_AUTH_EMAIL', None),
-                )
-        except InvalidPrefix:
-            abort(400, 'Invalid prefix')
-        content_pages = [
-            contents[i:i + max_items] for i in range(
-                0,
-                len(contents),
-                max_items,
+    except HTTPException as e:
+        response_code = e.code or response_code
+        audit_exc = e
+        raise
+    except Exception as e:
+        response_code = 500
+        audit_exc = e
+        raise
+    finally:
+        if not getattr(g, 'FSV_AUDIT_EMITTED', False):
+            audit_emit(
+                action=action,
+                namespace=getattr(g, 'BUCKET_NAMESPACE', None),
+                key=audit_key,
+                user=getattr(g, 'FSV_AUTH_EMAIL', None) or 'anonymous',
+                result='ok' if response_code < 400 else 'error',
+                status_code=response_code,
+                exc=audit_exc,
             )
-        ]
-        total_pages = len(content_pages)
-        current_page = 1 if total_pages == 0 else min(max(requested_page, 1), total_pages)
-
-        # HTMX partial swap returns only the inner #file-list fragment;
-        # full-page navigation returns the layout-wrapped page.
-        template = (
-            '_file_list.html'
-            if request.headers.get('HX-Request')
-            else 'files.html'
-        )
-        # Branding / upload_type / object_hostname / auth widget data are
-        # injected by the blueprint context processor.
-        return render_template(
-            template,
-            FS3V_CONTENTS=content_pages[current_page - 1] if content_pages else [],
-            FS3V_PREFIXES=prefixes,
-            FS3V_NEXT_TOKEN=next_token,
-            current_prefix=prefix,
-            current_search=search or '',
-            current_page=current_page,
-            total_pages=total_pages,
-        )
+            g.FSV_AUDIT_EMITTED = True
 
 
 @auth_blueprint.route("/login")

@@ -19,6 +19,8 @@ from .errors import (
     NotSupportUploadType,
 )
 
+logger = logging.getLogger(__name__)
+
 APP_TEMPLATE_FOLDER: str = FIXED_TEMPLATE_FOLDER
 
 __version__: str = "1.0.1"
@@ -298,8 +300,10 @@ class FlaskS3Viewer(AWSS3Client):
             # handlers themselves 404 when no viewer on this app has
             # auth wired up, so it's safe to always register.
             app.register_blueprint(auth_blueprint)
-            logging.info("*** registered FlaskS3Viewer blueprint! ***")
-            logging.info(app.url_map)
+            logger.info("*** registered FlaskS3Viewer blueprint! ***")
+            # URL map dump is noisy on every namespace registration; keep
+            # it on DEBUG so production logs aren't drowned out.
+            logger.debug('%s', app.url_map)
         _install_security_headers(app)
 
         # When the deployer points at a custom templates directory, prepend a
@@ -318,7 +322,7 @@ class FlaskS3Viewer(AWSS3Client):
 
             configure_google_oauth(app, self.google_client_id, self.google_client_secret)
 
-        logging.info(f"*** FlaskS3Viewer initialized for namespace='{self.namespace}' ***")
+        logger.info("*** FlaskS3Viewer initialized for namespace='%s' ***", self.namespace)
 
     @staticmethod
     def _install_template_override(app: Flask, folder: str) -> None:

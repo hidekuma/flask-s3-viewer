@@ -417,6 +417,191 @@ allow-list case — internally they wire up the
 ``permission_callback``. Pass your own ``permission_callback`` for
 fine-grained per-action policy.
 
+Audit logging
+-------------
+
+Every S3 CRUD action that flows through the blueprint emits a single
+structured record on the ``flask_s3_viewer.audit`` logger. The logger
+is always present — host applications opt in by attaching a handler
+and/or adjusting its level via the standard ``logging`` API. No
+constructor flag toggles audit on or off; the v1.0 public API is
+unchanged.
+
+**Logger name:** ``flask_s3_viewer.audit``
+**Default level:** unset (records propagate to root and are filtered
+by the host's effective level). Successful actions emit at
+``INFO``; permission denials emit at ``WARNING``; unexpected
+exceptions emit at ``ERROR``.
+
+**Record fields** (attached as ``LogRecord`` attributes via ``extra=``):
+
+  - ``action`` — one of ``list``, ``download``, ``upload``, ``delete``,
+    ``presign``
+  - ``namespace`` — viewer namespace the request landed on
+  - ``key`` — canonical S3 key / prefix (post-``base_path``)
+  - ``user`` — authenticated email or the literal string ``anonymous``
+  - ``result`` — ``ok`` / ``denied`` / ``error``
+  - ``status_code`` — HTTP status emitted to the client
+  - ``client_ip`` — ``request.remote_addr``
+  - ``user_agent`` — capped at 256 bytes; sanitised
+  - ``error`` — present only when an exception was attached
+
+The human-readable message is a single space-separated key=value line:
+
+.. code-block:: text
+
+    action=download namespace=fsv-test key=docs/report.pdf
+    user=alice@example.com result=ok status=200
+
+Newlines, carriage returns, and other ASCII control bytes inside
+attacker-controllable fields (key, email, User-Agent, exception
+message) are escaped as ``\\xNN`` before the record is built, so a
+crafted request cannot smuggle a fake row into the log stream.
+
+**Plain file handler example:**
+
+.. code-block:: python
+    :linenos:
+
+    import logging
+
+    handler = logging.FileHandler('/var/log/flask_s3_viewer/audit.log')
+    handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
+    logging.getLogger('flask_s3_viewer.audit').addHandler(handler)
+    logging.getLogger('flask_s3_viewer.audit').setLevel(logging.INFO)
+
+**Structured JSON handler example** (uses
+`python-json-logger <https://github.com/madzak/python-json-logger>`_):
+
+.. code-block:: python
+    :linenos:
+
+    import logging
+    from pythonjsonlogger import jsonlogger
+
+    audit_handler = logging.FileHandler('/var/log/flask_s3_viewer/audit.jsonl')
+    audit_handler.setFormatter(jsonlogger.JsonFormatter(
+        '%(asctime)s %(levelname)s %(action)s %(namespace)s '
+        '%(key)s %(user)s %(result)s %(status_code)s '
+        '%(client_ip)s %(user_agent)s'
+    ))
+    audit = logging.getLogger('flask_s3_viewer.audit')
+    audit.addHandler(audit_handler)
+    audit.setLevel(logging.INFO)
+    # The library leaves propagate=True by default — disable it here
+    # if you do NOT also want these records flowing to root handlers.
+    audit.propagate = False
+
+**PII / secret redaction.** Emails and S3 keys are written verbatim,
+which may be sensitive depending on deployment policy. Attach a
+``logging.Filter`` if you need to mask, hash, or drop fields before
+they hit disk — for example to GDPR-truncate the user field, or to
+strip ARNs/bucket names from ``error`` messages produced by boto3
+``ClientError`` stringification.
+
+.. code-block:: python
+    :linenos:
+
+    class RedactFilter(logging.Filter):
+        def filter(self, record):
+            if getattr(record, 'user', None):
+                user = record.user
+                record.user = user.split('@', 1)[0][:2] + '***@' + user.split('@', 1)[-1]
+            return True
+
+    audit.addFilter(RedactFilter())
+
+For ``key`` and ``error`` — which can carry full S3 paths and boto3
+``ClientError`` text containing bucket names / ARNs / request IDs —
+attach a second filter that keeps just enough breadcrumb to trace the
+incident without leaking the rest of the path or the AWS account
+topology:
+
+.. code-block:: python
+    :linenos:
+
+    import re
+
+    _ARN_RE = re.compile(r'arn:aws:[^\s"\']+')
+    _BUCKET_RE = re.compile(r'(?i)\bbucket[\s:=]+[^\s"\',]+')
+
+    class KeyErrorRedactFilter(logging.Filter):
+        """Redact prefix tails on ``key`` and AWS identifiers on ``error``."""
+        def filter(self, record):
+            key = getattr(record, 'key', None)
+            if key:
+                # Keep only the first path segment ("docs/...") so the
+                # audit trail still distinguishes top-level folders but
+                # the leaf filename / nested path is masked.
+                head, sep, _tail = key.partition('/')
+                record.key = f'{head}{sep}***' if sep else '***'
+            err = getattr(record, 'error', None)
+            if err:
+                err = _ARN_RE.sub('arn:aws:***', err)
+                err = _BUCKET_RE.sub('bucket=***', err)
+                record.error = err
+            return True
+
+    audit.addFilter(KeyErrorRedactFilter())
+
+The two filters compose — install both if you want the user, key, and
+error fields all masked. Tune the regex set to your environment;
+``ClientError`` text varies by API call.
+
+**Capturing the real client IP behind a reverse proxy.** ``client_ip``
+is sourced from ``request.remote_addr``, which Werkzeug fills from the
+*last hop* on the TCP connection. When the app sits behind a load
+balancer, ALB / ELB / nginx / Cloudflare, that hop is the proxy and
+every audit row records the proxy IP — not the originating client.
+For the audit trail to actually identify clients you must install
+Werkzeug's ``ProxyFix`` middleware (or an equivalent) so
+``X-Forwarded-For`` / ``Forwarded`` headers are honored:
+
+.. code-block:: python
+    :linenos:
+
+    from werkzeug.middleware.proxy_fix import ProxyFix
+
+    # ``x_for=1`` trusts exactly one X-Forwarded-For hop (your edge LB).
+    # If the request transits N reverse proxies you control end-to-end,
+    # raise this to N. Trusting too many hops lets clients spoof the IP.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
+Without ProxyFix (or a host-supplied equivalent), every ``client_ip``
+field in the audit stream is the LB's address and the audit trail
+loses most of its forensic value. The value of ``x_for`` is
+deployment-specific — adjust it for nested LB / CDN topologies, and
+**only** trust hops you operate.
+
+**Calling :func:`emit` from host code.** The ``emit`` function is part
+of the public surface: host integrations may import it and emit
+extra audit lines for non-CRUD operations they layer on top of the
+viewer (e.g. a custom admin route that bulk-tags objects). Usage:
+
+.. code-block:: python
+    :linenos:
+
+    from flask_s3_viewer.audit import emit as audit_emit
+    from flask_s3_viewer.auth import ACTION_LIST  # or ACTION_DOWNLOAD/...
+
+    # Call from inside a Flask request context so client_ip / user_agent
+    # are populated automatically; outside a request both fields emit as
+    # empty strings.
+    audit_emit(
+        action=ACTION_LIST,
+        namespace='my-bucket',
+        key='reports/2026/',   # caller pre-normalises (post-base_path)
+        user=current_user_email,
+        result='ok',
+        status_code=200,
+    )
+
+Prefer the ``flask_s3_viewer.auth.ACTION_*`` constants over raw
+strings; ``action`` and ``result`` are sanitised but the level mapping
+(``ok``→INFO, ``denied``→WARNING, ``error``→ERROR) depends on
+``result``. The signature is part of v1.x stability — additions will
+be backwards-compatible.
+
 Use Caching
 -----------
 S3 is charged per call. Therefore, Flask S3Viewer supports caching (currently only supports file caching, in-memory database will be supported later).

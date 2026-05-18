@@ -29,6 +29,8 @@ import boto3
 from boto3.session import Session
 from botocore.errorfactory import ClientError
 
+logger = logging.getLogger(__name__)
+
 
 class AWSSession:
 
@@ -76,9 +78,9 @@ class AWSSession:
             else:
                 self._session = base
         except ClientError as e:
-            logging.error(e)
+            logger.error(e)
         except Exception as e:
-            logging.error('Unexpected error: %s', e)
+            logger.error('Unexpected error: %s', e)
         else:
             self.runnable = True
 
