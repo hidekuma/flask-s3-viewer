@@ -318,7 +318,7 @@ def pull_division(endpoint: Any, values: Any) -> None:
     # bucket falls back to an empty string; the subsequent ``_get_viewer``
     # call will raise 404 before any audit emit fires.
     viewer = current_app.extensions.get(NAMESPACE, {}).get(g.BUCKET_NAMESPACE)
-    g.FSV_AUDIT_BUCKET = getattr(viewer, '_bucket_name', '') or ''
+    g.FSV_AUDIT_BUCKET = getattr(viewer, 'bucket_name', '') or ''
 
 
 @blueprint.route("/files/<path:key>", methods=['GET'])

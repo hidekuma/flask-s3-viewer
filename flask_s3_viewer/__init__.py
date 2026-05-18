@@ -27,6 +27,13 @@ __version__: str = "1.0.1"
 
 _EXTENSION_KEY: str = "flask_s3_viewer"
 
+# Sentinel used by ``add_new_one`` to distinguish "argument omitted → inherit
+# from parent" from "argument explicitly passed (including ``None`` to mean
+# disabled)". Kept module-private: callers express inheritance by omitting
+# the kwarg, never by importing the sentinel. ``is`` identity comparisons are
+# safe because the object is unique per process.
+_INHERIT: Any = object()
+
 
 def _install_security_headers(app: Flask) -> None:
     if app.extensions.get("flask_s3_viewer.security_headers"):
@@ -186,6 +193,12 @@ class FlaskS3Viewer(AWSS3Client):
         # supplies their own.
         self.google_client_id: str | None = google_client_id
         self.google_client_secret: str | None = google_client_secret
+        # Stash the raw allowlist arguments so ``add_new_one`` can hand them
+        # back to a child viewer when the caller omits the kwarg. The
+        # ``permission_callback`` below captures the values in a closure but
+        # does not expose them, hence the explicit private fields.
+        self._auth_allowed_emails: list[str] | set[str] | None = allowed_emails
+        self._auth_allowed_domains: list[str] | set[str] | None = allowed_domains
         if auth_callback is None and google_client_id:
             from .auth.google import session_auth_callback
 
@@ -382,9 +395,13 @@ class FlaskS3Viewer(AWSS3Client):
         logo_url: str | None = None,
         logo_path: str | None = None,
         template_folder: str | None = None,
-        auth_callback: Any = None,
-        permission_callback: Any = None,
-        visible_namespaces_callback: Any = None,
+        auth_callback: Any = _INHERIT,
+        permission_callback: Any = _INHERIT,
+        visible_namespaces_callback: Any = _INHERIT,
+        google_client_id: Any = _INHERIT,
+        google_client_secret: Any = _INHERIT,
+        allowed_emails: Any = _INHERIT,
+        allowed_domains: Any = _INHERIT,
         config: dict | None = None,
     ) -> "FlaskS3Viewer":
         """
@@ -399,9 +416,23 @@ class FlaskS3Viewer(AWSS3Client):
         :param str logo_url: Optional custom logo URL.
         :param str logo_path: Optional local logo path.
         :param str template_folder: Optional template override folder.
-        :param callable auth_callback: Optional auth callback override.
-        :param callable permission_callback: Optional permission callback override.
-        :param callable visible_namespaces_callback: Optional bucket switcher visibility callback.
+        :param callable auth_callback: Optional auth callback. Omit to inherit
+            the parent viewer's value; pass ``None`` explicitly to disable auth
+            on the child namespace (subject to ``__init__`` Google OAuth
+            wiring); pass a callable to use a different callback than the
+            parent.
+        :param callable permission_callback: Optional permission callback.
+            Same omit/None/value semantics as ``auth_callback``.
+        :param callable visible_namespaces_callback: Optional bucket switcher
+            visibility callback. Same omit/None/value semantics.
+        :param str google_client_id: Optional Google OAuth client ID. Omit
+            to inherit; ``None`` to disable OAuth on the child namespace.
+        :param str google_client_secret: Optional Google OAuth client secret.
+            Pair with ``google_client_id``; same omit/None semantics.
+        :param allowed_emails: Optional allowlist of literal emails. Omit to
+            inherit the parent's; ``None``/empty to drop the allowlist.
+        :param allowed_domains: Optional allowlist of domains. Omit to
+            inherit the parent's; ``None``/empty to drop the allowlist.
         :param dict config: Bucket configs
 
         Return:
@@ -412,6 +443,39 @@ class FlaskS3Viewer(AWSS3Client):
                 "add_new_one() requires the initial FlaskS3Viewer to be bound "
                 "to a Flask app (pass app=... or call init_app() first)."
             )
+        resolved_auth_callback = (
+            self.auth_callback if auth_callback is _INHERIT else auth_callback
+        )
+        resolved_permission_callback = (
+            self.permission_callback
+            if permission_callback is _INHERIT
+            else permission_callback
+        )
+        resolved_visible_namespaces_callback = (
+            self.visible_namespaces_callback
+            if visible_namespaces_callback is _INHERIT
+            else visible_namespaces_callback
+        )
+        resolved_google_client_id = (
+            self.google_client_id
+            if google_client_id is _INHERIT
+            else google_client_id
+        )
+        resolved_google_client_secret = (
+            self.google_client_secret
+            if google_client_secret is _INHERIT
+            else google_client_secret
+        )
+        resolved_allowed_emails = (
+            self._auth_allowed_emails
+            if allowed_emails is _INHERIT
+            else allowed_emails
+        )
+        resolved_allowed_domains = (
+            self._auth_allowed_domains
+            if allowed_domains is _INHERIT
+            else allowed_domains
+        )
         return FlaskS3Viewer(
             self.app,
             namespace=namespace,
@@ -423,8 +487,12 @@ class FlaskS3Viewer(AWSS3Client):
             logo_url=logo_url,
             logo_path=logo_path,
             template_folder=template_folder,
-            auth_callback=auth_callback or self.auth_callback,
-            permission_callback=permission_callback or self.permission_callback,
-            visible_namespaces_callback=visible_namespaces_callback or self.visible_namespaces_callback,
+            auth_callback=resolved_auth_callback,
+            permission_callback=resolved_permission_callback,
+            visible_namespaces_callback=resolved_visible_namespaces_callback,
+            google_client_id=resolved_google_client_id,
+            google_client_secret=resolved_google_client_secret,
+            allowed_emails=resolved_allowed_emails,
+            allowed_domains=resolved_allowed_domains,
             config=config,
         )

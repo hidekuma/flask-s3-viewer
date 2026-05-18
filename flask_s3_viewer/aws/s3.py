@@ -25,6 +25,16 @@ class AWSS3Client(AWSSession):
     _base_path: str
     _cache: AWSCache
 
+    @property
+    def bucket_name(self) -> str | None:
+        """Read-only public accessor for the configured S3 bucket name.
+
+        Host code that needs to read the bucket should prefer this over the
+        legacy ``_bucket_name`` private attribute. The private attribute is
+        retained so any pre-existing direct accessors stay working.
+        """
+        return self._bucket_name
+
     def __init__(
         self,
         *,

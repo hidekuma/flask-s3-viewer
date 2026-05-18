@@ -592,14 +592,24 @@ topology:</p>
 <span class="linenos">18</span>            <span class="n">err</span> <span class="o">=</span> <span class="n">_ARN_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;arn:aws:***&#39;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
 <span class="linenos">19</span>            <span class="n">err</span> <span class="o">=</span> <span class="n">_BUCKET_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;bucket=***&#39;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
 <span class="linenos">20</span>            <span class="n">record</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="n">err</span>
-<span class="linenos">21</span>        <span class="k">return</span> <span class="kc">True</span>
-<span class="linenos">22</span>
-<span class="linenos">23</span><span class="n">audit</span><span class="o">.</span><span class="n">addFilter</span><span class="p">(</span><span class="n">KeyErrorRedactFilter</span><span class="p">())</span>
+<span class="linenos">21</span>        <span class="c1"># ``bucket`` is exposed as a record extra (and a</span>
+<span class="linenos">22</span>        <span class="c1"># ``bucket=&lt;name&gt;`` token in the message body) on every emit.</span>
+<span class="linenos">23</span>        <span class="c1"># Mask it the same way if your retention policy treats live</span>
+<span class="linenos">24</span>        <span class="c1"># S3 bucket names as sensitive metadata.</span>
+<span class="linenos">25</span>        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s1">&#39;bucket&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+<span class="linenos">26</span>            <span class="n">record</span><span class="o">.</span><span class="n">bucket</span> <span class="o">=</span> <span class="s1">&#39;***&#39;</span>
+<span class="linenos">27</span>        <span class="k">return</span> <span class="kc">True</span>
+<span class="linenos">28</span>
+<span class="linenos">29</span><span class="n">audit</span><span class="o">.</span><span class="n">addFilter</span><span class="p">(</span><span class="n">KeyErrorRedactFilter</span><span class="p">())</span>
 </pre></div>
 </div>
 <p>The two filters compose — install both if you want the user, key, and
 error fields all masked. Tune the regex set to your environment;
-<code class="docutils literal notranslate"><span class="pre">ClientError</span></code> text varies by API call.</p>
+<code class="docutils literal notranslate"><span class="pre">ClientError</span></code> text varies by API call. The <code class="docutils literal notranslate"><span class="pre">bucket</span></code> record extra
+is populated for every blueprint emit, so masking it here keeps the
+audit pipeline from accidentally fanning bucket names out to
+secondary handlers (Splunk indexers, SIEM forwards, etc.) when the
+deployer wants to keep that detail bounded to a single trusted sink.</p>
 <p><strong>Capturing the real client IP behind a reverse proxy.</strong> <code class="docutils literal notranslate"><span class="pre">client_ip</span></code>
 is sourced from <code class="docutils literal notranslate"><span class="pre">request.remote_addr</span></code>, which Werkzeug fills from the
 <em>last hop</em> on the TCP connection. When the app sits behind a load

@@ -578,13 +578,23 @@ topology:
                 err = _ARN_RE.sub('arn:aws:***', err)
                 err = _BUCKET_RE.sub('bucket=***', err)
                 record.error = err
+            # ``bucket`` is exposed as a record extra (and a
+            # ``bucket=<name>`` token in the message body) on every emit.
+            # Mask it the same way if your retention policy treats live
+            # S3 bucket names as sensitive metadata.
+            if getattr(record, 'bucket', None):
+                record.bucket = '***'
             return True
 
     audit.addFilter(KeyErrorRedactFilter())
 
 The two filters compose — install both if you want the user, key, and
 error fields all masked. Tune the regex set to your environment;
-``ClientError`` text varies by API call.
+``ClientError`` text varies by API call. The ``bucket`` record extra
+is populated for every blueprint emit, so masking it here keeps the
+audit pipeline from accidentally fanning bucket names out to
+secondary handlers (Splunk indexers, SIEM forwards, etc.) when the
+deployer wants to keep that detail bounded to a single trusted sink.
 
 **Capturing the real client IP behind a reverse proxy.** ``client_ip``
 is sourced from ``request.remote_addr``, which Werkzeug fills from the

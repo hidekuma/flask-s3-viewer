@@ -602,6 +602,7 @@ class TestPerFileEmit:
         """When add_one raises mid-loop, already-uploaded files keep their
         ok rows, the failing file gets an error row, and remaining files
         are NOT emitted (atomic 'where did we stop' trace)."""
+        _client, bucket = s3_bucket
         app = _make_app(s3_bucket, tmp_path)
         # Flask's TESTING=True implies PROPAGATE_EXCEPTIONS=True, which
         # re-raises unexpected exceptions out of the test client. Disable
@@ -644,6 +645,11 @@ class TestPerFileEmit:
         assert upload[1].status_code == 500
         assert upload[1].key == 'p2.txt'
         assert 'RuntimeError' in getattr(upload[1], 'error', '')
+        # Per-file bucket carry: the ok row and the error row both belong
+        # to the same bucket — the audit pipeline should never drop the
+        # bucket extra mid-loop just because one upload raised.
+        for r in upload:
+            assert r.bucket == bucket
 
     def test_presign_mixed_five_files_emits_five_records(
         self, s3_bucket, tmp_path, audit_records,
@@ -675,6 +681,13 @@ class TestPerFileEmit:
         assert by_key['clash.txt'].result == 'error'
         assert by_key['bad.exe'].status_code == 403
         assert by_key['bad.exe'].result == 'error'
+        # Every per-file presign row — ok and error alike — must carry the
+        # viewer's bucket so JSON pipelines can correlate audit rows back
+        # to the bucket they targeted. Regression guard: an earlier draft
+        # lost the bucket field on the error rows because the abort path
+        # short-circuited before pull_division populated g.FSV_AUDIT_BUCKET.
+        for r in presigns:
+            assert r.bucket == bucket
 
     def test_denied_short_circuits_per_file_loop(
         self, s3_bucket, tmp_path, audit_records,
@@ -731,6 +744,7 @@ class TestPerFileEmit:
         self, s3_bucket, tmp_path, audit_records,
     ) -> None:
         """No files iterated → finally fallback emits a single prefix row."""
+        _client, bucket = s3_bucket
         app = _make_app(s3_bucket, tmp_path)
         resp = app.test_client().post(
             _ns_path('/files/presign'),
@@ -742,6 +756,7 @@ class TestPerFileEmit:
         assert presigns[0].key == 'empty/'
         assert presigns[0].status_code == 200
         assert presigns[0].result == 'ok'
+        assert presigns[0].bucket == bucket
 
 
 # ---------------------------------------------------------------------------

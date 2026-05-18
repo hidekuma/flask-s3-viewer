@@ -240,11 +240,19 @@
       if (!chip) return;
       var btn = chip.querySelector('button[onclick^="fsvPresignUpload"]');
       var cancel = chip.querySelector('button[onclick^="fsvPresignCancel"]');
+      // The file input lives outside the chip (line 47 in the form). Lock it
+      // while a presign request is in flight so a second selection can't
+      // overwrite the pending slot set before fetchPresigns resolves. The
+      // <label for="fs3viewer_files"> trigger is suppressed automatically
+      // when the input itself is disabled (browser standard behaviour), so
+      // no extra a11y wiring is needed.
+      var fileInput = document.getElementById('fs3viewer_files');
       if (btn) {
         btn.disabled = !!busy;
         btn.textContent = busy ? (label || 'Preparing…') : 'Upload';
       }
       if (cancel) cancel.disabled = !!busy;
+      if (fileInput) fileInput.disabled = !!busy;
     }
     function fsvPresignStartUpload(presigns) {
       var progress = document.getElementById('fsv-presign-progress');

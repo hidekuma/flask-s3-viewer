@@ -175,6 +175,42 @@ file. The “no files iterated” cases (mkdir-only upload, empty
 <code class="docutils literal notranslate"><span class="pre">file_list</span></code> presign, invalid prefix, denied auth) still emit a
 single prefix-keyed row. The <code class="docutils literal notranslate"><span class="pre">emit()</span></code> public signature is unchanged;
 only the per-request emit count grew (1 → N).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">upload_type='presign'</span></code> mode no longer pre-issues conflict-check
+presign URLs at file-selection time. The previous flow walked every
+selected file through a serial <code class="docutils literal notranslate"><span class="pre">post_presign</span></code> round-trip before any
+chip rendered, so picking N files incurred N sequential S3 / signer
+hops before the user could even see what they had staged. Chips and
+the Upload button now appear immediately after the file picker
+resolves; presign URL issuance is deferred to the Upload click.
+Conflict (HTTP 409) and permission-denied (HTTP 403) dialogs
+therefore surface after Upload instead of after file selection.
+<code class="docutils literal notranslate"><span class="pre">default</span></code> upload mode is unaffected. <code class="docutils literal notranslate"><span class="pre">core.js</span></code> public surface
+(<code class="docutils literal notranslate"><span class="pre">readyFileHandling</span></code>, <code class="docutils literal notranslate"><span class="pre">uploadFiles</span></code>, <code class="docutils literal notranslate"><span class="pre">preventDefaults</span></code>) is unchanged
+— only <code class="docutils literal notranslate"><span class="pre">_upload_form.html</span></code> was touched.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">add_new_one()</span></code> now accepts explicit auth-related kwargs
+(<code class="docutils literal notranslate"><span class="pre">auth_callback</span></code>, <code class="docutils literal notranslate"><span class="pre">permission_callback</span></code>, <code class="docutils literal notranslate"><span class="pre">visible_namespaces_callback</span></code>,
+<code class="docutils literal notranslate"><span class="pre">google_client_id</span></code>, <code class="docutils literal notranslate"><span class="pre">google_client_secret</span></code>, <code class="docutils literal notranslate"><span class="pre">allowed_emails</span></code>,
+<code class="docutils literal notranslate"><span class="pre">allowed_domains</span></code>). Omitted kwargs inherit the parent viewer’s value;
+explicit values (including <code class="docutils literal notranslate"><span class="pre">None</span></code> to mean <em>disabled</em>) override.
+Previously the <code class="docutils literal notranslate"><span class="pre">or</span> <span class="pre">self.x</span></code> fallback made <code class="docutils literal notranslate"><span class="pre">auth_callback=None</span></code> indistinguishable
+from “not passed”, so a child namespace could not opt out of a parent’s
+auth configuration. Backward-compatible: existing callers that omit the
+kwarg see no behavior change.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AWSS3Client.bucket_name</span></code> is now a read-only public property. The
+legacy private <code class="docutils literal notranslate"><span class="pre">_bucket_name</span></code> attribute is retained for any host code
+reading it directly; new integrations should prefer the property.
+The blueprint’s <code class="docutils literal notranslate"><span class="pre">pull_division</span></code> now uses the public property when
+populating <code class="docutils literal notranslate"><span class="pre">g.FSV_AUDIT_BUCKET</span></code>.</p></li>
+<li><p>Presign upload UI now disables the <code class="docutils literal notranslate"><span class="pre">&lt;input</span> <span class="pre">type=&quot;file&quot;&gt;</span></code> while a
+presign request is in flight (<code class="docutils literal notranslate"><span class="pre">fsvPresignSetUploadBusy</span></code>). Previously
+only the Upload button was disabled, leaving a race where a second
+file-picker selection could overwrite the pending slot set between
+the click and the response from <code class="docutils literal notranslate"><span class="pre">/files/presign</span></code>. The label
+(<code class="docutils literal notranslate"><span class="pre">&lt;label</span> <span class="pre">for=&quot;fs3viewer_files&quot;&gt;</span></code>) is suppressed automatically by the
+browser when the input itself is disabled.</p></li>
+<li><p>Audit logging redaction guide now documents that the <code class="docutils literal notranslate"><span class="pre">bucket</span></code> record
+extra is also a candidate for masking, with a one-line addition to
+the <code class="docutils literal notranslate"><span class="pre">KeyErrorRedactFilter</span></code> example.</p></li>
 </ul>
 <p><strong>Fixed</strong></p>
 <ul class="simple">

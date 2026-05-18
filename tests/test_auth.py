@@ -539,6 +539,147 @@ def test_google_oauth_sets_secure_session_cookie_defaults(s3_bucket, tmp_path):
     assert app.config['SESSION_COOKIE_SAMESITE'] == 'Lax'
 
 
+# ---------------------------------------------------------------------------
+# add_new_one — auth-related kwargs are now explicit and overridable
+# ---------------------------------------------------------------------------
+
+def test_add_new_one_inherits_auth_callback_when_omitted(s3_bucket, tmp_path):
+    """Omitting ``auth_callback`` keeps the legacy behaviour: the child
+    viewer inherits the parent's auth_callback. Regression guard for the
+    backward-compat half of the v1.1.0 ``_INHERIT`` sentinel work."""
+    s3_client, _ = s3_bucket
+    s3_client.create_bucket(Bucket='fsv-auth-child')
+
+    def parent_cb(_req):
+        return 'parent@example.com'
+
+    app = _make_app(
+        s3_bucket, tmp_path,
+        auth_callback=parent_cb,
+        permission_callback=lambda *a, **kw: True,
+    )
+    parent = app.extensions['flask_s3_viewer']['fsv-auth']
+    child = parent.add_new_one(
+        namespace='child-ns',
+        config={
+            'profile_name': None,
+            'bucket_name': 'fsv-auth-child',
+            'region_name': 'us-east-1',
+            'access_key': 'testing',
+            'secret_key': 'testing',
+            'cache_dir': str(tmp_path / 'child-cache'),
+            'use_cache': True,
+            'ttl': 60,
+        },
+    )
+    assert child.auth_callback is parent_cb
+    assert child.permission_callback is parent.permission_callback
+
+
+def test_add_new_one_explicit_none_disables_auth_on_child(s3_bucket, tmp_path):
+    """Passing ``auth_callback=None`` explicitly opts the child out of auth
+    even when the parent has it wired up. Without the sentinel-based
+    resolution this case was previously unreachable (``None or self.x``
+    silently fell back to the parent)."""
+    s3_client, _ = s3_bucket
+    s3_client.create_bucket(Bucket='fsv-auth-open')
+
+    app = _make_app(
+        s3_bucket, tmp_path,
+        auth_callback=lambda _req: 'parent@example.com',
+        permission_callback=lambda *a, **kw: True,
+    )
+    parent = app.extensions['flask_s3_viewer']['fsv-auth']
+    child = parent.add_new_one(
+        namespace='open-ns',
+        auth_callback=None,
+        permission_callback=None,
+        config={
+            'profile_name': None,
+            'bucket_name': 'fsv-auth-open',
+            'region_name': 'us-east-1',
+            'access_key': 'testing',
+            'secret_key': 'testing',
+            'cache_dir': str(tmp_path / 'open-cache'),
+            'use_cache': True,
+            'ttl': 60,
+        },
+    )
+    # With no Google credentials inherited and explicit None on both
+    # callbacks, the child falls back to the allow-all defaults.
+    assert child.auth_callback is allow_all_auth
+    assert child.permission_callback is allow_all_permissions
+    # Listing is reachable anonymously on the open child namespace even
+    # while the parent still enforces auth.
+    resp = app.test_client().get('/open-ns/files')
+    assert resp.status_code == 200
+
+
+def test_add_new_one_custom_callback_replaces_parent(s3_bucket, tmp_path):
+    """A custom callable handed to ``add_new_one`` is used verbatim,
+    bypassing the parent's callback."""
+    s3_client, _ = s3_bucket
+    s3_client.create_bucket(Bucket='fsv-auth-custom')
+
+    def custom_cb(_req):
+        return 'custom@example.com'
+
+    app = _make_app(
+        s3_bucket, tmp_path,
+        auth_callback=lambda _req: 'parent@example.com',
+        permission_callback=lambda *a, **kw: True,
+    )
+    parent = app.extensions['flask_s3_viewer']['fsv-auth']
+    child = parent.add_new_one(
+        namespace='custom-ns',
+        auth_callback=custom_cb,
+        config={
+            'profile_name': None,
+            'bucket_name': 'fsv-auth-custom',
+            'region_name': 'us-east-1',
+            'access_key': 'testing',
+            'secret_key': 'testing',
+            'cache_dir': str(tmp_path / 'custom-cache'),
+            'use_cache': True,
+            'ttl': 60,
+        },
+    )
+    assert child.auth_callback is custom_cb
+
+
+def test_add_new_one_allowed_emails_inherits_when_omitted(s3_bucket, tmp_path):
+    """``allowed_emails`` is now a private parent attribute, so omitting it
+    on ``add_new_one`` re-applies the same allowlist to the child via a
+    freshly-built ``email_allowlist`` permission callback."""
+    s3_client, _ = s3_bucket
+    s3_client.create_bucket(Bucket='fsv-auth-inherit-list')
+
+    app = _make_app(
+        s3_bucket, tmp_path,
+        auth_callback=lambda _req: 'vip@example.com',
+        allowed_emails=['vip@example.com'],
+    )
+    parent = app.extensions['flask_s3_viewer']['fsv-auth']
+    # ``permission_callback`` is omitted too — the child must rebuild a
+    # fresh email_allowlist from the inherited emails/domains.
+    child = parent.add_new_one(
+        namespace='inherit-list-ns',
+        config={
+            'profile_name': None,
+            'bucket_name': 'fsv-auth-inherit-list',
+            'region_name': 'us-east-1',
+            'access_key': 'testing',
+            'secret_key': 'testing',
+            'cache_dir': str(tmp_path / 'inherit-list-cache'),
+            'use_cache': True,
+            'ttl': 60,
+        },
+    )
+    # The inherited allowlist still authorises vip@ and still denies others.
+    assert child.permission_callback('vip@example.com', ACTION_LIST, 'ns', None) is True
+    assert child.permission_callback('stranger@example.com', ACTION_LIST, 'ns', None) is False
+
+
 def test_oauth_callback_requires_verified_email(s3_bucket, tmp_path):
     app = _make_app(
         s3_bucket, tmp_path,
