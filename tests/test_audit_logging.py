@@ -24,7 +24,6 @@ from flask import Flask
 from flask_s3_viewer import FlaskS3Viewer
 from flask_s3_viewer.audit import MAX_UA_LEN, _sanitize
 
-
 # ---------------------------------------------------------------------------
 # Handler that captures every record emitted by flask_s3_viewer.audit
 # ---------------------------------------------------------------------------
