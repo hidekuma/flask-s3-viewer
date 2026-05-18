@@ -325,6 +325,8 @@ class TestLogInjection:
         # Forged newlines/CRs must never reach the on-disk line.
         assert '\n' not in msg
         assert '\r' not in msg
+        # The req=<id> tail token must always be present.
+        assert 'req=' in msg
 
     def test_blueprint_request_with_tab_in_key_escapes_field(
         self, s3_bucket, tmp_path, audit_records,
@@ -379,6 +381,7 @@ class TestRecordShape:
         for field in (
             'action', 'namespace', 'key', 'user',
             'result', 'status_code', 'client_ip', 'user_agent',
+            'request_id',
         ):
             assert hasattr(r, field), f'audit record missing {field}'
 
@@ -732,3 +735,105 @@ class TestPerFileEmit:
         assert presigns[0].key == 'empty/'
         assert presigns[0].status_code == 200
         assert presigns[0].result == 'ok'
+
+
+# ---------------------------------------------------------------------------
+# request_id — shared per Flask request, fresh per emit outside request scope.
+# ---------------------------------------------------------------------------
+
+class TestRequestId:
+    def test_same_request_shares_one_request_id(
+        self, s3_bucket, tmp_path, audit_records,
+    ) -> None:
+        """Multi-file upload (N rows in one request) → all rows share one id."""
+        app = _make_app(s3_bucket, tmp_path)
+        data = {
+            'files[]': [
+                (io.BytesIO(b'1'), 'r1.txt'),
+                (io.BytesIO(b'2'), 'r2.txt'),
+                (io.BytesIO(b'3'), 'r3.txt'),
+            ],
+        }
+        resp = app.test_client().post(
+            _ns_path('/files'),
+            data=data,
+            content_type='multipart/form-data',
+        )
+        assert resp.status_code == 201
+        upload = _records_for(audit_records, 'upload')
+        assert len(upload) == 3
+        ids = {r.request_id for r in upload}
+        assert len(ids) == 1, f'expected one shared request_id, got {ids}'
+
+    def test_different_requests_get_different_request_ids(
+        self, s3_bucket, tmp_path, audit_records,
+    ) -> None:
+        """Two separate test_client requests → two distinct request_ids."""
+        app = _make_app(s3_bucket, tmp_path)
+        client = app.test_client()
+        client.get(_ns_path('/files'))
+        client.get(_ns_path('/files'))
+        listing = _records_for(audit_records, 'list')
+        assert len(listing) == 2
+        assert listing[0].request_id != listing[1].request_id
+
+    def test_emit_without_request_context_generates_fresh_each_call(
+        self, audit_records,
+    ) -> None:
+        """Calling emit() outside any request context → fresh id every call."""
+        from flask_s3_viewer.audit import emit
+
+        emit(
+            action='list', namespace='ns', key='', user='a@b.com',
+            result='ok', status_code=200,
+        )
+        emit(
+            action='list', namespace='ns', key='', user='a@b.com',
+            result='ok', status_code=200,
+        )
+        assert len(audit_records) >= 2
+        r1, r2 = audit_records[-2], audit_records[-1]
+        assert r1.request_id != r2.request_id
+
+    def test_request_id_is_eight_hex_chars(
+        self, s3_bucket, tmp_path, audit_records,
+    ) -> None:
+        import re
+
+        app = _make_app(s3_bucket, tmp_path)
+        app.test_client().get(_ns_path('/files'))
+        listing = _records_for(audit_records, 'list')
+        assert listing, 'expected one listing record'
+        rid = listing[0].request_id
+        assert re.fullmatch(r'[0-9a-f]{8}', rid), (
+            f'request_id must be 8 lowercase hex chars, got {rid!r}'
+        )
+
+    def test_request_id_appears_in_message_body(
+        self, s3_bucket, tmp_path, audit_records,
+    ) -> None:
+        """The human-readable message carries `req=<id>` so plaintext grep groups a request."""
+        app = _make_app(s3_bucket, tmp_path)
+        app.test_client().get(_ns_path('/files'))
+        listing = _records_for(audit_records, 'list')
+        r = listing[0]
+        assert f'req={r.request_id}' in r.getMessage()
+
+    def test_denied_row_carries_request_id(
+        self, s3_bucket, tmp_path, audit_records,
+    ) -> None:
+        """A 401 denied row must still surface request_id (record + message)."""
+        import re
+
+        app = _make_app(
+            s3_bucket, tmp_path,
+            auth_callback=lambda _req: None,
+            permission_callback=lambda *a, **kw: True,
+        )
+        resp = app.test_client().get(_ns_path('/files'))
+        assert resp.status_code == 401
+        listing = _records_for(audit_records, 'list')
+        assert len(listing) == 1
+        r = listing[0]
+        assert re.fullmatch(r'[0-9a-f]{8}', r.request_id)
+        assert f'req={r.request_id}' in r.getMessage()

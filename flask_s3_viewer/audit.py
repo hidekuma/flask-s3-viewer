@@ -27,6 +27,9 @@ carries:
   - ``status_code`` — HTTP status emitted to the client
   - ``client_ip`` — ``request.remote_addr`` or ``''`` outside a request
   - ``user_agent`` — capped at :data:`MAX_UA_LEN`, sanitised
+  - ``request_id`` — 8 hex chars; lines emitted within the same Flask
+    request share one id. Outside a request context every call produces
+    a fresh id.
   - ``error`` — present only when an exception was attached
 
 Log injection is defended at this layer: newline / carriage return /
@@ -36,9 +39,10 @@ tab and other ASCII control bytes inside user-controllable fields
 from __future__ import annotations
 
 import logging
+import secrets
 from typing import Any
 
-from flask import has_request_context, request
+from flask import g, has_request_context, request
 
 logger = logging.getLogger('flask_s3_viewer.audit')
 
@@ -119,6 +123,12 @@ def emit(
         background worker), ``client_ip`` and ``user_agent`` are
         emitted as empty strings — the rest of the record is intact.
 
+    Records emitted inside the same Flask request share a single
+    ``request_id`` (8 hex chars); outside a request context every call
+    gets a fresh id. The id is available both as ``record.request_id``
+    and as the ``req=<id>`` token at the tail of the human-readable
+    message.
+
     The signature is stable across the v1.x line; new keyword
     arguments may be added but existing positions / names will not
     change without a major version bump.
@@ -137,6 +147,19 @@ def emit(
             request.headers.get('User-Agent', ''),
             limit=MAX_UA_LEN,
         )
+        # Lazy-init a per-request id on flask.g so every emit inside one
+        # request shares the same correlation token. The key name is an
+        # internal sentinel — host code should consume the id via
+        # ``record.request_id`` or the ``req=<id>`` message token, not
+        # by reading ``g`` directly.
+        request_id = getattr(g, 'FSV_AUDIT_REQUEST_ID', None)
+        if request_id is None:
+            request_id = secrets.token_hex(4)
+            g.FSV_AUDIT_REQUEST_ID = request_id
+    else:
+        # No request scope to anchor to — grouping has no meaning, so
+        # every call gets its own id.
+        request_id = secrets.token_hex(4)
 
     error_msg = ''
     if exc is not None:
@@ -154,6 +177,7 @@ def emit(
         'status_code': int(status_code) if status_code is not None else 0,
         'client_ip': client_ip,
         'user_agent': user_agent,
+        'request_id': request_id,
     }
     if error_msg:
         extra['error'] = error_msg
@@ -161,7 +185,8 @@ def emit(
     message = (
         f'action={safe_action} namespace={safe_namespace} '
         f'key={safe_key} user={safe_user} '
-        f'result={safe_result} status={extra["status_code"]}'
+        f'result={safe_result} status={extra["status_code"]} '
+        f'req={request_id}'
     )
     if error_msg:
         message = f'{message} error={error_msg}'

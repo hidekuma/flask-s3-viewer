@@ -441,9 +441,17 @@ exceptions emit at ``ERROR``.
   - ``key`` — canonical S3 key / prefix (post-``base_path``)
   - ``user`` — authenticated email or the literal string ``anonymous``
   - ``result`` — ``ok`` / ``denied`` / ``error``
-  - ``status_code`` — HTTP status emitted to the client
+  - ``status_code`` — HTTP status emitted to the client. Reflects the
+    **planned** response code at emit time. If a render-phase exception
+    fires *after* a successful upload row was emitted (e.g. the listing
+    template rendering hits an I/O error), the audit row may carry
+    ``201`` while the client receives a ``500`` from Flask's error
+    handler.
   - ``client_ip`` — ``request.remote_addr``
   - ``user_agent`` — capped at 256 bytes; sanitised
+  - ``request_id`` — 8 hex chars; rows emitted within the same Flask
+    request share one id. Records emitted from host code outside a
+    request context get a fresh id each call.
   - ``error`` — present only when an exception was attached
 
 The human-readable message is a single space-separated key=value line:
@@ -451,7 +459,7 @@ The human-readable message is a single space-separated key=value line:
 .. code-block:: text
 
     action=download namespace=fsv-test key=docs/report.pdf
-    user=alice@example.com result=ok status=200
+    user=alice@example.com result=ok status=200 req=a1b2c3d4
 
 Newlines, carriage returns, and other ASCII control bytes inside
 attacker-controllable fields (key, email, User-Agent, exception
@@ -471,6 +479,12 @@ multi-file upload aborts with ``403`` (disallowed extension) or returns
 status but the audit stream carries one row per violating file —
 ``response status != row count`` by design. Plan for the row volume:
 uploading 100 files in one request produces 100 audit records.
+
+If the same target key appears N times in a single upload request, the
+audit stream records one ``409`` row per **unique** conflicting key —
+not N. The duplicate-detection step dedupes targets before emit (see
+``view.py`` ``duplicate_targets`` set), so two uploads of ``a.txt`` in
+one request produce one row, not two.
 
 **Plain file handler example:**
 
@@ -524,6 +538,10 @@ strip ARNs/bucket names from ``error`` messages produced by boto3
             return True
 
     audit.addFilter(RedactFilter())
+
+Multi-file uploads / presigns emit one record per file (see *Multi-file
+requests emit one row per file* above), so the filter above runs N
+times per request — keep it side-effect free and allocation-light.
 
 For ``key`` and ``error`` — which can carry full S3 paths and boto3
 ``ClientError`` text containing bucket names / ARNs / request IDs —

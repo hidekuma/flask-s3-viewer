@@ -137,6 +137,14 @@ are escaped to <code class="docutils literal notranslate"><span class="pre">\xNN
 <code class="docutils literal notranslate"><span class="pre">docs/source/usage/configuration.rst</span></code> for ProxyFix guidance, JSON
 handler setup, and PII / ARN / bucket-name redaction filter
 examples.</p></li>
+<li><p>Each audit record now carries a <code class="docutils literal notranslate"><span class="pre">request_id</span></code> (8 hex chars) that
+groups all rows from a single Flask request. Multi-file uploads /
+presigns and the auth/error/success rows of one request share one
+id, so per-file rows are joinable in JSON pipelines via
+<code class="docutils literal notranslate"><span class="pre">record.request_id</span></code> and grep-able in plaintext logs via the
+<code class="docutils literal notranslate"><span class="pre">req=&lt;id&gt;</span></code> token appended to the human-readable message body.
+Outside a request context every <code class="docutils literal notranslate"><span class="pre">emit()</span></code> gets a fresh id. The
+<code class="docutils literal notranslate"><span class="pre">emit()</span></code> public signature is unchanged.</p></li>
 </ul>
 <p><strong>Changed</strong></p>
 <ul class="simple">

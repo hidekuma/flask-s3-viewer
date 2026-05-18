@@ -473,15 +473,23 @@ exceptions emit at <code class="docutils literal notranslate"><span class="pre">
 <li><p><code class="docutils literal notranslate"><span class="pre">key</span></code> — canonical S3 key / prefix (post-<code class="docutils literal notranslate"><span class="pre">base_path</span></code>)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">user</span></code> — authenticated email or the literal string <code class="docutils literal notranslate"><span class="pre">anonymous</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">result</span></code> — <code class="docutils literal notranslate"><span class="pre">ok</span></code> / <code class="docutils literal notranslate"><span class="pre">denied</span></code> / <code class="docutils literal notranslate"><span class="pre">error</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">status_code</span></code> — HTTP status emitted to the client</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">status_code</span></code> — HTTP status emitted to the client. Reflects the
+<strong>planned</strong> response code at emit time. If a render-phase exception
+fires <em>after</em> a successful upload row was emitted (e.g. the listing
+template rendering hits an I/O error), the audit row may carry
+<code class="docutils literal notranslate"><span class="pre">201</span></code> while the client receives a <code class="docutils literal notranslate"><span class="pre">500</span></code> from Flask’s error
+handler.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">client_ip</span></code> — <code class="docutils literal notranslate"><span class="pre">request.remote_addr</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">user_agent</span></code> — capped at 256 bytes; sanitised</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">request_id</span></code> — 8 hex chars; rows emitted within the same Flask
+request share one id. Records emitted from host code outside a
+request context get a fresh id each call.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">error</span></code> — present only when an exception was attached</p></li>
 </ul>
 </div></blockquote>
 <p>The human-readable message is a single space-separated key=value line:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>action=download namespace=fsv-test key=docs/report.pdf
-user=alice@example.com result=ok status=200
+user=alice@example.com result=ok status=200 req=a1b2c3d4
 </pre></div>
 </div>
 <p>Newlines, carriage returns, and other ASCII control bytes inside
@@ -501,6 +509,11 @@ multi-file upload aborts with <code class="docutils literal notranslate"><span c
 status but the audit stream carries one row per violating file —
 <code class="docutils literal notranslate"><span class="pre">response</span> <span class="pre">status</span> <span class="pre">!=</span> <span class="pre">row</span> <span class="pre">count</span></code> by design. Plan for the row volume:
 uploading 100 files in one request produces 100 audit records.</p>
+<p>If the same target key appears N times in a single upload request, the
+audit stream records one <code class="docutils literal notranslate"><span class="pre">409</span></code> row per <strong>unique</strong> conflicting key —
+not N. The duplicate-detection step dedupes targets before emit (see
+<code class="docutils literal notranslate"><span class="pre">view.py</span></code> <code class="docutils literal notranslate"><span class="pre">duplicate_targets</span></code> set), so two uploads of <code class="docutils literal notranslate"><span class="pre">a.txt</span></code> in
+one request produce one row, not two.</p>
 <p><strong>Plain file handler example:</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="linenos">2</span>
@@ -545,6 +558,9 @@ strip ARNs/bucket names from <code class="docutils literal notranslate"><span cl
 <span class="linenos">8</span><span class="n">audit</span><span class="o">.</span><span class="n">addFilter</span><span class="p">(</span><span class="n">RedactFilter</span><span class="p">())</span>
 </pre></div>
 </div>
+<p>Multi-file uploads / presigns emit one record per file (see <em>Multi-file
+requests emit one row per file</em> above), so the filter above runs N
+times per request — keep it side-effect free and allocation-light.</p>
 <p>For <code class="docutils literal notranslate"><span class="pre">key</span></code> and <code class="docutils literal notranslate"><span class="pre">error</span></code> — which can carry full S3 paths and boto3
 <code class="docutils literal notranslate"><span class="pre">ClientError</span></code> text containing bucket names / ARNs / request IDs —
 attach a second filter that keeps just enough breadcrumb to trace the

@@ -8,6 +8,55 @@ from flask_s3_viewer.aws.ref import Region
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(asctime)s: %(message)s")
 
+# ---------------------------------------------------------------------------
+# Audit logger setup (flask_s3_viewer.audit)
+#
+# Independent of the host root logger above. The audit logger emits one
+# record per S3 CRUD action (list/download/upload/delete/presign) with
+# extra fields:
+#   action / namespace / key / user / result / status_code /
+#   client_ip / user_agent / request_id (+ error on failure)
+#
+# Multi-file uploads emit one row per file; every row in the same Flask
+# request shares one `request_id` (8 hex chars) so plain-text grep can
+# group them, e.g. `grep "req=a1b2c3d4" audit.log`.
+#
+# Copy this block into your own app to start auditing — adjust the
+# handler (StreamHandler / FileHandler / structured JSON via
+# python-json-logger) and the formatter to fit your log pipeline.
+# ---------------------------------------------------------------------------
+audit_logger = logging.getLogger("flask_s3_viewer.audit")
+audit_handler = logging.StreamHandler()
+audit_handler.setFormatter(logging.Formatter(
+    "AUDIT %(asctime)s %(levelname)s "
+    "action=%(action)s namespace=%(namespace)s "
+    "key=%(key)s user=%(user)s result=%(result)s "
+    "status=%(status_code)s req=%(request_id)s "
+    "ip=%(client_ip)s"
+))
+audit_logger.addHandler(audit_handler)
+audit_logger.setLevel(logging.INFO)
+# Set False if you do NOT want audit lines also reaching the root
+# handler installed by logging.basicConfig above. Left True here so
+# the demo shows both streams side by side.
+# audit_logger.propagate = False
+
+
+# Optional: demo-only PII-soft user field. Production policies should
+# replace this with the redaction filter that matches your compliance
+# requirements (see docs/source/usage/configuration.rst).
+class _DemoUserRedactFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        user = getattr(record, "user", None)
+        if user and "@" in user:
+            local, domain = user.split("@", 1)
+            record.user = f"{local[:2]}***@{domain}"
+        return True
+
+
+# Comment the next line out to see raw email addresses in the demo log.
+audit_logger.addFilter(_DemoUserRedactFilter())
+
 app = Flask(__name__)
 
 # For test, disable template caching
@@ -59,7 +108,7 @@ ALLOWED_DOMAINS: list[str] = [
 # ---------------------------------------------------------------------------
 RBAC_POLICY: dict[str, dict[str, dict[str, set[str]]]] = {
     # Replace these with your real Google account emails.
-    "test@test.com": {
+    "joseph.jeong@kakaopiccoma.com": {
         "flask-s3-viewer": {
             "list": {""},
             "upload": {"test/aaaa/"},
