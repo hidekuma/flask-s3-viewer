@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 APP_TEMPLATE_FOLDER: str = FIXED_TEMPLATE_FOLDER
 
-__version__: str = "1.1.0"
+__version__: str = "1.1.1"
 
 _EXTENSION_KEY: str = "flask_s3_viewer"
 
