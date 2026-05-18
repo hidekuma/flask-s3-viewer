@@ -145,6 +145,13 @@ id, so per-file rows are joinable in JSON pipelines via
 <code class="docutils literal notranslate"><span class="pre">req=&lt;id&gt;</span></code> token appended to the human-readable message body.
 Outside a request context every <code class="docutils literal notranslate"><span class="pre">emit()</span></code> gets a fresh id. The
 <code class="docutils literal notranslate"><span class="pre">emit()</span></code> public signature is unchanged.</p></li>
+<li><p>Audit records now include a <code class="docutils literal notranslate"><span class="pre">bucket</span></code> field (record extra +
+<code class="docutils literal notranslate"><span class="pre">bucket=&lt;name&gt;</span></code> message token) reflecting the viewer’s S3 bucket
+name. The blueprint’s <code class="docutils literal notranslate"><span class="pre">url_value_preprocessor</span></code> resolves the bucket
+once per request so every audit row carries it without any
+per-view bookkeeping; emits from outside a request context yield an
+empty bucket unless the caller pre-sets <code class="docutils literal notranslate"><span class="pre">g.FSV_AUDIT_BUCKET</span></code>. The
+<code class="docutils literal notranslate"><span class="pre">emit()</span></code> public signature is unchanged.</p></li>
 </ul>
 <p><strong>Changed</strong></p>
 <ul class="simple">

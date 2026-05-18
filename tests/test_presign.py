@@ -217,10 +217,16 @@ class TestPresignTemplate:
         """The file <input> and the Upload button must point at the
         ``FLASK_S3_VIEWER_CORE`` entry points — otherwise core.js never
         gets a chance to run.
+
+        v1.1: ``onchange`` now goes through the lightweight
+        ``fsvPresignFilesSelected`` wrapper so the file_chip can render
+        within the same animation frame as the file picker dismissal.
+        Presign issuance is deferred to the Upload click handler,
+        which calls ``FLASK_S3_VIEWER_CORE.fetchPresigns`` directly.
         """
         rv = presign_client.get('/fsv-presign/files')
         body = rv.data.decode('utf-8')
-        assert 'FLASK_S3_VIEWER_CORE.readyFileHandling' in body
+        assert 'fsvPresignFilesSelected' in body
         assert 'FLASK_S3_VIEWER_CORE.putAll' in body
         assert 'FLASK_S3_VIEWER_CORE.fetchPresigns' in body
         assert 'FLASK_S3_VIEWER_CORE.onProgress' in body

@@ -45,7 +45,7 @@
         Select files
       </label>
       <input id="fs3viewer_files" type="file" name="files[]" multiple style="display: none;"
-             onchange="FLASK_S3_VIEWER_CORE.readyFileHandling(event, fsvPresignReady)">
+             onchange="fsvPresignFilesSelected(event)">
     </div>
   </form>
   <div class="mt-2 space-y-2">
@@ -231,13 +231,29 @@
         }, 500);
       }
     }
-    function fsvPresignUpload(e) {
+    // Toggle the "Preparing…" spinner state on the chip's Upload button
+    // while a presign request is in flight. Click-time presign issuance
+    // can take ~50-150ms per file on the wire, so a visible busy state
+    // beats a silent click.
+    function fsvPresignSetUploadBusy(busy, label) {
+      var chip = document.getElementById('file_chip');
+      if (!chip) return;
+      var btn = chip.querySelector('button[onclick^="fsvPresignUpload"]');
+      var cancel = chip.querySelector('button[onclick^="fsvPresignCancel"]');
+      if (btn) {
+        btn.disabled = !!busy;
+        btn.textContent = busy ? (label || 'Preparing…') : 'Upload';
+      }
+      if (cancel) cancel.disabled = !!busy;
+    }
+    function fsvPresignStartUpload(presigns) {
       var progress = document.getElementById('fsv-presign-progress');
       var loading = document.getElementById('floading');
       var chip = document.getElementById('file_chip');
+      fsvPresignSlots = presigns || [];
       var conflicts = fsvPresignConflicts(fsvPresignFiles, fsvPresignSlots);
-      FLASK_S3_VIEWER_CORE.preventDefaults(e);
       if (conflicts.length) {
+        fsvPresignSetUploadBusy(false);
         fsvPresignShowOverwrite(conflicts);
         return;
       }
@@ -247,7 +263,36 @@
         loading.style.display = 'inline';
       }
       FLASK_S3_VIEWER_CORE.putAll(fsvPresignFiles, fsvPresignSlots, fsvPresignDone);
+      fsvPresignSetUploadBusy(false);
       if (chip) chip.style.display = 'none';
+    }
+    function fsvPresignUpload(e) {
+      FLASK_S3_VIEWER_CORE.preventDefaults(e);
+      if (!fsvPresignFiles || !fsvPresignFiles.length) return;
+      // Defer presign issuance until the user actually clicks Upload —
+      // chip noticing on input change should stay O(1) regardless of N.
+      // If a slot set is already present (e.g. the conflict overwrite
+      // flow re-uses the cached slots), reuse it without another round
+      // trip.
+      if (fsvPresignSlots && fsvPresignSlots.length === fsvPresignFiles.length) {
+        fsvPresignStartUpload(fsvPresignSlots);
+        return;
+      }
+      fsvPresignSetUploadBusy(true, 'Preparing…');
+      FLASK_S3_VIEWER_CORE.fetchPresigns(fsvPresignFiles, function (slots, error) {
+        if (error) {
+          fsvPresignSetUploadBusy(false);
+          var status = error.status || 403;
+          var body = error.responseText || '';
+          if (window.fsvShowServerError) {
+            window.fsvShowServerError(body, status);
+          } else {
+            window.alert('Upload failed (' + status + ')');
+          }
+          return;
+        }
+        fsvPresignStartUpload(slots);
+      });
     }
     function fsvPresignCancel(e) {
       var chip = document.getElementById('file_chip');
@@ -263,6 +308,16 @@
       if (meta) meta.textContent = '0%';
       if (loading) loading.style.display = 'none';
       fsvPresignHideOverwrite();
+    }
+    // <input type=file> onchange handler. Stays O(1) regardless of N so the
+    // chip (with the Upload button inside) becomes visible in the same
+    // animation frame as the file dialog dismissal. Presign issuance is
+    // deferred to the click on Upload — see fsvPresignUpload.
+    function fsvPresignFilesSelected(e) {
+      var input = e && e.target;
+      if (!input || !input.files) return;
+      var files = Array.prototype.slice.call(input.files);
+      fsvPresignReady(e, files, null, null);
     }
     function fsvPresignReady(e, files, presigns, error) {
       if (error) {

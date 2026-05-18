@@ -438,6 +438,11 @@ exceptions emit at ``ERROR``.
   - ``action`` — one of ``list``, ``download``, ``upload``, ``delete``,
     ``presign``
   - ``namespace`` — viewer namespace the request landed on
+  - ``bucket`` — S3 bucket name resolved from the viewer config for the
+    current request. Populated automatically by the blueprint's
+    ``url_value_preprocessor``; the empty string when ``emit()`` is
+    called outside a Flask request context unless the caller pre-sets
+    ``g.FSV_AUDIT_BUCKET`` themselves.
   - ``key`` — canonical S3 key / prefix (post-``base_path``)
   - ``user`` — authenticated email or the literal string ``anonymous``
   - ``result`` — ``ok`` / ``denied`` / ``error``
@@ -458,8 +463,9 @@ The human-readable message is a single space-separated key=value line:
 
 .. code-block:: text
 
-    action=download namespace=fsv-test key=docs/report.pdf
-    user=alice@example.com result=ok status=200 req=a1b2c3d4
+    action=download namespace=fsv-test bucket=fsv-bucket
+    key=docs/report.pdf user=alice@example.com result=ok status=200
+    req=a1b2c3d4
 
 Newlines, carriage returns, and other ASCII control bytes inside
 attacker-controllable fields (key, email, User-Agent, exception
@@ -510,7 +516,7 @@ one request produce one row, not two.
     audit_handler = logging.FileHandler('/var/log/flask_s3_viewer/audit.jsonl')
     audit_handler.setFormatter(jsonlogger.JsonFormatter(
         '%(asctime)s %(levelname)s %(action)s %(namespace)s '
-        '%(key)s %(user)s %(result)s %(status_code)s '
+        '%(bucket)s %(key)s %(user)s %(result)s %(status_code)s '
         '%(client_ip)s %(user_agent)s'
     ))
     audit = logging.getLogger('flask_s3_viewer.audit')

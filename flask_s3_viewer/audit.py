@@ -20,6 +20,9 @@ carries:
 
   - ``action`` — one of ``list``/``download``/``upload``/``delete``/``presign``
   - ``namespace`` — the viewer namespace this request landed on
+  - ``bucket`` — S3 bucket name resolved from the viewer config for the
+    current request (``''`` outside a request context unless the caller
+    pre-set ``g.FSV_AUDIT_BUCKET``)
   - ``key`` — the canonical S3 key / prefix touched (``''`` for listings
     that operate on the namespace root)
   - ``user`` — authenticated email or ``"anonymous"``
@@ -141,12 +144,20 @@ def emit(
 
     client_ip = ''
     user_agent = ''
+    bucket_raw = ''
     if has_request_context():
         client_ip = _sanitize(request.remote_addr, limit=64)
         user_agent = _sanitize(
             request.headers.get('User-Agent', ''),
             limit=MAX_UA_LEN,
         )
+        # ``g.FSV_AUDIT_BUCKET`` is set by the blueprint's
+        # ``url_value_preprocessor`` once per request so every audit row
+        # in this request carries the resolved viewer's S3 bucket name
+        # without each view having to set it. Host code emitting from
+        # outside the blueprint may pre-set ``g.FSV_AUDIT_BUCKET``
+        # themselves; otherwise it falls back to the empty string.
+        bucket_raw = getattr(g, 'FSV_AUDIT_BUCKET', '') or ''
         # Lazy-init a per-request id on flask.g so every emit inside one
         # request shares the same correlation token. The key name is an
         # internal sentinel — host code should consume the id via
@@ -161,6 +172,8 @@ def emit(
         # every call gets its own id.
         request_id = secrets.token_hex(4)
 
+    safe_bucket = _sanitize(bucket_raw, limit=_MAX_FIELD_LEN)
+
     error_msg = ''
     if exc is not None:
         error_msg = _sanitize(
@@ -171,6 +184,7 @@ def emit(
     extra: dict[str, Any] = {
         'action': safe_action,
         'namespace': safe_namespace,
+        'bucket': safe_bucket,
         'key': safe_key,
         'user': safe_user,
         'result': safe_result,
@@ -184,7 +198,7 @@ def emit(
 
     message = (
         f'action={safe_action} namespace={safe_namespace} '
-        f'key={safe_key} user={safe_user} '
+        f'bucket={safe_bucket} key={safe_key} user={safe_user} '
         f'result={safe_result} status={extra["status_code"]} '
         f'req={request_id}'
     )

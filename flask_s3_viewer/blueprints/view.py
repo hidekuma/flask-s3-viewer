@@ -312,6 +312,13 @@ def add_division(endpoint: str, values: dict) -> None:
 @blueprint.url_value_preprocessor
 def pull_division(endpoint: Any, values: Any) -> None:
     g.BUCKET_NAMESPACE = values.pop('BUCKET_NAMESPACE')
+    # Resolve the bucket name once per request so every audit row in this
+    # request carries it without each view having to set it manually. An
+    # unknown namespace yields ``None`` from the registry lookup and the
+    # bucket falls back to an empty string; the subsequent ``_get_viewer``
+    # call will raise 404 before any audit emit fires.
+    viewer = current_app.extensions.get(NAMESPACE, {}).get(g.BUCKET_NAMESPACE)
+    g.FSV_AUDIT_BUCKET = getattr(viewer, '_bucket_name', '') or ''
 
 
 @blueprint.route("/files/<path:key>", methods=['GET'])

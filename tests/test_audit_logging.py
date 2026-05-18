@@ -92,6 +92,7 @@ def _records_for(records, action: str) -> list[logging.LogRecord]:
 
 class TestActionHappyPath:
     def test_list_emits_one_record(self, s3_bucket, tmp_path, audit_records) -> None:
+        _client, bucket = s3_bucket
         app = _make_app(s3_bucket, tmp_path)
         resp = app.test_client().get(_ns_path('/files'))
         assert resp.status_code == 200
@@ -102,6 +103,7 @@ class TestActionHappyPath:
         assert r.result == 'ok'
         assert r.status_code == 200
         assert r.namespace == 'fsv-audit'
+        assert r.bucket == bucket
         # Default INFO level for success.
         assert r.levelno == logging.INFO
 
@@ -118,8 +120,10 @@ class TestActionHappyPath:
         assert download[0].key == 'hello.txt'
         assert download[0].result == 'ok'
         assert download[0].status_code == 200
+        assert download[0].bucket == bucket
 
     def test_upload_emits_record(self, s3_bucket, tmp_path, audit_records) -> None:
+        _client, bucket = s3_bucket
         app = _make_app(s3_bucket, tmp_path)
         data = {
             'files[]': (io.BytesIO(b'payload'), 'audit-upload.txt'),
@@ -134,6 +138,7 @@ class TestActionHappyPath:
         assert len(upload) == 1
         assert upload[0].result == 'ok'
         assert upload[0].status_code == 201
+        assert upload[0].bucket == bucket
 
     def test_delete_emits_record(self, s3_bucket, tmp_path, audit_records) -> None:
         s3_client, bucket = s3_bucket
@@ -146,8 +151,10 @@ class TestActionHappyPath:
         assert deletes[0].result == 'ok'
         assert deletes[0].status_code == 204
         assert deletes[0].key == 'gone.txt'
+        assert deletes[0].bucket == bucket
 
     def test_presign_emits_record(self, s3_bucket, tmp_path, audit_records) -> None:
+        _client, bucket = s3_bucket
         app = _make_app(s3_bucket, tmp_path)
         resp = app.test_client().post(
             _ns_path('/files/presign'),
@@ -158,6 +165,7 @@ class TestActionHappyPath:
         assert len(presigns) == 1
         assert presigns[0].result == 'ok'
         assert presigns[0].status_code == 200
+        assert presigns[0].bucket == bucket
 
 
 # ---------------------------------------------------------------------------
@@ -378,7 +386,7 @@ class TestRecordShape:
         listing = _records_for(audit_records, 'list')
         r = listing[0]
         for field in (
-            'action', 'namespace', 'key', 'user',
+            'action', 'namespace', 'bucket', 'key', 'user',
             'result', 'status_code', 'client_ip', 'user_agent',
             'request_id',
         ):
@@ -836,3 +844,134 @@ class TestRequestId:
         r = listing[0]
         assert re.fullmatch(r'[0-9a-f]{8}', r.request_id)
         assert f'req={r.request_id}' in r.getMessage()
+
+
+# ---------------------------------------------------------------------------
+# bucket — record extra + message token reflect the viewer's S3 bucket name
+# ---------------------------------------------------------------------------
+
+class TestBucketField:
+    def test_bucket_present_in_record_and_message(
+        self, s3_bucket, tmp_path, audit_records,
+    ) -> None:
+        """Every blueprint emit carries the viewer's S3 bucket name on the
+        ``LogRecord`` and as a ``bucket=<name>`` token after ``namespace=``."""
+        _client, bucket = s3_bucket
+        app = _make_app(s3_bucket, tmp_path)
+        resp = app.test_client().get(_ns_path('/files'))
+        assert resp.status_code == 200
+        listing = _records_for(audit_records, 'list')
+        r = listing[0]
+        assert r.bucket == bucket
+        message = r.getMessage()
+        # bucket token sits directly between namespace and key.
+        assert f'namespace={r.namespace} bucket={bucket} key=' in message
+
+    def test_denied_row_carries_bucket(
+        self, s3_bucket, tmp_path, audit_records,
+    ) -> None:
+        """The auth-deny path still goes through ``pull_division`` so the
+        bucket is populated even when the request never reaches a view."""
+        _client, bucket = s3_bucket
+        app = _make_app(
+            s3_bucket, tmp_path,
+            auth_callback=lambda _req: None,
+            permission_callback=lambda *a, **kw: True,
+        )
+        resp = app.test_client().get(_ns_path('/files'))
+        assert resp.status_code == 401
+        listing = _records_for(audit_records, 'list')
+        assert listing[0].bucket == bucket
+
+    def test_error_row_carries_bucket(
+        self, s3_bucket, tmp_path, audit_records,
+    ) -> None:
+        """Error / abort responses still carry the bucket field."""
+        _client, bucket = s3_bucket
+        app = _make_app(s3_bucket, tmp_path)
+        resp = app.test_client().get(_ns_path('/files?prefix=../etc'))
+        assert resp.status_code == 400
+        listing = _records_for(audit_records, 'list')
+        assert listing[0].bucket == bucket
+
+    def test_emit_outside_request_context_yields_empty_bucket(
+        self, audit_records,
+    ) -> None:
+        """Direct ``emit()`` without a Flask request scope leaves bucket
+        empty (the ``g.FSV_AUDIT_BUCKET`` sentinel is unset)."""
+        from flask_s3_viewer.audit import emit
+
+        emit(
+            action='list',
+            namespace='ns',
+            key='',
+            user='a@b.com',
+            result='ok',
+            status_code=200,
+        )
+        r = audit_records[-1]
+        assert r.bucket == ''
+        assert 'bucket=' in r.getMessage()
+
+    def test_multi_namespace_records_per_namespace_bucket(
+        self, s3_bucket, tmp_path, audit_records,
+    ) -> None:
+        """When two viewers are registered on the same app via
+        ``add_new_one``, each request's audit row reflects that namespace's
+        configured bucket — proving the resolution is per-request, not
+        cross-contaminated by the first registered viewer."""
+        # Spin up a second moto-mocked bucket alongside the existing one and
+        # bind both viewers to one Flask app via add_new_one.
+        s3_client, bucket_primary = s3_bucket
+        bucket_secondary = 'fsv-audit-secondary'
+        s3_client.create_bucket(Bucket=bucket_secondary)
+
+        app = Flask(__name__)
+        app.config['TESTING'] = True
+        app.secret_key = 'audit-test-secret'
+        # Two viewers on one app — exercises the registry-lookup branch
+        # of ``pull_division`` for every namespace. We construct each
+        # viewer directly (not via ``add_new_one``) because the latter
+        # propagates the parent's auth defaults and would enable auth
+        # enforcement on the second namespace, masking the bucket assert
+        # behind a 401.
+        FlaskS3Viewer(
+            app,
+            namespace='fsv-audit-a',
+            config={
+                'profile_name': None,
+                'bucket_name': bucket_primary,
+                'region_name': 'us-east-1',
+                'access_key': 'testing',
+                'secret_key': 'testing',
+                'cache_dir': str(tmp_path / 'cache-a'),
+                'use_cache': True,
+                'ttl': 60,
+            },
+        )
+        FlaskS3Viewer(
+            app,
+            namespace='fsv-audit-b',
+            config={
+                'profile_name': None,
+                'bucket_name': bucket_secondary,
+                'region_name': 'us-east-1',
+                'access_key': 'testing',
+                'secret_key': 'testing',
+                'cache_dir': str(tmp_path / 'cache-b'),
+                'use_cache': True,
+                'ttl': 60,
+            },
+        )
+
+        client = app.test_client()
+        assert client.get('/fsv-audit-a/files').status_code == 200
+        assert client.get('/fsv-audit-b/files').status_code == 200
+
+        listing = _records_for(audit_records, 'list')
+        assert len(listing) == 2
+        by_ns = {r.namespace: r for r in listing}
+        assert by_ns['fsv-audit-a'].bucket == bucket_primary
+        assert by_ns['fsv-audit-b'].bucket == bucket_secondary
+        # The two namespaces resolved to distinct buckets — no cross-talk.
+        assert by_ns['fsv-audit-a'].bucket != by_ns['fsv-audit-b'].bucket

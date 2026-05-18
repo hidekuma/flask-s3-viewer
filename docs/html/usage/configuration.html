@@ -470,6 +470,11 @@ exceptions emit at <code class="docutils literal notranslate"><span class="pre">
 <li><p><code class="docutils literal notranslate"><span class="pre">action</span></code> — one of <code class="docutils literal notranslate"><span class="pre">list</span></code>, <code class="docutils literal notranslate"><span class="pre">download</span></code>, <code class="docutils literal notranslate"><span class="pre">upload</span></code>, <code class="docutils literal notranslate"><span class="pre">delete</span></code>,
 <code class="docutils literal notranslate"><span class="pre">presign</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">namespace</span></code> — viewer namespace the request landed on</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bucket</span></code> — S3 bucket name resolved from the viewer config for the
+current request. Populated automatically by the blueprint’s
+<code class="docutils literal notranslate"><span class="pre">url_value_preprocessor</span></code>; the empty string when <code class="docutils literal notranslate"><span class="pre">emit()</span></code> is
+called outside a Flask request context unless the caller pre-sets
+<code class="docutils literal notranslate"><span class="pre">g.FSV_AUDIT_BUCKET</span></code> themselves.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">key</span></code> — canonical S3 key / prefix (post-<code class="docutils literal notranslate"><span class="pre">base_path</span></code>)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">user</span></code> — authenticated email or the literal string <code class="docutils literal notranslate"><span class="pre">anonymous</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">result</span></code> — <code class="docutils literal notranslate"><span class="pre">ok</span></code> / <code class="docutils literal notranslate"><span class="pre">denied</span></code> / <code class="docutils literal notranslate"><span class="pre">error</span></code></p></li>
@@ -488,8 +493,9 @@ request context get a fresh id each call.</p></li>
 </ul>
 </div></blockquote>
 <p>The human-readable message is a single space-separated key=value line:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>action=download namespace=fsv-test key=docs/report.pdf
-user=alice@example.com result=ok status=200 req=a1b2c3d4
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>action=download namespace=fsv-test bucket=fsv-bucket
+key=docs/report.pdf user=alice@example.com result=ok status=200
+req=a1b2c3d4
 </pre></div>
 </div>
 <p>Newlines, carriage returns, and other ASCII control bytes inside
@@ -531,7 +537,7 @@ one request produce one row, not two.</p>
 <span class="linenos"> 4</span><span class="n">audit_handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="s1">&#39;/var/log/flask_s3_viewer/audit.jsonl&#39;</span><span class="p">)</span>
 <span class="linenos"> 5</span><span class="n">audit_handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">jsonlogger</span><span class="o">.</span><span class="n">JsonFormatter</span><span class="p">(</span>
 <span class="linenos"> 6</span>    <span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1"> </span><span class="si">%(levelname)s</span><span class="s1"> </span><span class="si">%(action)s</span><span class="s1"> </span><span class="si">%(namespace)s</span><span class="s1"> &#39;</span>
-<span class="linenos"> 7</span>    <span class="s1">&#39;</span><span class="si">%(key)s</span><span class="s1"> </span><span class="si">%(user)s</span><span class="s1"> </span><span class="si">%(result)s</span><span class="s1"> </span><span class="si">%(status_code)s</span><span class="s1"> &#39;</span>
+<span class="linenos"> 7</span>    <span class="s1">&#39;</span><span class="si">%(bucket)s</span><span class="s1"> </span><span class="si">%(key)s</span><span class="s1"> </span><span class="si">%(user)s</span><span class="s1"> </span><span class="si">%(result)s</span><span class="s1"> </span><span class="si">%(status_code)s</span><span class="s1"> &#39;</span>
 <span class="linenos"> 8</span>    <span class="s1">&#39;</span><span class="si">%(client_ip)s</span><span class="s1"> </span><span class="si">%(user_agent)s</span><span class="s1">&#39;</span>
 <span class="linenos"> 9</span><span class="p">))</span>
 <span class="linenos">10</span><span class="n">audit</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;flask_s3_viewer.audit&#39;</span><span class="p">)</span>
