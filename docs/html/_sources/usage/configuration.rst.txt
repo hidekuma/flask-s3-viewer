@@ -304,6 +304,170 @@ profiles that themselves declare ``role_arn``+``source_profile`` in
 ``~/.aws/config`` — boto3 handles AssumeRole automatically), env vars,
 EC2 IMDS, ECS task role, AWS SSO, and EKS IRSA.
 
+Automatic credential refresh
+````````````````````````````
+
+Since v1.2, ``AssumeRole`` temporary credentials are wrapped in
+botocore's ``RefreshableCredentials`` whenever ``role_arn`` is set
+*and* either MFA is not used or a ``token_code_callback`` is supplied.
+boto3 re-invokes ``sts:AssumeRole`` automatically when the cached
+credentials approach expiry. botocore's defaults are a **15-minute
+advisory window** (best-effort background refresh) and a **10-minute
+mandatory window** (synchronous refresh — the next S3 call blocks
+until new credentials are in place). A long-running viewer no longer
+hits ``ExpiredToken`` once ``DurationSeconds`` elapses.
+
+The legacy single-shot path is preserved for the ``mfa_serial`` +
+literal ``token_code`` combination — once the OTP is consumed there
+is no way to obtain the next one without prompting the user, so the
+session keeps the v1.1.x behaviour and surfaces ``ExpiredToken``
+after the session expires. Use this only for short-lived workflows.
+
+For headless deployments that still need MFA, supply a
+``token_code_callback`` that fetches the current OTP from your
+secret store. The callback is invoked **on every refresh**, so each
+``AssumeRole`` call carries a fresh code:
+
+.. code-block:: python
+    :linenos:
+
+    def fetch_otp() -> str:
+        # Pull the current TOTP from your secret manager / hardware HSM /
+        # short-lived broker — anything except interactive stdin in a
+        # daemon context.
+        return secrets_client.get_current_totp('flask-s3-viewer')
+
+    FlaskS3Viewer(
+        app,
+        namespace='mfa-account',
+        config={
+            'bucket_name': 'secure-bucket',
+            'role_arn': 'arn:aws:iam::123456789012:role/AdminRole',
+            'mfa_serial': 'arn:aws:iam::123456789012:mfa/headless',
+            'token_code_callback': fetch_otp,
+        },
+    )
+
+Thread-safety is delegated to botocore's standard
+``RefreshableCredentials`` locking. Each Flask process/worker gets
+its own ``FlaskS3Viewer`` instance and its own refresh schedule —
+the library does not share credentials across workers.
+
+Presigned URL TTL with temporary credentials
+````````````````````````````````````````````
+
+A presigned URL signed with STS-issued credentials is bounded by
+**``min(Expires, STS session expiry)``**. boto3 writes the
+*requested* ``X-Amz-Expires`` into the URL query verbatim, but S3
+rejects the request at access time once the underlying STS session
+expires. Concrete consequence: a viewer started with
+``duration_seconds=3600`` (1 hour) that issues a presigned URL with
+``Expires=86400`` (24 hours) still produces a URL the client can
+only use for ~1 hour. Automatic refresh (above) does **not** extend
+URLs that were already signed — refreshed credentials only affect
+*new* signatures.
+
+If you need long-lived presigned URLs:
+
+- Sign with a long-lived IAM user (skip ``role_arn`` for that
+  namespace), or
+- Set ``duration_seconds`` ≥ the longest ``Expires`` value your
+  application requests (within the STS maximum of 12 h for chained
+  AssumeRole, or 43200 s when explicitly allowed by the role).
+
+Choosing ``duration_seconds``
+`````````````````````````````
+
+STS AssumeRole quotas are per-account (default ~30 TPS) and
+botocore's **15-minute advisory** / **10-minute mandatory** refresh
+windows pull each renewal that much earlier than ``Expiration``. The
+practical guidance:
+
+- **≥ 3600 (1 h) recommended.** With a 1-hour session, the advisory
+  window kicks in ~45 min after issuance and renews once per hour.
+- **900 s (the STS minimum) is risky.** Because the advisory window
+  is also 900 s, *every* S3 call after issuance falls inside the
+  advisory band and triggers a background refresh — effectively
+  rate-limited by botocore's per-credential lock, but still hard on
+  STS quota under high worker counts.
+- Typical sweet spot: 3600 – 43200 (1 h – 12 h).
+- For viewers behind ``gunicorn --workers N``, each worker maintains
+  its own refresh schedule. Multiply your expected refresh
+  frequency by ``N`` when sizing against the STS account quota; a
+  larger ``duration_seconds`` (e.g. 12 h) keeps the per-second
+  refresh rate well under quota even at high worker counts.
+
+Using with EKS IRSA
+```````````````````
+
+In EKS, IAM Roles for Service Accounts (IRSA) issues web-identity
+tokens via the projected ServiceAccount token. When you combine
+IRSA with an explicit ``role_arn`` in the viewer config, two
+credential layers stack:
+
+1. **Base** — boto3 calls
+   ``sts:AssumeRoleWithWebIdentity`` against the IRSA-projected
+   token and gets a refresh-capable ``Credentials`` object out of
+   the box (boto3 manages this layer; flask-s3-viewer is not
+   involved).
+2. **Working** — flask-s3-viewer then calls ``sts:AssumeRole``
+   against that base and produces the working session. The v1.2
+   refresh wiring renews this second layer transparently.
+
+Both layers refresh independently, so a viewer running on EKS for
+days keeps working without manual intervention.
+
+STS endpoint selection
+``````````````````````
+
+For non-``us-east-1`` deployments, prefer the **regional** STS
+endpoint to reduce latency and improve availability. boto3 1.30+
+uses regional STS by default; older configurations may need
+``AWS_STS_REGIONAL_ENDPOINTS=regional`` in the environment.
+Concretely, calls to ``sts.amazonaws.com`` (global,
+``us-east-1``) from Seoul measure 150 – 200 ms RTT, while
+``sts.ap-northeast-2.amazonaws.com`` is in the 5 – 10 ms range.
+
+Mapping the web user to a CloudTrail identity
+`````````````````````````````````````````````
+
+The audit log records the **web user** (Flask session / header)
+under the ``user`` field; CloudTrail records the
+**``RoleSessionName``** passed to ``sts:AssumeRole``. Bridge the
+two by embedding a stable per-user identifier into
+``role_session_name``:
+
+.. code-block:: python
+    :linenos:
+
+    FlaskS3Viewer(
+        app,
+        namespace='cross-account',
+        config={
+            'bucket_name': 'target-bucket',
+            'role_arn': 'arn:aws:iam::123456789012:role/AppRole',
+            # CloudTrail surfaces this string in every API call. Keep it
+            # opaque but trace-able.
+            'role_session_name': f'fs3v-{user_id_hash}',
+        },
+    )
+
+.. warning::
+    ``RoleSessionName`` is recorded **in cleartext** in CloudTrail
+    and surfaces in many AWS Console screens. Do not embed PII such
+    as full email addresses, Korean RRN (주민등록번호), phone
+    numbers, or any other regulated identifier. Use a short hash
+    (e.g. ``hashlib.sha256(email).hexdigest()[:16]``) or an opaque
+    numeric user id instead. The audit ``user`` field can keep the
+    email for the operator's own log pipeline.
+
+.. note::
+    Per-namespace role assumption is already supported — each
+    ``add_new_one(config={...})`` call builds an independent
+    ``AWSSession``, so namespace A can assume role X while
+    namespace B assumes role Y. The v1.2 refresh wiring applies
+    independently per namespace.
+
 Range requests / partial downloads
 ----------------------------------
 

@@ -6,7 +6,7 @@
 <meta content="Flask, s3, aws, upload, uploader, browsing, python3, python, mount, objectstorage, s3viewer" name="keywords" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Configuration &mdash; Flask-S3-Viewer 1.1.1 documentation</title>
+  <title>Configuration &mdash; Flask-S3-Viewer 1.2.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
 
@@ -18,7 +18,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=58fbf978"></script>
+        <script src="../_static/documentation_options.js?v=6efca38a"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -63,7 +63,15 @@
 <li class="toctree-l2"><a class="reference internal" href="#branding-title-logo">Branding (title + logo)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#template-overrides">Template overrides</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#controll-large-files">Controll large files</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#sts-assumerole-mfa">STS AssumeRole / MFA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sts-assumerole-mfa">STS AssumeRole / MFA</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#automatic-credential-refresh">Automatic credential refresh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#presigned-url-ttl-with-temporary-credentials">Presigned URL TTL with temporary credentials</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#choosing-duration-seconds">Choosing <code class="docutils literal notranslate"><span class="pre">duration_seconds</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#using-with-eks-irsa">Using with EKS IRSA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sts-endpoint-selection">STS endpoint selection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mapping-the-web-user-to-a-cloudtrail-identity">Mapping the web user to a CloudTrail identity</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#range-requests-partial-downloads">Range requests / partial downloads</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#authentication-permissions">Authentication &amp; permissions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#audit-logging">Audit logging</a></li>
@@ -353,6 +361,160 @@ path is used. That covers static keys, named profiles (including
 profiles that themselves declare <code class="docutils literal notranslate"><span class="pre">role_arn``+``source_profile</span></code> in
 <code class="docutils literal notranslate"><span class="pre">~/.aws/config</span></code> — boto3 handles AssumeRole automatically), env vars,
 EC2 IMDS, ECS task role, AWS SSO, and EKS IRSA.</p>
+<section id="automatic-credential-refresh">
+<h3>Automatic credential refresh<a class="headerlink" href="#automatic-credential-refresh" title="Link to this heading"></a></h3>
+<p>Since v1.2, <code class="docutils literal notranslate"><span class="pre">AssumeRole</span></code> temporary credentials are wrapped in
+botocore’s <code class="docutils literal notranslate"><span class="pre">RefreshableCredentials</span></code> whenever <code class="docutils literal notranslate"><span class="pre">role_arn</span></code> is set
+<em>and</em> either MFA is not used or a <code class="docutils literal notranslate"><span class="pre">token_code_callback</span></code> is supplied.
+boto3 re-invokes <code class="docutils literal notranslate"><span class="pre">sts:AssumeRole</span></code> automatically when the cached
+credentials approach expiry. botocore’s defaults are a <strong>15-minute
+advisory window</strong> (best-effort background refresh) and a <strong>10-minute
+mandatory window</strong> (synchronous refresh — the next S3 call blocks
+until new credentials are in place). A long-running viewer no longer
+hits <code class="docutils literal notranslate"><span class="pre">ExpiredToken</span></code> once <code class="docutils literal notranslate"><span class="pre">DurationSeconds</span></code> elapses.</p>
+<p>The legacy single-shot path is preserved for the <code class="docutils literal notranslate"><span class="pre">mfa_serial</span></code> +
+literal <code class="docutils literal notranslate"><span class="pre">token_code</span></code> combination — once the OTP is consumed there
+is no way to obtain the next one without prompting the user, so the
+session keeps the v1.1.x behaviour and surfaces <code class="docutils literal notranslate"><span class="pre">ExpiredToken</span></code>
+after the session expires. Use this only for short-lived workflows.</p>
+<p>For headless deployments that still need MFA, supply a
+<code class="docutils literal notranslate"><span class="pre">token_code_callback</span></code> that fetches the current OTP from your
+secret store. The callback is invoked <strong>on every refresh</strong>, so each
+<code class="docutils literal notranslate"><span class="pre">AssumeRole</span></code> call carries a fresh code:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="k">def</span><span class="w"> </span><span class="nf">fetch_otp</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="linenos"> 2</span>    <span class="c1"># Pull the current TOTP from your secret manager / hardware HSM /</span>
+<span class="linenos"> 3</span>    <span class="c1"># short-lived broker — anything except interactive stdin in a</span>
+<span class="linenos"> 4</span>    <span class="c1"># daemon context.</span>
+<span class="linenos"> 5</span>    <span class="k">return</span> <span class="n">secrets_client</span><span class="o">.</span><span class="n">get_current_totp</span><span class="p">(</span><span class="s1">&#39;flask-s3-viewer&#39;</span><span class="p">)</span>
+<span class="linenos"> 6</span>
+<span class="linenos"> 7</span><span class="n">FlaskS3Viewer</span><span class="p">(</span>
+<span class="linenos"> 8</span>    <span class="n">app</span><span class="p">,</span>
+<span class="linenos"> 9</span>    <span class="n">namespace</span><span class="o">=</span><span class="s1">&#39;mfa-account&#39;</span><span class="p">,</span>
+<span class="linenos">10</span>    <span class="n">config</span><span class="o">=</span><span class="p">{</span>
+<span class="linenos">11</span>        <span class="s1">&#39;bucket_name&#39;</span><span class="p">:</span> <span class="s1">&#39;secure-bucket&#39;</span><span class="p">,</span>
+<span class="linenos">12</span>        <span class="s1">&#39;role_arn&#39;</span><span class="p">:</span> <span class="s1">&#39;arn:aws:iam::123456789012:role/AdminRole&#39;</span><span class="p">,</span>
+<span class="linenos">13</span>        <span class="s1">&#39;mfa_serial&#39;</span><span class="p">:</span> <span class="s1">&#39;arn:aws:iam::123456789012:mfa/headless&#39;</span><span class="p">,</span>
+<span class="linenos">14</span>        <span class="s1">&#39;token_code_callback&#39;</span><span class="p">:</span> <span class="n">fetch_otp</span><span class="p">,</span>
+<span class="linenos">15</span>    <span class="p">},</span>
+<span class="linenos">16</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Thread-safety is delegated to botocore’s standard
+<code class="docutils literal notranslate"><span class="pre">RefreshableCredentials</span></code> locking. Each Flask process/worker gets
+its own <code class="docutils literal notranslate"><span class="pre">FlaskS3Viewer</span></code> instance and its own refresh schedule —
+the library does not share credentials across workers.</p>
+</section>
+<section id="presigned-url-ttl-with-temporary-credentials">
+<h3>Presigned URL TTL with temporary credentials<a class="headerlink" href="#presigned-url-ttl-with-temporary-credentials" title="Link to this heading"></a></h3>
+<p>A presigned URL signed with STS-issued credentials is bounded by
+<strong>``min(Expires, STS session expiry)``</strong>. boto3 writes the
+<em>requested</em> <code class="docutils literal notranslate"><span class="pre">X-Amz-Expires</span></code> into the URL query verbatim, but S3
+rejects the request at access time once the underlying STS session
+expires. Concrete consequence: a viewer started with
+<code class="docutils literal notranslate"><span class="pre">duration_seconds=3600</span></code> (1 hour) that issues a presigned URL with
+<code class="docutils literal notranslate"><span class="pre">Expires=86400</span></code> (24 hours) still produces a URL the client can
+only use for ~1 hour. Automatic refresh (above) does <strong>not</strong> extend
+URLs that were already signed — refreshed credentials only affect
+<em>new</em> signatures.</p>
+<p>If you need long-lived presigned URLs:</p>
+<ul class="simple">
+<li><p>Sign with a long-lived IAM user (skip <code class="docutils literal notranslate"><span class="pre">role_arn</span></code> for that
+namespace), or</p></li>
+<li><p>Set <code class="docutils literal notranslate"><span class="pre">duration_seconds</span></code> ≥ the longest <code class="docutils literal notranslate"><span class="pre">Expires</span></code> value your
+application requests (within the STS maximum of 12 h for chained
+AssumeRole, or 43200 s when explicitly allowed by the role).</p></li>
+</ul>
+</section>
+<section id="choosing-duration-seconds">
+<h3>Choosing <code class="docutils literal notranslate"><span class="pre">duration_seconds</span></code><a class="headerlink" href="#choosing-duration-seconds" title="Link to this heading"></a></h3>
+<p>STS AssumeRole quotas are per-account (default ~30 TPS) and
+botocore’s <strong>15-minute advisory</strong> / <strong>10-minute mandatory</strong> refresh
+windows pull each renewal that much earlier than <code class="docutils literal notranslate"><span class="pre">Expiration</span></code>. The
+practical guidance:</p>
+<ul class="simple">
+<li><p><strong>≥ 3600 (1 h) recommended.</strong> With a 1-hour session, the advisory
+window kicks in ~45 min after issuance and renews once per hour.</p></li>
+<li><p><strong>900 s (the STS minimum) is risky.</strong> Because the advisory window
+is also 900 s, <em>every</em> S3 call after issuance falls inside the
+advisory band and triggers a background refresh — effectively
+rate-limited by botocore’s per-credential lock, but still hard on
+STS quota under high worker counts.</p></li>
+<li><p>Typical sweet spot: 3600 – 43200 (1 h – 12 h).</p></li>
+<li><p>For viewers behind <code class="docutils literal notranslate"><span class="pre">gunicorn</span> <span class="pre">--workers</span> <span class="pre">N</span></code>, each worker maintains
+its own refresh schedule. Multiply your expected refresh
+frequency by <code class="docutils literal notranslate"><span class="pre">N</span></code> when sizing against the STS account quota; a
+larger <code class="docutils literal notranslate"><span class="pre">duration_seconds</span></code> (e.g. 12 h) keeps the per-second
+refresh rate well under quota even at high worker counts.</p></li>
+</ul>
+</section>
+<section id="using-with-eks-irsa">
+<h3>Using with EKS IRSA<a class="headerlink" href="#using-with-eks-irsa" title="Link to this heading"></a></h3>
+<p>In EKS, IAM Roles for Service Accounts (IRSA) issues web-identity
+tokens via the projected ServiceAccount token. When you combine
+IRSA with an explicit <code class="docutils literal notranslate"><span class="pre">role_arn</span></code> in the viewer config, two
+credential layers stack:</p>
+<ol class="arabic simple">
+<li><p><strong>Base</strong> — boto3 calls
+<code class="docutils literal notranslate"><span class="pre">sts:AssumeRoleWithWebIdentity</span></code> against the IRSA-projected
+token and gets a refresh-capable <code class="docutils literal notranslate"><span class="pre">Credentials</span></code> object out of
+the box (boto3 manages this layer; flask-s3-viewer is not
+involved).</p></li>
+<li><p><strong>Working</strong> — flask-s3-viewer then calls <code class="docutils literal notranslate"><span class="pre">sts:AssumeRole</span></code>
+against that base and produces the working session. The v1.2
+refresh wiring renews this second layer transparently.</p></li>
+</ol>
+<p>Both layers refresh independently, so a viewer running on EKS for
+days keeps working without manual intervention.</p>
+</section>
+<section id="sts-endpoint-selection">
+<h3>STS endpoint selection<a class="headerlink" href="#sts-endpoint-selection" title="Link to this heading"></a></h3>
+<p>For non-<code class="docutils literal notranslate"><span class="pre">us-east-1</span></code> deployments, prefer the <strong>regional</strong> STS
+endpoint to reduce latency and improve availability. boto3 1.30+
+uses regional STS by default; older configurations may need
+<code class="docutils literal notranslate"><span class="pre">AWS_STS_REGIONAL_ENDPOINTS=regional</span></code> in the environment.
+Concretely, calls to <code class="docutils literal notranslate"><span class="pre">sts.amazonaws.com</span></code> (global,
+<code class="docutils literal notranslate"><span class="pre">us-east-1</span></code>) from Seoul measure 150 – 200 ms RTT, while
+<code class="docutils literal notranslate"><span class="pre">sts.ap-northeast-2.amazonaws.com</span></code> is in the 5 – 10 ms range.</p>
+</section>
+<section id="mapping-the-web-user-to-a-cloudtrail-identity">
+<h3>Mapping the web user to a CloudTrail identity<a class="headerlink" href="#mapping-the-web-user-to-a-cloudtrail-identity" title="Link to this heading"></a></h3>
+<p>The audit log records the <strong>web user</strong> (Flask session / header)
+under the <code class="docutils literal notranslate"><span class="pre">user</span></code> field; CloudTrail records the
+<strong>``RoleSessionName``</strong> passed to <code class="docutils literal notranslate"><span class="pre">sts:AssumeRole</span></code>. Bridge the
+two by embedding a stable per-user identifier into
+<code class="docutils literal notranslate"><span class="pre">role_session_name</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="n">FlaskS3Viewer</span><span class="p">(</span>
+<span class="linenos"> 2</span>    <span class="n">app</span><span class="p">,</span>
+<span class="linenos"> 3</span>    <span class="n">namespace</span><span class="o">=</span><span class="s1">&#39;cross-account&#39;</span><span class="p">,</span>
+<span class="linenos"> 4</span>    <span class="n">config</span><span class="o">=</span><span class="p">{</span>
+<span class="linenos"> 5</span>        <span class="s1">&#39;bucket_name&#39;</span><span class="p">:</span> <span class="s1">&#39;target-bucket&#39;</span><span class="p">,</span>
+<span class="linenos"> 6</span>        <span class="s1">&#39;role_arn&#39;</span><span class="p">:</span> <span class="s1">&#39;arn:aws:iam::123456789012:role/AppRole&#39;</span><span class="p">,</span>
+<span class="linenos"> 7</span>        <span class="c1"># CloudTrail surfaces this string in every API call. Keep it</span>
+<span class="linenos"> 8</span>        <span class="c1"># opaque but trace-able.</span>
+<span class="linenos"> 9</span>        <span class="s1">&#39;role_session_name&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;fs3v-</span><span class="si">{</span><span class="n">user_id_hash</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+<span class="linenos">10</span>    <span class="p">},</span>
+<span class="linenos">11</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><code class="docutils literal notranslate"><span class="pre">RoleSessionName</span></code> is recorded <strong>in cleartext</strong> in CloudTrail
+and surfaces in many AWS Console screens. Do not embed PII such
+as full email addresses, Korean RRN (주민등록번호), phone
+numbers, or any other regulated identifier. Use a short hash
+(e.g. <code class="docutils literal notranslate"><span class="pre">hashlib.sha256(email).hexdigest()[:16]</span></code>) or an opaque
+numeric user id instead. The audit <code class="docutils literal notranslate"><span class="pre">user</span></code> field can keep the
+email for the operator’s own log pipeline.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Per-namespace role assumption is already supported — each
+<code class="docutils literal notranslate"><span class="pre">add_new_one(config={...})</span></code> call builds an independent
+<code class="docutils literal notranslate"><span class="pre">AWSSession</span></code>, so namespace A can assume role X while
+namespace B assumes role Y. The v1.2 refresh wiring applies
+independently per namespace.</p>
+</div>
+</section>
 </section>
 <section id="range-requests-partial-downloads">
 <h2>Range requests / partial downloads<a class="headerlink" href="#range-requests-partial-downloads" title="Link to this heading"></a></h2>

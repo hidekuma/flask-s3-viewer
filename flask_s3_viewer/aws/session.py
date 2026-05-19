@@ -21,13 +21,31 @@ What this class adds:
   - **MFA**: pass ``mfa_serial`` together with a ``token_code`` (or a
     ``token_code_callback`` callable that returns one on demand).
   - **Tunable** ``role_session_name`` and ``duration_seconds``.
+  - **Automatic refresh of AssumeRole temporary credentials** via
+    botocore ``RefreshableCredentials`` — long-running viewers no
+    longer hit ``ExpiredToken`` once ``DurationSeconds`` elapses.
+    Activated whenever ``role_arn`` is set *and* either MFA is not
+    used or a ``token_code_callback`` is supplied. The static
+    ``mfa_serial`` + literal ``token_code`` combination keeps the
+    legacy single-shot behavior for backward compatibility.
+
+.. note::
+    The refresh path depends on the botocore private attribute
+    ``BotocoreSession._credentials`` because ``set_credentials`` only
+    accepts a static 3-tuple and rejects ``RefreshableCredentials``
+    instances. This is the pattern recommended by AWS-internal
+    boto3 examples; if botocore changes the surface, the import or
+    assignment will fail loudly at construction time rather than
+    silently degrade.
 """
 import logging
 from collections.abc import Callable
 
 import boto3
 from boto3.session import Session
+from botocore.credentials import RefreshableCredentials
 from botocore.errorfactory import ClientError
+from botocore.session import Session as BotocoreSession
 
 logger = logging.getLogger(__name__)
 
@@ -127,6 +145,66 @@ class AWSSession:
     ) -> Session:
         """Run STS AssumeRole on top of ``base`` and return a fresh
         ``boto3.Session`` bound to the temporary credentials.
+
+        Two branches share a single entry point:
+
+        - **Refresh-eligible** (``role_arn`` + MFA absent OR
+          ``token_code_callback`` present): delegate to
+          ``_assume_role_refreshable`` — boto3 will auto-refresh
+          credentials via botocore ``RefreshableCredentials``.
+        - **Static** (``mfa_serial`` + literal ``token_code`` and no
+          callback): keep the legacy single-shot behavior so existing
+          short-lived MFA workflows continue to function identically.
+          ``ExpiredToken`` after ``DurationSeconds`` is the same
+          surface as before.
+        """
+        # MFA with a literal token_code (and no callback) cannot refresh
+        # — once the OTP is consumed there is no way to obtain the next
+        # one without prompting the user again. Preserve the legacy
+        # single-shot path for backward compatibility.
+        refresh_eligible = not (mfa_serial and token_code and token_code_callback is None)
+        if refresh_eligible:
+            return AWSSession._assume_role_refreshable(
+                base=base,
+                role_arn=role_arn,
+                role_session_name=role_session_name,
+                external_id=external_id,
+                duration_seconds=duration_seconds,
+                mfa_serial=mfa_serial,
+                token_code=token_code,
+                token_code_callback=token_code_callback,
+                region_name=region_name,
+            )
+        return AWSSession._assume_role_static(
+            base=base,
+            role_arn=role_arn,
+            role_session_name=role_session_name,
+            external_id=external_id,
+            duration_seconds=duration_seconds,
+            mfa_serial=mfa_serial,
+            token_code=token_code,
+            token_code_callback=token_code_callback,
+            region_name=region_name,
+        )
+
+    @staticmethod
+    def _assume_role_static(
+        *,
+        base: Session,
+        role_arn: str,
+        role_session_name: str,
+        external_id: str | None,
+        duration_seconds: int | None,
+        mfa_serial: str | None,
+        token_code: str | None,
+        token_code_callback: Callable[[], str] | None,
+        region_name: str | None,
+    ) -> Session:
+        """Legacy single-shot AssumeRole path — no refresh.
+
+        Used only when ``mfa_serial`` + literal ``token_code`` is
+        supplied without a callback, since the consumed OTP cannot be
+        replayed for refresh.
         """
         sts = base.client('sts')
         kwargs: dict = {
@@ -153,6 +231,102 @@ class AWSSession:
             aws_session_token=creds['SessionToken'],
             region_name=region_name,
         )
+
+    @staticmethod
+    def _assume_role_refreshable(
+        *,
+        base: Session,
+        role_arn: str,
+        role_session_name: str,
+        external_id: str | None,
+        duration_seconds: int | None,
+        mfa_serial: str | None,
+        token_code: str | None,
+        token_code_callback: Callable[[], str] | None,
+        region_name: str | None,
+    ) -> Session:
+        """AssumeRole with automatic refresh via ``RefreshableCredentials``.
+
+        The closure ``_refresh`` is invoked once synchronously here (to
+        seed initial credentials) and then re-invoked by botocore each
+        time the cached credentials approach expiry. botocore's
+        ``RefreshableCredentials`` defaults are:
+
+          - advisory window: **15 minutes** (``_advisory_refresh_timeout
+            = 900``) — best-effort background refresh.
+          - mandatory window: **10 minutes** (``_mandatory_refresh_timeout
+            = 600``) — synchronous refresh, the API call blocks until
+            credentials are renewed.
+
+        On the MFA + callback path, the callback runs again on every
+        refresh — supplying a fresh OTP transparently to boto3.
+        """
+        # Reuse a single STS client across refreshes — the parent
+        # ``base`` session's credentials are assumed to be long-lived
+        # (IAM user, IRSA web-identity, IMDS role, …) and outlive any
+        # individual AssumeRole result.
+        sts = base.client('sts')
+        base_kwargs: dict = {
+            'RoleArn': role_arn,
+            'RoleSessionName': role_session_name,
+        }
+        if external_id:
+            base_kwargs['ExternalId'] = external_id
+        if duration_seconds:
+            base_kwargs['DurationSeconds'] = duration_seconds
+
+        def _refresh() -> dict:
+            kwargs = dict(base_kwargs)
+            if mfa_serial:
+                code = token_code or (
+                    token_code_callback() if token_code_callback else None
+                )
+                if not code:
+                    raise ValueError(
+                        'mfa_serial requires either token_code or token_code_callback.'
+                    )
+                kwargs['SerialNumber'] = mfa_serial
+                kwargs['TokenCode'] = code
+            try:
+                resp = sts.assume_role(**kwargs)
+            except ClientError as e:
+                # Re-raise so boto3 surfaces the failure on the next
+                # AWS API call; logging here gives operators a single
+                # breadcrumb tying the failure to the refresh path.
+                logger.error('AssumeRole refresh failed: %s', e)
+                raise
+            creds = resp['Credentials']
+            return {
+                'access_key': creds['AccessKeyId'],
+                'secret_key': creds['SecretAccessKey'],
+                'token': creds['SessionToken'],
+                # ``Expiration`` is a timezone-aware datetime from boto3
+                # / moto; ``isoformat()`` yields the RFC 3339-compatible
+                # string ``RefreshableCredentials`` expects.
+                'expiry_time': creds['Expiration'].isoformat(),
+            }
+
+        rc = RefreshableCredentials.create_from_metadata(
+            metadata=_refresh(),
+            refresh_using=_refresh,
+            method='sts-assume-role',
+        )
+        bsess = BotocoreSession()
+        # ``set_credentials`` on the botocore session only accepts a
+        # static (access_key, secret_key, token) triple and would
+        # collapse the ``RefreshableCredentials`` instance to a plain
+        # ``Credentials`` snapshot. Direct assignment to the private
+        # ``_credentials`` slot is the pattern AWS-published boto3
+        # examples use to keep the refresh wiring intact.
+        bsess._credentials = rc
+        if region_name:
+            # ``boto3.Session(botocore_session=..., region_name=...)``
+            # configures the region on the wrapper, but the underlying
+            # botocore session also needs the variable set so any
+            # client that defers to the botocore session sees the
+            # same region.
+            bsess.set_config_variable('region', region_name)
+        return boto3.Session(botocore_session=bsess, region_name=region_name)
 
     def __repr__(self) -> str:
         return (
