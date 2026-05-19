@@ -833,6 +833,7 @@ def utility_processor() -> dict:
     google_configured = False
     title: str | None = None
     logo_url: str | None = None
+    logo_link_url: str | None = None
     upload_type: str | None = None
     object_hostname: str | None = None
     object_base_path: str | None = None
@@ -841,6 +842,7 @@ def utility_processor() -> dict:
         if viewer is not None:
             title = getattr(viewer, 'title', None)
             logo_url = getattr(viewer, 'logo_url', None)
+            logo_link_url = getattr(viewer, 'logo_link_url', None)
             upload_type = getattr(viewer, 'upload_type', None)
             object_hostname = getattr(viewer, 'object_hostname', None)
             object_base_path = getattr(viewer, '_base_path', None)
@@ -887,6 +889,7 @@ def utility_processor() -> dict:
         format_datetime=format_datetime,
         FS3V_TITLE=title,
         FS3V_LOGO_URL=logo_url,
+        FS3V_LOGO_LINK_URL=logo_link_url,
         FS3V_UPLOAD_TYPE=upload_type,
         FS3V_OBJECT_HOSTNAME=object_hostname,
         FS3V_OBJECT_BASE_PATH=object_base_path,

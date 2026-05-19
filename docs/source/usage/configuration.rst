@@ -171,7 +171,7 @@ Since v1.0, Flask S3 Viewer ships a single unified design built with
 Branding (title + logo)
 -----------------------
 
-Three constructor options let you brand the UI without overriding templates:
+Four constructor options let you brand the UI without overriding templates:
 
 .. code-block:: python
     :linenos:
@@ -182,6 +182,7 @@ Three constructor options let you brand the UI without overriding templates:
         title='ACME File Vault',
         logo_path='/opt/acme/assets/logo.svg',   # local file, auto-inlined
         # logo_url='https://cdn.acme.io/logo.svg',  # alternatively, any URL
+        logo_link_url='https://intranet.acme.io/dashboard',  # optional
         config={...},
     )
 
@@ -190,6 +191,23 @@ Three constructor options let you brand the UI without overriding templates:
 ``logo_url`` accepts any browser-resolvable URL (CDN, ``url_for("static",
 filename=...)`` result, or absolute URL). ``logo_path`` takes precedence
 over ``logo_url`` when both are provided.
+
+``logo_link_url`` (since v1.3) overrides the click target of the header
+logo + title anchor. When set, the anchor renders as a plain
+``<a href="...">`` pointing at the configured URL — useful when the
+deployer wants the brand mark to return users to an external dashboard
+/ home page rather than the namespace's own root listing. The HTMX swap
+attributes (``hx-get`` / ``hx-target`` / ``hx-push-url``) are intentionally
+omitted in this mode so the browser performs a standard full-page
+navigation; the listing's HTMX flows (file rows, pagination, search,
+bucket switcher) are unaffected. Omit ``logo_link_url`` (or leave it as
+``None``) to keep the v1.2 behaviour where the anchor performs an
+in-place HTMX listing reset back to the namespace root.
+
+For multi-namespace deployments using :meth:`add_new_one`, omit the
+kwarg on the child to inherit the parent's value; pass ``None``
+explicitly to drop the parent's override on this child namespace; pass
+a different string to override the parent value only on the child.
 
 Template overrides
 ------------------

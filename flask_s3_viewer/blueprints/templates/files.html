@@ -5,12 +5,19 @@
   {%- set current_search = current_search if current_search is defined else request.args.get('search', '') -%}
   <header class="border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
     <div class="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-4 md:flex-row md:items-center md:justify-between">
-      <a class="flex min-w-0 items-center gap-3 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-gray-100/20"
+      {%- set _logo_anchor_class = "flex min-w-0 items-center gap-3 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-gray-100/20" -%}
+      {% if FS3V_LOGO_LINK_URL %}
+      <a class="{{ _logo_anchor_class }}"
+         href="{{ FS3V_LOGO_LINK_URL }}"
+         aria-label="Go to home">
+      {% else %}
+      <a class="{{ _logo_anchor_class }}"
          href="{{ url_for('flask_s3_viewer.files') }}"
          hx-get="{{ url_for('flask_s3_viewer.files') }}"
          hx-target="#file-list"
         hx-push-url="true"
         aria-label="Go to root">
+      {% endif %}
         {% if FS3V_LOGO_URL %}
           <img src="{{ FS3V_LOGO_URL }}" alt="" class="h-11 max-w-24 rounded-lg object-contain flex-shrink-0">
         {% else %}

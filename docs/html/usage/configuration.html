@@ -6,7 +6,7 @@
 <meta content="Flask, s3, aws, upload, uploader, browsing, python3, python, mount, objectstorage, s3viewer" name="keywords" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Configuration &mdash; Flask-S3-Viewer 1.2.0 documentation</title>
+  <title>Configuration &mdash; Flask-S3-Viewer 1.3.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
 
@@ -18,7 +18,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=6efca38a"></script>
+        <script src="../_static/documentation_options.js?v=1f29e9d3"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -251,15 +251,16 @@ emits a <code class="xref py py-class docutils literal notranslate"><span class=
 </section>
 <section id="branding-title-logo">
 <h2>Branding (title + logo)<a class="headerlink" href="#branding-title-logo" title="Link to this heading"></a></h2>
-<p>Three constructor options let you brand the UI without overriding templates:</p>
+<p>Four constructor options let you brand the UI without overriding templates:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="n">FlaskS3Viewer</span><span class="p">(</span>
 <span class="linenos">2</span>    <span class="n">app</span><span class="p">,</span>
 <span class="linenos">3</span>    <span class="n">namespace</span><span class="o">=</span><span class="s1">&#39;my-bucket&#39;</span><span class="p">,</span>
 <span class="linenos">4</span>    <span class="n">title</span><span class="o">=</span><span class="s1">&#39;ACME File Vault&#39;</span><span class="p">,</span>
 <span class="linenos">5</span>    <span class="n">logo_path</span><span class="o">=</span><span class="s1">&#39;/opt/acme/assets/logo.svg&#39;</span><span class="p">,</span>   <span class="c1"># local file, auto-inlined</span>
 <span class="linenos">6</span>    <span class="c1"># logo_url=&#39;https://cdn.acme.io/logo.svg&#39;,  # alternatively, any URL</span>
-<span class="linenos">7</span>    <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="o">...</span><span class="p">},</span>
-<span class="linenos">8</span><span class="p">)</span>
+<span class="linenos">7</span>    <span class="n">logo_link_url</span><span class="o">=</span><span class="s1">&#39;https://intranet.acme.io/dashboard&#39;</span><span class="p">,</span>  <span class="c1"># optional</span>
+<span class="linenos">8</span>    <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="o">...</span><span class="p">},</span>
+<span class="linenos">9</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">logo_path</span></code> reads the file once at construction time and embeds it as a
@@ -267,6 +268,21 @@ emits a <code class="xref py py-class docutils literal notranslate"><span class=
 <code class="docutils literal notranslate"><span class="pre">logo_url</span></code> accepts any browser-resolvable URL (CDN, <code class="docutils literal notranslate"><span class="pre">url_for(&quot;static&quot;,</span>
 <span class="pre">filename=...)</span></code> result, or absolute URL). <code class="docutils literal notranslate"><span class="pre">logo_path</span></code> takes precedence
 over <code class="docutils literal notranslate"><span class="pre">logo_url</span></code> when both are provided.</p>
+<p><code class="docutils literal notranslate"><span class="pre">logo_link_url</span></code> (since v1.3) overrides the click target of the header
+logo + title anchor. When set, the anchor renders as a plain
+<code class="docutils literal notranslate"><span class="pre">&lt;a</span> <span class="pre">href=&quot;...&quot;&gt;</span></code> pointing at the configured URL — useful when the
+deployer wants the brand mark to return users to an external dashboard
+/ home page rather than the namespace’s own root listing. The HTMX swap
+attributes (<code class="docutils literal notranslate"><span class="pre">hx-get</span></code> / <code class="docutils literal notranslate"><span class="pre">hx-target</span></code> / <code class="docutils literal notranslate"><span class="pre">hx-push-url</span></code>) are intentionally
+omitted in this mode so the browser performs a standard full-page
+navigation; the listing’s HTMX flows (file rows, pagination, search,
+bucket switcher) are unaffected. Omit <code class="docutils literal notranslate"><span class="pre">logo_link_url</span></code> (or leave it as
+<code class="docutils literal notranslate"><span class="pre">None</span></code>) to keep the v1.2 behaviour where the anchor performs an
+in-place HTMX listing reset back to the namespace root.</p>
+<p>For multi-namespace deployments using <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_new_one()</span></code>, omit the
+kwarg on the child to inherit the parent’s value; pass <code class="docutils literal notranslate"><span class="pre">None</span></code>
+explicitly to drop the parent’s override on this child namespace; pass
+a different string to override the parent value only on the child.</p>
 </section>
 <section id="template-overrides">
 <h2>Template overrides<a class="headerlink" href="#template-overrides" title="Link to this heading"></a></h2>

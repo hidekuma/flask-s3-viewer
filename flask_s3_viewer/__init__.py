@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 APP_TEMPLATE_FOLDER: str = FIXED_TEMPLATE_FOLDER
 
-__version__: str = "1.2.0"
+__version__: str = "1.3.0"
 
 _EXTENSION_KEY: str = "flask_s3_viewer"
 
@@ -126,6 +126,7 @@ class FlaskS3Viewer(AWSS3Client):
         title: str | None = None,
         logo_url: str | None = None,
         logo_path: str | None = None,
+        logo_link_url: str | None = None,
         template_folder: str | None = None,
         auth_callback: Any = None,
         permission_callback: Any = None,
@@ -154,6 +155,14 @@ class FlaskS3Viewer(AWSS3Client):
             read once and inlined as a ``data:`` URI — convenient when you
             don't want to expose the file via a separate static route.
             ``logo_path`` takes precedence over ``logo_url``.
+        :param str logo_link_url: Optional override for the click target of
+            the header logo + title anchor. When set, the anchor renders as
+            a plain ``<a href="...">`` pointing at this URL and the default
+            HTMX swap (which navigates back to the namespace root listing)
+            is disabled — useful when the deployer wants the brand mark to
+            return users to an external dashboard / home page. Omit (or
+            leave as ``None``) to keep the v1.2 behaviour where the anchor
+            performs an in-place HTMX listing reset.
         :param str template_folder: Optional path to a directory containing
             overrides for any of the bundled templates (``layout.html``,
             ``files.html``, ``_file_list.html``, ``_pagination.html``,
@@ -180,6 +189,7 @@ class FlaskS3Viewer(AWSS3Client):
         self.allowed_extensions: set[str] | None = allowed_extensions
         self.title: str = title or "Flask S3 Viewer"
         self.logo_url: str | None = _resolve_logo(logo_url, logo_path)
+        self.logo_link_url: str | None = logo_link_url
         self.template_folder: str | None = template_folder
         # ---- auth wiring ----
         from .auth import (
@@ -394,6 +404,7 @@ class FlaskS3Viewer(AWSS3Client):
         title: str | None = None,
         logo_url: str | None = None,
         logo_path: str | None = None,
+        logo_link_url: Any = _INHERIT,
         template_folder: str | None = None,
         auth_callback: Any = _INHERIT,
         permission_callback: Any = _INHERIT,
@@ -415,6 +426,11 @@ class FlaskS3Viewer(AWSS3Client):
         :param str title: Heading + browser title text for this namespace.
         :param str logo_url: Optional custom logo URL.
         :param str logo_path: Optional local logo path.
+        :param str logo_link_url: Optional override for the header logo +
+            title anchor click target. Omit to inherit the parent viewer's
+            value; pass ``None`` to drop the override on this child
+            namespace (restoring the default HTMX listing reset); pass a
+            string to use a different URL than the parent.
         :param str template_folder: Optional template override folder.
         :param callable auth_callback: Optional auth callback. Omit to inherit
             the parent viewer's value; pass ``None`` explicitly to disable auth
@@ -476,6 +492,9 @@ class FlaskS3Viewer(AWSS3Client):
             if allowed_domains is _INHERIT
             else allowed_domains
         )
+        resolved_logo_link_url = (
+            self.logo_link_url if logo_link_url is _INHERIT else logo_link_url
+        )
         return FlaskS3Viewer(
             self.app,
             namespace=namespace,
@@ -486,6 +505,7 @@ class FlaskS3Viewer(AWSS3Client):
             title=title,
             logo_url=logo_url,
             logo_path=logo_path,
+            logo_link_url=resolved_logo_link_url,
             template_folder=template_folder,
             auth_callback=resolved_auth_callback,
             permission_callback=resolved_permission_callback,

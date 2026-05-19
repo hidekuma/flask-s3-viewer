@@ -75,11 +75,14 @@ FlaskS3Viewer(
     title="ACME File Vault",
     logo_path="/opt/acme/assets/logo.svg",   # local file, auto inlined as a data: URI
     # or: logo_url="https://cdn.acme.io/logo.svg",
+    logo_link_url="https://intranet.acme.io/dashboard",  # optional (v1.3+)
     config={...},
 )
 ```
 
 `logo_path` reads the file once at construction time and embeds it as a `data:` URI so you don't need a separate static route. `logo_url` accepts any browser-resolvable URL (CDN, `url_for("static", filename=...)`, etc.). `logo_path` takes precedence.
+
+`logo_link_url` (v1.3+) overrides the click target of the header logo + title anchor. When set, the anchor renders as a plain `<a href="...">` pointing at the configured URL and the default HTMX listing reset is disabled — useful when the brand mark should return users to an external dashboard / home page. Omit to keep the v1.2 in-place HTMX swap. With `add_new_one`, omit to inherit the parent value, pass `None` to drop the parent's override on a child namespace, or pass a different string to override per namespace.
 
 ### Customizing templates (`template_folder`)
 
@@ -177,6 +180,7 @@ Constructor options:
 | `title`              | Heading + browser tab title text. Default `"Flask S3 Viewer"`.   |
 | `logo_url`           | URL of a custom logo image (absolute, `url_for(...)`, or `/static/...`). |
 | `logo_path`          | Local filesystem path to a logo image — auto-inlined as a `data:` URI. Takes precedence over `logo_url`. |
+| `logo_link_url`      | (v1.3+) Overrides the header logo + title anchor click target. When set, replaces the default HTMX listing reset with standard navigation. |
 | `template_folder`    | Directory whose Jinja files override the bundled templates (Flask `ChoiceLoader` pattern). Seed it via the CLI scaffold. |
 
 ## AWS authentication

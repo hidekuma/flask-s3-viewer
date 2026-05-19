@@ -212,6 +212,178 @@ class TestResolveLogo:
         assert url is not None and url.startswith('data:image/png;base64,')
 
 
+class TestLogoLinkUrl:
+    """``logo_link_url`` swaps the header logo anchor from the default
+    HTMX listing reset to a plain ``<a href>`` navigation. Backward-compat
+    is the headline: omitting the kwarg must leave every existing render
+    100% identical to v1.2.
+    """
+
+    def _make_app(self, bucket, tmp_path, **kwargs):
+        from flask import Flask
+
+        app = Flask(__name__)
+        app.config['TESTING'] = True
+        FlaskS3Viewer(
+            app,
+            namespace='fsv-link',
+            config={
+                'profile_name': None,
+                'bucket_name': bucket,
+                'region_name': 'us-east-1',
+                'access_key': 't',
+                'secret_key': 't',
+                'cache_dir': str(tmp_path / 'cache'),
+                'use_cache': True,
+                'ttl': 60,
+            },
+            **kwargs,
+        )
+        return app
+
+    def test_omitted_preserves_htmx_swap_attributes(self, s3_bucket, tmp_path):
+        _client, bucket = s3_bucket
+        app = self._make_app(bucket, tmp_path)
+        viewer = app.extensions['flask_s3_viewer']['fsv-link']
+        assert viewer.logo_link_url is None
+        rv = app.test_client().get('/fsv-link/files')
+        assert rv.status_code == 200
+        # Default rendering keeps the HTMX swap attributes intact.
+        assert b'hx-get=' in rv.data
+        assert b'hx-target="#file-list"' in rv.data
+        assert b'hx-push-url="true"' in rv.data
+        assert b'aria-label="Go to root"' in rv.data
+
+    def test_explicit_url_drops_htmx_attributes(self, s3_bucket, tmp_path):
+        _client, bucket = s3_bucket
+        app = self._make_app(
+            bucket, tmp_path, logo_link_url='https://dashboard.example.com/home',
+        )
+        viewer = app.extensions['flask_s3_viewer']['fsv-link']
+        assert viewer.logo_link_url == 'https://dashboard.example.com/home'
+        rv = app.test_client().get('/fsv-link/files')
+        assert rv.status_code == 200
+        assert b'href="https://dashboard.example.com/home"' in rv.data
+        # Both the hx-get and hx-target attributes must be absent on the
+        # logo anchor when an override is configured (the bucket-switcher
+        # and file rows still use HTMX, so check only the header anchor
+        # by scoping to its aria-label).
+        assert b'aria-label="Go to home"' in rv.data
+        # The whole page must not carry a hx-get pointing at the listing
+        # root when the override is on (other hx-gets exist in row
+        # actions, none use this href shape).
+        assert b'hx-target="#file-list"\n        hx-push-url="true"' not in rv.data
+
+    def test_multi_namespace_inherits_parent_logo_link_url(self, aws_credentials, tmp_path):
+        import boto3
+        from flask import Flask
+        from moto import mock_aws
+
+        with mock_aws():
+            s3 = boto3.client('s3', region_name='us-east-1')
+            s3.create_bucket(Bucket='parent-b')
+            s3.create_bucket(Bucket='child-b')
+            app = Flask(__name__)
+            parent = FlaskS3Viewer(
+                app,
+                namespace='parent-ns',
+                logo_link_url='https://parent.example.com',
+                config={
+                    'profile_name': None,
+                    'bucket_name': 'parent-b', 'region_name': 'us-east-1',
+                    'access_key': 't', 'secret_key': 't',
+                    'cache_dir': str(tmp_path / 'p'), 'use_cache': True, 'ttl': 60,
+                },
+            )
+            # No kwarg = inherit.
+            child = parent.add_new_one(
+                namespace='child-ns',
+                config={
+                    'profile_name': None,
+                    'bucket_name': 'child-b', 'region_name': 'us-east-1',
+                    'access_key': 't', 'secret_key': 't',
+                    'cache_dir': str(tmp_path / 'c'), 'use_cache': True, 'ttl': 60,
+                },
+            )
+            assert child.logo_link_url == 'https://parent.example.com'
+
+    def test_multi_namespace_child_overrides_parent(self, aws_credentials, tmp_path):
+        import boto3
+        from flask import Flask
+        from moto import mock_aws
+
+        with mock_aws():
+            s3 = boto3.client('s3', region_name='us-east-1')
+            s3.create_bucket(Bucket='parent-b')
+            s3.create_bucket(Bucket='child-b')
+            app = Flask(__name__)
+            parent = FlaskS3Viewer(
+                app,
+                namespace='parent-ns2',
+                logo_link_url='https://parent.example.com',
+                config={
+                    'profile_name': None,
+                    'bucket_name': 'parent-b', 'region_name': 'us-east-1',
+                    'access_key': 't', 'secret_key': 't',
+                    'cache_dir': str(tmp_path / 'p'), 'use_cache': True, 'ttl': 60,
+                },
+            )
+            child = parent.add_new_one(
+                namespace='child-ns2',
+                logo_link_url='https://child.example.com',
+                config={
+                    'profile_name': None,
+                    'bucket_name': 'child-b', 'region_name': 'us-east-1',
+                    'access_key': 't', 'secret_key': 't',
+                    'cache_dir': str(tmp_path / 'c'), 'use_cache': True, 'ttl': 60,
+                },
+            )
+            assert child.logo_link_url == 'https://child.example.com'
+
+    def test_multi_namespace_child_explicit_none_disables_inherit(self, aws_credentials, tmp_path):
+        """Explicit ``None`` on the child disables the parent's override.
+
+        Checked via the resolved attribute on the child instance — the
+        full render path is exercised by
+        ``test_omitted_preserves_htmx_swap_attributes`` above, so this
+        test focuses on the sentinel branching alone (and intentionally
+        avoids the GET so it does not need to set up the inherited
+        ``auth_callback`` chain that ``add_new_one`` propagates).
+        """
+        import boto3
+        from flask import Flask
+        from moto import mock_aws
+
+        with mock_aws():
+            s3 = boto3.client('s3', region_name='us-east-1')
+            s3.create_bucket(Bucket='parent-b')
+            s3.create_bucket(Bucket='child-b')
+            app = Flask(__name__)
+            parent = FlaskS3Viewer(
+                app,
+                namespace='parent-ns3',
+                logo_link_url='https://parent.example.com',
+                config={
+                    'profile_name': None,
+                    'bucket_name': 'parent-b', 'region_name': 'us-east-1',
+                    'access_key': 't', 'secret_key': 't',
+                    'cache_dir': str(tmp_path / 'p'), 'use_cache': True, 'ttl': 60,
+                },
+            )
+            child = parent.add_new_one(
+                namespace='child-ns3',
+                logo_link_url=None,
+                config={
+                    'profile_name': None,
+                    'bucket_name': 'child-b', 'region_name': 'us-east-1',
+                    'access_key': 't', 'secret_key': 't',
+                    'cache_dir': str(tmp_path / 'c'), 'use_cache': True, 'ttl': 60,
+                },
+            )
+            assert parent.logo_link_url == 'https://parent.example.com'
+            assert child.logo_link_url is None
+
+
 # ---------------------------------------------------------------------------
 # flask_s3_viewer/errors.py
 # ---------------------------------------------------------------------------
