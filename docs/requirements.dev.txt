@@ -10,7 +10,7 @@ click==8.1.7
 docutils==0.20.1
 Flask==3.0.3
 flask_s3_viewer @ file:///Users/joseph/Documents/workspace/flask-s3-viewer/dist/flask_s3_viewer-0.3.1-py3-none-any.whl#sha256=30baf25a6d686ee2a8ee718380a911673c1fadb5fbee4dc8739e1485845d94f7
-idna==3.7
+idna==3.15
 imagesize==1.4.1
 importlib_metadata==8.0.0
 itsdangerous==2.2.0
