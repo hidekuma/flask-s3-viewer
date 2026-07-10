@@ -24,7 +24,7 @@ m2r2==0.3.3.post2
 markdown-it-py==3.0.0
 MarkupSafe==2.1.5
 mdurl==0.1.2
-mistune==0.8.4
+mistune==3.3.0
 more-itertools==10.3.0
 nh3==0.2.18
 packaging==24.1
